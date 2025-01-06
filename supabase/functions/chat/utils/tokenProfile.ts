@@ -1,16 +1,15 @@
-import { searchTweets } from './twitter/client.ts';
+import { searchTweets } from "./twitter/client.ts";
 
 interface TokenProfile {
   symbol: string;
   name: string;
-  marketCap?: number;
   price?: number;
+  marketCap?: number;
   volume24h?: number;
-  holders?: number;
   socialMetrics?: {
     twitterMentions: number;
-    sentiment: 'positive' | 'neutral' | 'negative';
-    recentTweets?: {
+    sentiment: number;
+    recentTweets: {
       text: string;
       engagement: number;
       timestamp: string;
@@ -18,150 +17,40 @@ interface TokenProfile {
   };
 }
 
-async function searchCoinGecko(query: string): Promise<any> {
-  const apiKey = Deno.env.get('COINGECKO_API_KEY');
-  try {
-    console.log('Searching CoinGecko for:', query);
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          'x-cg-demo-api-key': apiKey
-        }
-      }
-    );
-    const data = await response.json();
-    console.log('CoinGecko Search Results:', data);
-    return data.coins?.[0] || null;
-  } catch (error) {
-    console.error('Error searching CoinGecko:', error);
-    return null;
-  }
-}
-
-async function getTokenMarketData(coinId: string): Promise<any> {
-  const apiKey = Deno.env.get('COINGECKO_API_KEY');
-  try {
-    console.log('Fetching market data for:', coinId);
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=true&developer_data=false`,
-      {
-        headers: {
-          'x-cg-demo-api-key': apiKey
-        }
-      }
-    );
-    const data = await response.json();
-    console.log('CoinGecko Market Data:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching market data:', error);
-    return null;
-  }
-}
-
-async function analyzeSentiment(tweets: any[]): Promise<{
-  sentiment: 'positive' | 'neutral' | 'negative';
-  recentTweets: any[];
-}> {
-  if (!tweets || tweets.length === 0) {
-    console.log('No tweets to analyze');
-    return { 
-      sentiment: 'neutral',
-      recentTweets: []
-    };
-  }
-  
-  console.log('Analyzing sentiment for tweets:', tweets.length);
-  
-  const processedTweets = tweets.map(tweet => {
-    const metrics = tweet.public_metrics || {};
-    const engagement = (metrics.like_count || 0) + 
-                      (metrics.retweet_count || 0) * 2 + 
-                      (metrics.reply_count || 0) * 3;
-    
-    return {
-      text: tweet.text,
-      engagement,
-      timestamp: tweet.created_at
-    };
-  });
-
-  const topTweets = processedTweets
-    .sort((a, b) => b.engagement - a.engagement)
-    .slice(0, 3);
-  
-  const totalEngagement = processedTweets.reduce((acc, tweet) => acc + tweet.engagement, 0);
-  const averageEngagement = totalEngagement / tweets.length;
-  
-  let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
-  if (averageEngagement > 1000) sentiment = 'positive';
-  else if (averageEngagement < 100) sentiment = 'negative';
-  
-  console.log('Sentiment analysis complete:', { sentiment, topTweetsCount: topTweets.length });
-  
-  return {
-    sentiment,
-    recentTweets: topTweets
-  };
-}
-
 export async function createTokenProfile(symbol: string): Promise<TokenProfile | null> {
-  console.log(`Creating token profile for ${symbol}...`);
-  
-  const cleanSymbol = symbol.replace('$', '').toLowerCase();
-  
-  // Search for token on CoinGecko
-  const coinGeckoData = await searchCoinGecko(cleanSymbol);
-  if (!coinGeckoData) {
-    console.log('Token not found on CoinGecko');
+  try {
+    console.log('Creating token profile for symbol:', symbol);
+    
+    // Clean up symbol (remove $ if present)
+    const cleanSymbol = symbol.replace('$', '').toUpperCase();
+    
+    // Fetch Twitter data
+    const twitterData = await searchTweets(`$${cleanSymbol}`, 10);
+    console.log('Twitter data for token:', twitterData);
+
+    // Process Twitter metrics
+    const tweets = twitterData?.data || [];
+    const recentTweets = tweets.map(tweet => ({
+      text: tweet.text,
+      engagement: tweet.public_metrics ? 
+        (tweet.public_metrics.like_count + tweet.public_metrics.retweet_count) : 0,
+      timestamp: tweet.created_at
+    }));
+
+    // Calculate average sentiment (mock implementation)
+    const sentiment = 0.7; // Placeholder value
+
+    return {
+      symbol: cleanSymbol,
+      name: `${cleanSymbol} Token`, // Placeholder
+      socialMetrics: {
+        twitterMentions: tweets.length,
+        sentiment,
+        recentTweets
+      }
+    };
+  } catch (error) {
+    console.error('Error creating token profile:', error);
     return null;
   }
-  
-  // Get detailed market data
-  const marketData = await getTokenMarketData(coinGeckoData.id);
-  
-  // Get Twitter mentions with enhanced search
-  const searchQueries = [
-    `${symbol} crypto`,
-    `${symbol} token`,
-    coinGeckoData.name
-  ];
-  
-  console.log('Fetching tweets for queries:', searchQueries);
-  
-  const twitterPromises = searchQueries.map(async (query) => {
-    const response = await searchTweets({ query, maxResults: 10 });
-    return response.data || [];
-  });
-  
-  const twitterResults = await Promise.all(twitterPromises);
-  
-  // Combine and deduplicate tweets
-  const allTweets = twitterResults
-    .flat()
-    .filter((tweet, index, self) => 
-      index === self.findIndex(t => t.id === tweet.id)
-    );
-  
-  console.log(`Found ${allTweets.length} unique tweets for ${symbol}`);
-  
-  // Analyze sentiment and get top tweets
-  const { sentiment, recentTweets } = await analyzeSentiment(allTweets);
-  
-  const profile: TokenProfile = {
-    symbol: symbol,
-    name: coinGeckoData.name,
-    marketCap: marketData?.market_data?.market_cap?.usd,
-    price: marketData?.market_data?.current_price?.usd,
-    volume24h: marketData?.market_data?.total_volume?.usd,
-    socialMetrics: {
-      twitterMentions: allTweets.length,
-      sentiment: sentiment,
-      recentTweets: recentTweets
-    }
-  };
-  
-  console.log('Created token profile:', profile);
-  return profile;
 }
