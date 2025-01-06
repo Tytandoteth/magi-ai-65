@@ -3,6 +3,7 @@ import { ChatInput } from "@/components/ChatInput";
 import { ChatMessage } from "@/components/ChatMessage";
 import { Message, ChatState } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [chatState, setChatState] = useState<ChatState>({
@@ -37,29 +38,20 @@ const Index = () => {
     }));
 
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
+          messages: [...chatState.messages, userMessage].map(({ role, content }) => ({
+            role,
+            content,
+          })),
         },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            ...chatState.messages,
-            { role: "user", content },
-          ].map(({ role, content }) => ({ role, content })),
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to get response from OpenAI");
-      }
+      if (error) throw error;
 
-      const data = await response.json();
       const assistantMessage: Message = {
         id: Date.now().toString(),
-        content: data.choices[0].message.content,
+        content: data.response.content,
         role: "assistant",
         timestamp: new Date(),
       };
