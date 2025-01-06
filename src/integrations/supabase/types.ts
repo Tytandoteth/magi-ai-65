@@ -30,6 +30,27 @@ export type Database = {
         }
         Relationships: []
       }
+      etherscan_scraper: {
+        Row: {
+          address: string | null
+          created_at: string
+          holders: number | null
+          id: number
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          holders?: number | null
+          id?: number
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          holders?: number | null
+          id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -33,14 +33,23 @@ export async function fetchCoinGeckoData() {
 
 export async function fetchTokenData(address: string) {
   try {
-    const response = await fetch(`https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${Deno.env.get('ETHERSCAN_API_KEY')}`);
+    const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
+    console.log('Fetching token data for address:', address);
+    
+    const response = await fetch(`https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`);
     const data = await response.json();
     console.log('Etherscan token data:', data);
     
     // Also fetch holder count
-    const holdersResponse = await fetch(`https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${Deno.env.get('ETHERSCAN_API_KEY')}`);
+    const holdersResponse = await fetch(`https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`);
     const holdersData = await holdersResponse.json();
     console.log('Etherscan holders data:', holdersData);
+    
+    // Create Supabase client
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Store the data in our database
     const { data: insertData, error } = await supabase
@@ -54,6 +63,7 @@ export async function fetchTokenData(address: string) {
       .select();
       
     if (error) console.error('Error storing token data:', error);
+    console.log('Stored token data:', insertData);
     
     return {
       tokenInfo: data.result,
@@ -66,7 +76,6 @@ export async function fetchTokenData(address: string) {
 }
 
 import { fetchLatestTweets } from './twitter.ts';
-import { supabase } from '../../../src/integrations/supabase/client';
 
 export async function fetchExternalData() {
   const penguAddress = '0x1234...'; // Replace with actual $PENGU contract address
