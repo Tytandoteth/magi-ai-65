@@ -9,6 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      crypto_news: {
+        Row: {
+          categories: string[] | null
+          created_at: string
+          id: number
+          published_at: string
+          raw_data: Json | null
+          sentiment: number | null
+          source: string
+          title: string
+          url: string
+        }
+        Insert: {
+          categories?: string[] | null
+          created_at?: string
+          id?: number
+          published_at: string
+          raw_data?: Json | null
+          sentiment?: number | null
+          source: string
+          title: string
+          url: string
+        }
+        Update: {
+          categories?: string[] | null
+          created_at?: string
+          id?: number
+          published_at?: string
+          raw_data?: Json | null
+          sentiment?: number | null
+          source?: string
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      defi_market_data: {
+        Row: {
+          coin_id: string
+          created_at: string
+          current_price: number | null
+          id: number
+          market_cap: number | null
+          name: string
+          price_change_24h: number | null
+          price_change_percentage_24h: number | null
+          raw_data: Json | null
+          symbol: string
+          total_value_locked: number | null
+          total_volume: number | null
+        }
+        Insert: {
+          coin_id: string
+          created_at?: string
+          current_price?: number | null
+          id?: number
+          market_cap?: number | null
+          name: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Update: {
+          coin_id?: string
+          created_at?: string
+          current_price?: number | null
+          id?: number
+          market_cap?: number | null
+          name?: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol?: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Relationships: []
+      }
       "etherscan scraper": {
         Row: {
           address: string | null
@@ -48,6 +129,45 @@ export type Database = {
           created_at?: string
           holders?: number | null
           id?: number
+        }
+        Relationships: []
+      }
+      mag_token_analytics: {
+        Row: {
+          circulating_supply: number | null
+          created_at: string
+          holders_count: number | null
+          id: number
+          market_cap: number | null
+          price: number | null
+          raw_data: Json | null
+          total_supply: number | null
+          transactions_24h: number | null
+          volume_24h: number | null
+        }
+        Insert: {
+          circulating_supply?: number | null
+          created_at?: string
+          holders_count?: number | null
+          id?: number
+          market_cap?: number | null
+          price?: number | null
+          raw_data?: Json | null
+          total_supply?: number | null
+          transactions_24h?: number | null
+          volume_24h?: number | null
+        }
+        Update: {
+          circulating_supply?: number | null
+          created_at?: string
+          holders_count?: number | null
+          id?: number
+          market_cap?: number | null
+          price?: number | null
+          raw_data?: Json | null
+          total_supply?: number | null
+          transactions_24h?: number | null
+          volume_24h?: number | null
         }
         Relationships: []
       }
