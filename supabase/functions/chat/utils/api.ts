@@ -50,8 +50,8 @@ export async function fetchTokenData(address: string) {
     const holdersData = await holdersResponse.json();
     console.log('Etherscan holders data:', holdersData);
 
-    // Create Supabase client directly in the function
-    const { createClient } = await import('@supabase/supabase-js');
+    // Create Supabase client using ESM URL
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
