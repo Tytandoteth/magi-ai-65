@@ -77,21 +77,23 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto">
-      <div className="flex-1 overflow-y-auto p-4">
-        {chatState.messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
-        ))}
-        {chatState.isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="bg-secondary text-secondary-foreground rounded-lg px-4 py-2">
-              <p className="text-sm">Thinking...</p>
+    <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
+      <div className="chat-container flex-1 flex flex-col">
+        <div className="flex-1 overflow-y-auto py-4">
+          {chatState.messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
+          {chatState.isLoading && (
+            <div className="flex justify-start mb-4 px-4">
+              <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
+                <p className="text-sm">Thinking...</p>
+              </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+        <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
       </div>
-      <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
     </div>
   );
 };
