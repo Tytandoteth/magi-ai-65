@@ -1,4 +1,4 @@
-import { ApiStatus } from '../types';
+import { ApiStatus } from '../types.ts';
 
 const CACHE_DURATION = 60000; // 1 minute
 const cache = new Map<string, { data: ApiStatus; timestamp: number }>();

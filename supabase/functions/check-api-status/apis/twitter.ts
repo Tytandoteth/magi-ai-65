@@ -1,6 +1,6 @@
-import { fetchWithRetry } from '../utils/fetch';
-import { getCachedData, setCachedData } from '../utils/cache';
-import { ApiStatus } from '../types';
+import { fetchWithRetry } from '../utils/fetch.ts';
+import { getCachedData, setCachedData } from '../utils/cache.ts';
+import { ApiStatus } from '../types.ts';
 
 export async function checkTwitterAPI(): Promise<ApiStatus> {
   console.log('Checking Twitter API...');
