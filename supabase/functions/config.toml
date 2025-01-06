@@ -1,28 +1,7 @@
 project_id = "ejncohkxeviqioparmyh"
 
-[global]
-only_testing = false
-
-[[fetch-market-data.secrets]]
-name = "COINGECKO_API_KEY"
-
-[[fetch-market-data.secrets]]
+[[chat.secrets]]
 name = "SUPABASE_URL"
 
-[[fetch-market-data.secrets]]
-name = "SUPABASE_SERVICE_ROLE_KEY"
-
-[[fetch-crypto-news.secrets]]
-name = "SUPABASE_URL"
-
-[[fetch-crypto-news.secrets]]
-name = "SUPABASE_SERVICE_ROLE_KEY"
-
-[[fetch-mag-analytics.secrets]]
-name = "ETHERSCAN_API_KEY"
-
-[[fetch-mag-analytics.secrets]]
-name = "SUPABASE_URL"
-
-[[fetch-mag-analytics.secrets]]
+[[chat.secrets]]
 name = "SUPABASE_SERVICE_ROLE_KEY"
