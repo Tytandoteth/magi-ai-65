@@ -28,10 +28,14 @@ export const useChat = () => {
       timestamp: new Date(),
       request: {
         messages: currentMessages,
+        apis: []
       },
     };
 
     try {
+      console.log('Starting chat request with messages:', currentMessages);
+      
+      const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
           messages: currentMessages.map(({ role, content, id, timestamp }) => ({
@@ -44,6 +48,11 @@ export const useChat = () => {
       });
 
       if (error) throw error;
+
+      // Update API statuses from the edge function
+      if (data.apiStatuses) {
+        apiLog.request.apis = data.apiStatuses;
+      }
 
       const assistantMessage: Message = {
         id: Date.now().toString(),
@@ -59,8 +68,17 @@ export const useChat = () => {
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
       apiLog.error = error.message;
-      addApiLog(apiLog);
       
+      // Add failed API status
+      if (apiLog.request.apis) {
+        apiLog.request.apis.push({
+          name: 'chat',
+          status: 'error',
+          error: error.message
+        });
+      }
+      
+      addApiLog(apiLog);
       setError("Failed to get response. Please try again.");
       setLoading(false);
 
