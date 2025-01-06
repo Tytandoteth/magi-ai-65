@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SendHorizontal } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
 
 interface ChatInputProps {
@@ -40,13 +41,9 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         onClick={handleSend}
         disabled={disabled || !message.trim()}
         size="icon"
-        className="bg-transparent hover:bg-transparent p-0 h-8 w-8"
+        className="bg-[#1e1f23] hover:bg-[#2a2b2e] text-gray-100"
       >
-        <img 
-          src="/lovable-uploads/cb051562-df58-4bf5-b272-606e94765a37.png" 
-          alt="Send"
-          className="w-full h-full object-contain"
-        />
+        <SendHorizontal className="h-4 w-4" />
       </Button>
     </div>
   );
