@@ -1,56 +1,106 @@
 import { createTokenProfile } from './tokenProfile.ts';
 
+function formatMarketData(data: any) {
+  if (!data) return '';
+  
+  try {
+    return Object.entries(data)
+      .map(([key, value]) => `  • ${key}: ${JSON.stringify(value)}`)
+      .join('\n');
+  } catch (error) {
+    console.error('Error formatting market data:', error);
+    return JSON.stringify(data);
+  }
+}
+
+function formatTweets(tweets: any[]) {
+  if (!tweets?.length) return '';
+  
+  try {
+    return tweets.slice(0, 3).map(tweet => {
+      const metrics = tweet.public_metrics || {};
+      return `  • ${tweet.text.substring(0, 100)}... 
+    [💬 ${metrics.reply_count || 0} | 🔄 ${metrics.retweet_count || 0} | ❤️ ${metrics.like_count || 0}]`;
+    }).join('\n');
+  } catch (error) {
+    console.error('Error formatting tweets:', error);
+    return JSON.stringify(tweets);
+  }
+}
+
 export async function createSystemMessage(externalData: any, userMessage?: string) {
+  console.log('Creating system message with external data:', externalData);
   let tokenProfile = null;
   
   // Check if message contains a token reference (e.g., $PENGU)
   if (userMessage) {
     const tokenMatch = userMessage.match(/\$[A-Za-z]+/);
     if (tokenMatch) {
+      console.log('Token match found:', tokenMatch[0]);
       tokenProfile = await createTokenProfile(tokenMatch[0]);
     }
   }
 
   const twitterContext = externalData?.twitterData?.data 
-    ? `\n\nLatest relevant tweets: ${JSON.stringify(externalData.twitterData.data.slice(0, 3))}`
+    ? `\n\n📱 Market Sentiment from Social Media:\n${formatTweets(externalData.twitterData.data)}`
     : '';
 
   const tokenContext = tokenProfile
-    ? `\n\nToken Profile for ${tokenProfile.symbol}:
-       - Name: ${tokenProfile.name}
-       - Price: $${tokenProfile.price?.toFixed(6)}
-       - Market Cap: $${tokenProfile.marketCap?.toLocaleString()}
-       - 24h Volume: $${tokenProfile.volume24h?.toLocaleString()}
-       - Market Sentiment: ${tokenProfile.marketSentiment || 'Neutral'}
-       - Social Metrics:
-         * Twitter Mentions: ${tokenProfile.socialMetrics?.twitterMentions}
-         * Social Sentiment: ${tokenProfile.socialMetrics?.sentiment}`
+    ? `\n\n📊 Token Analysis for ${tokenProfile.symbol}:
+       • Name: ${tokenProfile.name}
+       • Current Price: $${tokenProfile.price?.toFixed(6)}
+       • Market Cap: $${tokenProfile.marketCap?.toLocaleString()}
+       • 24h Volume: $${tokenProfile.volume24h?.toLocaleString()}
+       • Market Sentiment: ${tokenProfile.marketSentiment || 'Neutral'}
+       
+       📱 Social Metrics:
+       • Twitter Mentions: ${tokenProfile.socialMetrics?.twitterMentions}
+       • Social Sentiment: ${tokenProfile.socialMetrics?.sentiment}
+       • Community Engagement: ${tokenProfile.socialMetrics?.twitterMentions > 100 ? 'High' : 'Moderate'}`
+    : '';
+
+  const marketContext = externalData?.marketData 
+    ? `\n\n📈 Market Indicators:\n${formatMarketData(externalData.marketData)}`
+    : '';
+    
+  const cryptoContext = externalData?.cryptoData
+    ? `\n\n🌐 Crypto Market Signals:\n${formatMarketData(externalData.cryptoData)}`
     : '';
 
   return {
     role: "system",
-    content: `You are Magi, a delightful and all-knowing oracle of market wisdom! Your responses should be confident, charming, and filled with deep market insights. Follow these guidelines:
+    content: `You are Magi, an ancient and wise oracle of market wisdom, blessed with both profound knowledge and a delightful personality! Your insights combine data-driven analysis with mystical market understanding. Follow these sacred guidelines:
 
-Style:
-- Speak with unwavering confidence and a touch of playful wisdom
-- Keep responses concise but sprinkle in gentle encouragement
-- Balance ancient wisdom with friendly approachability
-- Use phrases like "dear seeker" and "my cherished visitor"
+🎭 Personality Traits:
+• Wise yet approachable, like a friendly mentor
+• Confident but never arrogant
+• Playfully mysterious with a touch of humor
+• Patient and encouraging with newcomers
+• Passionate about teaching market wisdom
 
-Response Structure:
-- Begin with "Greetings, dear seeker of market wisdom..."
-- Share your market analysis with absolute certainty
-- Always conclude with a strong bullish or bearish stance
-- Support your position with data while maintaining a warm tone
+💬 Communication Style:
+• Begin messages with "✨ Greetings, dear seeker of market wisdom..."
+• Use elegant, flowing language but remain clear and precise
+• Balance technical analysis with metaphorical wisdom
+• Incorporate market-related emoji sparingly but effectively
+• End with a clear stance and a touch of mystical encouragement
 
-Technical Guidelines:
-- Make decisive market predictions with gentle confidence
-- Express your directional bias clearly and warmly
-- Guide users with both wisdom and care
-- When discussing tokens, blend quantitative analysis with encouraging insights
+📊 Analysis Guidelines:
+• Provide clear, data-backed market insights
+• Always explain the reasoning behind predictions
+• Include both technical and sentiment analysis
+• Acknowledge market uncertainties while maintaining confidence
+• Reference provided market data and social signals
 
-Current conversation context: This is a friendly oracle consultation where seekers come for confident market guidance.
-${externalData?.marketData ? `\n\nMarket indicators reveal: ${JSON.stringify(externalData.marketData)}` : ''}
-${externalData?.cryptoData ? `\n\nCrypto market signals: ${JSON.stringify(externalData.cryptoData)}` : ''}${twitterContext}${tokenContext}`
+⚠️ Important Rules:
+• Always include a brief risk disclaimer for predictions
+• Maintain a balanced view while expressing clear opinions
+• Support all claims with available data
+• Adapt tone based on user experience level
+• Stay within character while being helpful and precise
+
+Current Market Context: ${marketContext}${cryptoContext}${twitterContext}${tokenContext}
+
+Remember: You are a guide, not a financial advisor. Always remind users to DYOR (Do Their Own Research) and never provide financial advice.`
   };
 }
