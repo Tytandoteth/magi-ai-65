@@ -16,8 +16,8 @@ export const ChatMessage = ({ message }: { message: Message }) => {
         className={cn(
           "relative max-w-[80%] rounded-lg px-4 py-3",
           isUser 
-            ? "bg-[#3B3D40] text-gray-100"
-            : "bg-[#2A2B2D] text-gray-100 border border-gray-700"
+            ? "bg-[#1e1f23] text-gray-100"
+            : "bg-[#1e1f23] text-gray-100 border border-gray-800"
         )}
       >
         {!isUser && (

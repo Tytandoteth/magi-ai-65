@@ -33,7 +33,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="How can I help you today?"
-        className="resize-none bg-[#3B3D40] border-gray-700 focus-visible:ring-gray-500 text-gray-100 placeholder:text-gray-400"
+        className="resize-none bg-[#1e1f23] border-gray-800 focus-visible:ring-gray-500 text-gray-100 placeholder:text-gray-400"
         rows={1}
         disabled={disabled}
       />
@@ -41,7 +41,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         onClick={handleSend}
         disabled={disabled || !message.trim()}
         size="icon"
-        className="bg-[#3B3D40] hover:bg-[#4B4D50] text-gray-100"
+        className="bg-[#1e1f23] hover:bg-[#2a2b2e] text-gray-100"
       >
         <SendHorizontal className="h-4 w-4" />
       </Button>

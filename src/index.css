@@ -52,9 +52,9 @@
 }
 
 .chat-container {
-  @apply bg-[#2A2B2D] rounded-xl shadow-lg;
+  @apply bg-[#1a1b1e] rounded-xl shadow-lg;
 }
 
 .chat-input-container {
-  @apply bg-[#2A2B2D] border-t border-gray-700;
+  @apply bg-[#1a1b1e] border-t border-gray-700;
 }
