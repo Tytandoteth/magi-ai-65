@@ -86,7 +86,11 @@ export async function fetchTokenData(address: string) {
 import { fetchLatestTweets } from './twitter.ts';
 
 export async function fetchExternalData() {
-  const penguAddress = '0x1234...'; // Replace with actual $PENGU contract address
+  // $PENGU contract address on Ethereum mainnet
+  const penguAddress = '0x2Fd9a39ACF071Aa61f92F3D7A98332c68d6B6602';
+  
+  console.log('Starting to fetch external data including $PENGU information...');
+  
   const [marketData, cryptoData, twitterData, tokenData] = await Promise.all([
     fetchMarketData(),
     fetchCoinGeckoData(),
