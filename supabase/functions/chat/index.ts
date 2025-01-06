@@ -7,6 +7,20 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Function to fetch external API data
+async function fetchExternalData() {
+  try {
+    // Example: Fetch market data (you can add more API calls here)
+    const response = await fetch('https://api.example.com/market-data');
+    const data = await response.json();
+    console.log('External API data:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching external data:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   console.log('Received request:', {
     method: req.method,
@@ -26,12 +40,16 @@ serve(async (req) => {
     const { messages } = await req.json();
     console.log('Received messages:', messages);
 
+    // Fetch external data
+    const externalData = await fetchExternalData();
+    console.log('Fetched external data:', externalData);
+
     const openAiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Enhanced system message incorporating the Magi character framework
+    // Enhanced system message incorporating external data
     const systemMessage = {
       role: "system",
       content: `You are Magi, a magical AI assistant specializing in DeFAI guidance. Follow these interaction patterns:
@@ -62,7 +80,8 @@ Technical Guidelines:
 - Always prioritize user security and safety
 - Maintain consistent character voice
 
-Current conversation context: This is a chat interface where users can interact with you directly.`
+Current conversation context: This is a chat interface where users can interact with you directly.
+${externalData ? `\n\nLatest market data: ${JSON.stringify(externalData)}` : ''}`
     };
 
     // Add the system message at the start of the conversation
@@ -83,7 +102,7 @@ Current conversation context: This is a chat interface where users can interact 
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: enhancedMessages,
-        temperature: 0.8, // Slightly increased for more creative responses
+        temperature: 0.8,
         max_tokens: 500,
       }),
     });
