@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatInput } from "@/components/ChatInput";
 import { ChatMessage } from "@/components/ChatMessage";
+import { TypingIndicator } from "@/components/TypingIndicator";
 import { Message, ChatState } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,13 +125,7 @@ const Index = () => {
                 <ChatMessage key={message.id} message={message} />
               ))}
               
-              {chatState.isLoading && (
-                <div className="flex justify-start mb-4 px-4">
-                  <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
-                    <p className="text-sm">Thinking...</p>
-                  </div>
-                </div>
-              )}
+              {chatState.isLoading && <TypingIndicator />}
               
               <div ref={messagesEndRef} />
             </div>
