@@ -1,4 +1,4 @@
-import { fetchLatestTweets } from './twitter.ts';
+import { searchTweets } from './twitter/client.ts';
 
 interface TokenProfile {
   symbol: string;
