@@ -1,9 +1,45 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
+
+// Cache implementation
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF = 1000; // 1 second
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES, backoff = INITIAL_BACKOFF): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    
+    if (response.status === 429) {
+      if (retries === 0) {
+        console.log('Rate limit exceeded and max retries reached');
+        return response;
+      }
+      
+      console.log(`Rate limit hit, waiting ${backoff}ms before retry. ${retries} retries left`);
+      await sleep(backoff);
+      
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    
+    return response;
+  } catch (error) {
+    if (retries === 0) throw error;
+    
+    console.error(`Fetch error: ${error.message}. Retrying...`);
+    await sleep(backoff);
+    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +50,7 @@ serve(async (req) => {
     const startTime = Date.now();
     const apiStatuses: Record<string, any> = {};
 
-    // Check Twitter API
+    // Check Twitter API with caching and retry logic
     try {
       console.log('Checking Twitter API...');
       const twitterBearerToken = Deno.env.get('TWITTER_BEARER_TOKEN');
@@ -22,26 +58,41 @@ serve(async (req) => {
         throw new Error('Twitter Bearer Token not configured');
       }
 
-      const twitterResponse = await fetch(
-        'https://api.twitter.com/2/tweets/search/recent?query=crypto',
-        {
-          headers: {
-            'Authorization': `Bearer ${twitterBearerToken}`,
+      // Check cache first
+      const cachedTwitterData = cache.get('twitter');
+      if (cachedTwitterData && Date.now() - cachedTwitterData.timestamp < CACHE_TTL) {
+        console.log('Using cached Twitter API status');
+        apiStatuses.twitter = cachedTwitterData.data;
+      } else {
+        const twitterResponse = await fetchWithRetry(
+          'https://api.twitter.com/2/tweets/search/recent?query=crypto',
+          {
+            headers: {
+              'Authorization': `Bearer ${twitterBearerToken}`,
+            }
           }
-        }
-      );
+        );
 
-      const twitterData = await twitterResponse.text();
-      console.log('Twitter API response:', twitterData);
+        const twitterData = await twitterResponse.text();
+        console.log('Twitter API response:', twitterData);
 
-      apiStatuses.twitter = {
-        name: 'Twitter API',
-        status: twitterResponse.status === 200 ? 'operational' : 
-                twitterResponse.status === 429 ? 'degraded' : 'down',
-        lastChecked: new Date(),
-        responseTime: Date.now() - startTime,
-        error: twitterResponse.status !== 200 ? twitterData : undefined
-      };
+        const status = twitterResponse.status === 200 ? 'operational' : 
+                      twitterResponse.status === 429 ? 'degraded' : 'down';
+
+        apiStatuses.twitter = {
+          name: 'Twitter API',
+          status,
+          lastChecked: new Date(),
+          responseTime: Date.now() - startTime,
+          error: twitterResponse.status !== 200 ? twitterData : undefined
+        };
+
+        // Cache the response
+        cache.set('twitter', {
+          data: apiStatuses.twitter,
+          timestamp: Date.now()
+        });
+      }
     } catch (error) {
       console.error('Twitter API error:', error);
       apiStatuses.twitter = {
@@ -87,7 +138,7 @@ serve(async (req) => {
       };
     }
 
-    // Check Etherscan API
+    // Check Etherscan API with increased timeout
     try {
       console.log('Checking Etherscan API...');
       const esStartTime = Date.now();
@@ -96,10 +147,15 @@ serve(async (req) => {
         throw new Error('Etherscan API key not configured');
       }
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const esResponse = await fetch(
-        `https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=${esApiKey}`
+        `https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=${esApiKey}`,
+        { signal: controller.signal }
       );
 
+      clearTimeout(timeout);
       const esData = await esResponse.text();
       console.log('Etherscan API response:', esData);
 
@@ -120,7 +176,7 @@ serve(async (req) => {
       };
     }
 
-    // Check CryptoNews API
+    // Check CryptoNews API with timeout
     try {
       console.log('Checking CryptoNews API...');
       const cnStartTime = Date.now();
@@ -129,10 +185,15 @@ serve(async (req) => {
         throw new Error('CryptoNews API key not configured');
       }
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const cnResponse = await fetch(
-        `https://cryptonews-api.com/api/v1/category?section=general&items=1&token=${cnApiKey}`
+        `https://cryptonews-api.com/api/v1/category?section=general&items=1&token=${cnApiKey}`,
+        { signal: controller.signal }
       );
 
+      clearTimeout(timeout);
       const cnData = await cnResponse.text();
       console.log('CryptoNews API response:', cnData);
 
