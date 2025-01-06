@@ -11,4 +11,5 @@ export interface ApiStatusResponse {
   coingecko: ApiStatus;
   etherscan: ApiStatus;
   cryptoNews: ApiStatus;
+  defiLlama: ApiStatus;
 }

@@ -50,7 +50,7 @@ serve(async (req) => {
     const startTime = Date.now();
     const apiStatuses: Record<string, any> = {};
 
-    // Check Twitter API with caching and retry logic
+    // Check Twitter API
     try {
       console.log('Checking Twitter API...');
       const twitterBearerToken = Deno.env.get('TWITTER_BEARER_TOKEN');
@@ -58,7 +58,6 @@ serve(async (req) => {
         throw new Error('Twitter Bearer Token not configured');
       }
 
-      // Check cache first
       const cachedTwitterData = cache.get('twitter');
       if (cachedTwitterData && Date.now() - cachedTwitterData.timestamp < CACHE_TTL) {
         console.log('Using cached Twitter API status');
@@ -87,7 +86,6 @@ serve(async (req) => {
           error: twitterResponse.status !== 200 ? twitterData : undefined
         };
 
-        // Cache the response
         cache.set('twitter', {
           data: apiStatuses.twitter,
           timestamp: Date.now()
@@ -138,7 +136,7 @@ serve(async (req) => {
       };
     }
 
-    // Check Etherscan API with increased timeout
+    // Check Etherscan API
     try {
       console.log('Checking Etherscan API...');
       const esStartTime = Date.now();
@@ -148,7 +146,7 @@ serve(async (req) => {
       }
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
       const esResponse = await fetch(
         `https://api.etherscan.io/api?module=stats&action=ethsupply&apikey=${esApiKey}`,
@@ -176,7 +174,7 @@ serve(async (req) => {
       };
     }
 
-    // Check CryptoNews API with timeout
+    // Check CryptoNews API
     try {
       console.log('Checking CryptoNews API...');
       const cnStartTime = Date.now();
@@ -186,7 +184,7 @@ serve(async (req) => {
       }
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
       const cnResponse = await fetch(
         `https://cryptonews-api.com/api/v1/category?section=general&items=1&token=${cnApiKey}`,
@@ -208,6 +206,36 @@ serve(async (req) => {
       console.error('CryptoNews API error:', error);
       apiStatuses.cryptoNews = {
         name: 'CryptoNews API',
+        status: 'down',
+        lastChecked: new Date(),
+        error: error.message
+      };
+    }
+
+    // Check DefiLlama API
+    try {
+      console.log('Checking DefiLlama API...');
+      const dlStartTime = Date.now();
+      const dlApiKey = Deno.env.get('DEFILLAMA_API_KEY');
+      
+      const dlResponse = await fetch('https://api.llama.fi/protocols', {
+        headers: dlApiKey ? { 'Authorization': `Bearer ${dlApiKey}` } : {}
+      });
+
+      const dlData = await dlResponse.text();
+      console.log('DefiLlama API response:', dlData);
+
+      apiStatuses.defiLlama = {
+        name: 'DefiLlama API',
+        status: dlResponse.status === 200 ? 'operational' : 'down',
+        lastChecked: new Date(),
+        responseTime: Date.now() - dlStartTime,
+        error: dlResponse.status !== 200 ? dlData : undefined
+      };
+    } catch (error) {
+      console.error('DefiLlama API error:', error);
+      apiStatuses.defiLlama = {
+        name: 'DefiLlama API',
         status: 'down',
         lastChecked: new Date(),
         error: error.message
