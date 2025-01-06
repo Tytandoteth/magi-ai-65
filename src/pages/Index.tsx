@@ -2,6 +2,7 @@ import { useChat } from "@/hooks/use-chat";
 import { ChatContainer } from "@/components/ChatContainer";
 import { ApiLogs } from "@/components/ApiLogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ApiStatusDashboard from "@/components/ApiStatusDashboard";
 
 const Index = () => {
   const { chatState, apiLogs, handleSendMessage } = useChat();
@@ -12,6 +13,7 @@ const Index = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="logs">API Logs</TabsTrigger>
+          <TabsTrigger value="status">API Status</TabsTrigger>
         </TabsList>
         
         <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
@@ -25,6 +27,10 @@ const Index = () => {
           <div className="chat-container flex-1">
             <ApiLogs logs={apiLogs} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="status" className="flex-1 flex flex-col mt-0">
+          <ApiStatusDashboard />
         </TabsContent>
       </Tabs>
     </div>
