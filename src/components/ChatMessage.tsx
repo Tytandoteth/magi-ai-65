@@ -13,13 +13,13 @@ export const ChatMessage = ({ message }: { message: Message }) => {
     >
       <div
         className={cn(
-          "max-w-[80%] rounded-lg px-4 py-2",
+          "max-w-[80%] rounded-lg px-4 py-2 backdrop-blur-sm shadow-glass",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-secondary text-secondary-foreground"
+            ? "bg-gradient-primary text-primary-foreground"
+            : "bg-card/90 text-card-foreground border border-white/20"
         )}
       >
-        <p className="text-sm sm:text-base whitespace-pre-wrap break-words">
+        <p className="text-sm sm:text-base whitespace-pre-wrap break-words font-mono">
           {message.content}
         </p>
       </div>
