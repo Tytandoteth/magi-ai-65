@@ -1,4 +1,8 @@
 import { Message } from "@/types/chat";
+import { UserMessage } from "./UserMessage";
+import { ApiCalls } from "./ApiCalls";
+import { MagiResponse } from "./MagiResponse";
+import { ErrorMessage } from "./ErrorMessage";
 
 interface ApiLog {
   timestamp: Date;
