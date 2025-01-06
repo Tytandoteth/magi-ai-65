@@ -88,9 +88,12 @@ function formatTokenProfile(profile: any) {
   if (profile.defiMetrics) {
     const tvl = profile.defiMetrics.tvl ? `$${(profile.defiMetrics.tvl / 1e6).toFixed(2)}M` : 'Not available';
     const change24h = profile.defiMetrics.change24h ? `${profile.defiMetrics.change24h.toFixed(2)}%` : 'Not available';
+    const apy = profile.defiMetrics.apy ? `${profile.defiMetrics.apy.toFixed(2)}%` : 'Not available';
     defiMetricsStr = `\nDeFi Metrics:
+• Protocol: ${profile.defiMetrics.protocol || 'Unknown'}
 • Total Value Locked: ${tvl}
 • 24h Change: ${change24h}
+• APY: ${apy}
 • Category: ${profile.defiMetrics.category || 'Unknown'}
 • Active Chains: ${profile.defiMetrics.chains?.join(', ') || 'Unknown'}`;
   }

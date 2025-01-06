@@ -12,6 +12,8 @@ interface TokenProfile {
     change24h?: number;
     category?: string;
     chains?: string[];
+    apy?: number;
+    protocol?: string;
   };
   socialMetrics?: {
     twitterMentions: number;
@@ -32,7 +34,7 @@ async function fetchDefiLlamaData(symbol: string): Promise<any> {
     const { data: protocolData, error } = await supabase
       .from('defi_llama_protocols')
       .select('*')
-      .ilike('symbol', symbol)
+      .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -47,15 +49,37 @@ async function fetchDefiLlamaData(symbol: string): Promise<any> {
     }
 
     // If not in cache, try to fetch from DeFi Llama API
-    const response = await fetch(`https://api.llama.fi/protocols`);
+    console.log('Fetching from DeFi Llama API');
+    const response = await fetch('https://api.llama.fi/protocols');
     const protocols = await response.json();
     
     const protocol = protocols.find((p: any) => 
-      p.symbol?.toLowerCase() === symbol.toLowerCase()
+      p.symbol?.toLowerCase() === symbol.toLowerCase() ||
+      p.name.toLowerCase().includes(symbol.toLowerCase())
     );
 
     if (protocol) {
       console.log('Found protocol in DeFi Llama API:', protocol);
+      
+      // Store in our database for future use
+      const { error: insertError } = await supabase
+        .from('defi_llama_protocols')
+        .insert({
+          protocol_id: protocol.id,
+          name: protocol.name,
+          symbol: protocol.symbol,
+          category: protocol.category,
+          tvl: protocol.tvl,
+          change_1h: protocol.change_1h,
+          change_1d: protocol.change_1d,
+          change_7d: protocol.change_7d,
+          raw_data: protocol
+        });
+
+      if (insertError) {
+        console.error('Error caching DeFi Llama data:', insertError);
+      }
+
       return protocol;
     }
 
@@ -77,7 +101,7 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
     const { data: marketData, error: marketError } = await supabase
       .from('defi_market_data')
       .select('*')
-      .eq('symbol', cleanSymbol.toLowerCase())
+      .or(`symbol.ilike.${cleanSymbol},name.ilike.%${cleanSymbol}%`)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -117,7 +141,9 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
         tvl: defiLlamaData.tvl,
         change24h: defiLlamaData.change_1d,
         category: defiLlamaData.category,
-        chains: defiLlamaData.chains
+        chains: defiLlamaData.chains,
+        apy: defiLlamaData.apy,
+        protocol: defiLlamaData.name
       } : undefined,
       socialMetrics: {
         twitterMentions: tweets.length,
