@@ -84,11 +84,22 @@ function formatTokenProfile(profile: any) {
   const marketCapStr = profile.marketCap ? `$${(profile.marketCap / 1e6).toFixed(2)}M` : 'Not available';
   const volumeStr = profile.volume24h ? `$${(profile.volume24h / 1e6).toFixed(2)}M` : 'Not available';
   
+  let defiMetricsStr = '';
+  if (profile.defiMetrics) {
+    const tvl = profile.defiMetrics.tvl ? `$${(profile.defiMetrics.tvl / 1e6).toFixed(2)}M` : 'Not available';
+    const change24h = profile.defiMetrics.change24h ? `${profile.defiMetrics.change24h.toFixed(2)}%` : 'Not available';
+    defiMetricsStr = `\nDeFi Metrics:
+• Total Value Locked: ${tvl}
+• 24h Change: ${change24h}
+• Category: ${profile.defiMetrics.category || 'Unknown'}
+• Active Chains: ${profile.defiMetrics.chains?.join(', ') || 'Unknown'}`;
+  }
+  
   return `Token Analysis for ${profile.symbol}:
 • Name: ${profile.name}
 • Price: ${priceStr}
 • Market Cap: ${marketCapStr}
-• 24h Volume: ${volumeStr}
+• 24h Volume: ${volumeStr}${defiMetricsStr}
 
 Social Stats:
 • Twitter Mentions (24h): ${profile.socialMetrics?.twitterMentions || 0}

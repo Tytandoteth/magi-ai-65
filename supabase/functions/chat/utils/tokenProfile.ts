@@ -7,6 +7,12 @@ interface TokenProfile {
   price?: number;
   marketCap?: number;
   volume24h?: number;
+  defiMetrics?: {
+    tvl?: number;
+    change24h?: number;
+    category?: string;
+    chains?: string[];
+  };
   socialMetrics?: {
     twitterMentions: number;
     sentiment: number;
@@ -16,6 +22,48 @@ interface TokenProfile {
       timestamp: string;
     }[];
   };
+}
+
+async function fetchDefiLlamaData(symbol: string): Promise<any> {
+  try {
+    console.log('Fetching DeFi Llama data for:', symbol);
+    
+    // Query our cached DeFi Llama data first
+    const { data: protocolData, error } = await supabase
+      .from('defi_llama_protocols')
+      .select('*')
+      .ilike('symbol', symbol)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error fetching DeFi Llama data from cache:', error);
+      return null;
+    }
+
+    if (protocolData && protocolData.length > 0) {
+      console.log('Found cached DeFi Llama data:', protocolData[0]);
+      return protocolData[0];
+    }
+
+    // If not in cache, try to fetch from DeFi Llama API
+    const response = await fetch(`https://api.llama.fi/protocols`);
+    const protocols = await response.json();
+    
+    const protocol = protocols.find((p: any) => 
+      p.symbol?.toLowerCase() === symbol.toLowerCase()
+    );
+
+    if (protocol) {
+      console.log('Found protocol in DeFi Llama API:', protocol);
+      return protocol;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching DeFi Llama data:', error);
+    return null;
+  }
 }
 
 export async function createTokenProfile(symbol: string): Promise<TokenProfile | null> {
@@ -37,7 +85,9 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
       console.error('Error fetching market data:', marketError);
     }
 
-    console.log('Market data for token:', marketData);
+    // Fetch DeFi Llama data
+    const defiLlamaData = await fetchDefiLlamaData(cleanSymbol);
+    console.log('DeFi Llama data:', defiLlamaData);
 
     // Fetch Twitter data
     const twitterData = await searchTweets(`$${cleanSymbol}`, 10);
@@ -59,10 +109,16 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
 
     return {
       symbol: cleanSymbol,
-      name: latestMarketData?.name || `${cleanSymbol} Token`,
-      price: latestMarketData?.current_price,
-      marketCap: latestMarketData?.market_cap,
+      name: latestMarketData?.name || defiLlamaData?.name || `${cleanSymbol} Token`,
+      price: latestMarketData?.current_price || defiLlamaData?.price,
+      marketCap: latestMarketData?.market_cap || defiLlamaData?.mcap,
       volume24h: latestMarketData?.total_volume,
+      defiMetrics: defiLlamaData ? {
+        tvl: defiLlamaData.tvl,
+        change24h: defiLlamaData.change_1d,
+        category: defiLlamaData.category,
+        chains: defiLlamaData.chains
+      } : undefined,
       socialMetrics: {
         twitterMentions: tweets.length,
         sentiment,
