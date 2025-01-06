@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Message } from "@/types/chat";
 
 export interface ApiLog {
