@@ -19,21 +19,24 @@ function generateOAuthSignature(
   consumerSecret: string,
   tokenSecret: string
 ): string {
+  // Sort parameters alphabetically and encode them
+  const sortedParams = Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+
   const signatureBaseString = `${method}&${encodeURIComponent(
     url
-  )}&${encodeURIComponent(
-    Object.entries(params)
-      .sort()
-      .map(([k, v]) => `${k}=${v}`)
-      .join("&")
+  )}&${encodeURIComponent(sortedParams)}`;
+
+  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(
+    tokenSecret
   )}`;
-  const signingKey = `${encodeURIComponent(
-    consumerSecret
-  )}&${encodeURIComponent(tokenSecret)}`;
+
   const hmacSha1 = createHmac("sha1", signingKey);
   const signature = hmacSha1.update(signatureBaseString).digest("base64");
 
-  // Add debug logging
+  console.log("OAuth Parameters:", params);
   console.log("Signature Base String:", signatureBaseString);
   console.log("Signing Key:", signingKey);
   console.log("Generated Signature:", signature);
@@ -41,7 +44,11 @@ function generateOAuthSignature(
   return signature;
 }
 
-function generateOAuthHeader(method: string, url: string): string {
+function generateOAuthHeader(
+  method: string,
+  url: string,
+  queryParams: Record<string, string> = {}
+): string {
   const oauthParams = {
     oauth_consumer_key: API_KEY!,
     oauth_nonce: Math.random().toString(36).substring(2),
@@ -51,17 +58,29 @@ function generateOAuthHeader(method: string, url: string): string {
     oauth_version: "1.0",
   };
 
+  // Combine OAuth params with query params for signature
+  const signatureParams = {
+    ...oauthParams,
+    ...queryParams,
+  };
+
   const signature = generateOAuthSignature(
     method,
     url,
-    oauthParams,
+    signatureParams,
     API_SECRET!,
     ACCESS_TOKEN_SECRET!
   );
 
+  // Only include OAuth params in the header
+  const headerParams = {
+    ...oauthParams,
+    oauth_signature: signature,
+  };
+
   return (
     "OAuth " +
-    Object.entries({ ...oauthParams, oauth_signature: signature })
+    Object.entries(headerParams)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
       .join(", ")
@@ -72,17 +91,19 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
   try {
     validateEnvironmentVariables();
     
-    const baseUrl = "https://api.x.com/2/tweets/search/recent";
-    const searchParams = new URLSearchParams({
+    const baseUrl = "https://api.twitter.com/2/tweets/search/recent";
+    const queryParams = {
       query,
       "tweet.fields": "created_at,public_metrics",
-      max_results: maxResults.toString(),
-    });
+      "max_results": maxResults.toString(),
+    };
     
+    const searchParams = new URLSearchParams(queryParams);
     const url = `${baseUrl}?${searchParams.toString()}`;
-    const oauthHeader = generateOAuthHeader("GET", baseUrl);
     
-    console.log("Fetching tweets with URL:", url);
+    const oauthHeader = generateOAuthHeader("GET", baseUrl, queryParams);
+    
+    console.log("Request URL:", url);
     console.log("OAuth Header:", oauthHeader);
     
     const response = await fetch(url, {
