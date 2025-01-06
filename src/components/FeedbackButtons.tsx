@@ -16,10 +16,15 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
     try {
       console.log(`Submitting ${type} feedback for message ${messageId}`);
       
+      const messageIdNumber = parseInt(messageId);
+      if (isNaN(messageIdNumber)) {
+        throw new Error("Invalid message ID");
+      }
+
       const { error } = await supabase
         .from("ai_agent_metrics")
         .insert({
-          message_id: messageId,
+          message_id: messageIdNumber,
           feedback: { type },
           effectiveness_score: type === "positive" ? 1 : 0,
         });
