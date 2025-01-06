@@ -21,6 +21,7 @@ interface TokenProfile {
 async function searchCoinGecko(query: string): Promise<any> {
   const apiKey = Deno.env.get('COINGECKO_API_KEY');
   try {
+    console.log('Searching CoinGecko for:', query);
     const response = await fetch(
       `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`,
       {
@@ -41,6 +42,7 @@ async function searchCoinGecko(query: string): Promise<any> {
 async function getTokenMarketData(coinId: string): Promise<any> {
   const apiKey = Deno.env.get('COINGECKO_API_KEY');
   try {
+    console.log('Fetching market data for:', coinId);
     const response = await fetch(
       `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=true&developer_data=false`,
       {
@@ -63,11 +65,14 @@ async function analyzeSentiment(tweets: any[]): Promise<{
   recentTweets: any[];
 }> {
   if (!tweets || tweets.length === 0) {
+    console.log('No tweets to analyze');
     return { 
       sentiment: 'neutral',
       recentTweets: []
     };
   }
+  
+  console.log('Analyzing sentiment for tweets:', tweets.length);
   
   // Process tweets and calculate engagement
   const processedTweets = tweets.map(tweet => {
@@ -96,6 +101,8 @@ async function analyzeSentiment(tweets: any[]): Promise<{
   if (averageEngagement > 1000) sentiment = 'positive';
   else if (averageEngagement < 100) sentiment = 'negative';
   
+  console.log('Sentiment analysis complete:', { sentiment, topTweetsCount: topTweets.length });
+  
   return {
     sentiment,
     recentTweets: topTweets
@@ -121,6 +128,8 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
     `${symbol} token`,
     coinGeckoData.name
   ];
+  
+  console.log('Fetching tweets for queries:', searchQueries);
   
   const twitterPromises = searchQueries.map(query => fetchLatestTweets(query, 10));
   const twitterResults = await Promise.all(twitterPromises);

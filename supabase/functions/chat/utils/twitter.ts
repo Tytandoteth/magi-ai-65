@@ -16,6 +16,7 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
     
     const url = `${baseUrl}?${queryParams.toString()}`;
     console.log("Fetching tweets from URL:", url);
+    console.log("Using Bearer token:", BEARER_TOKEN.substring(0, 5) + "...");
     
     const response = await fetch(url, {
       headers: {
