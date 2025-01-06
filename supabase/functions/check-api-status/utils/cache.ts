@@ -1,18 +1,21 @@
-export const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-export const cache = new Map<string, { data: any; timestamp: number }>();
+import { ApiStatus } from '../types';
 
-export const getCachedData = (key: string) => {
-  const cachedData = cache.get(key);
-  if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-    console.log(`Using cached ${key} API status`);
-    return cachedData.data;
+const CACHE_DURATION = 60000; // 1 minute
+const cache = new Map<string, { data: ApiStatus; timestamp: number }>();
+
+export function getCachedData(key: string): ApiStatus | null {
+  const cached = cache.get(key);
+  if (!cached) return null;
+  
+  const now = Date.now();
+  if (now - cached.timestamp > CACHE_DURATION) {
+    cache.delete(key);
+    return null;
   }
-  return null;
-};
+  
+  return cached.data;
+}
 
-export const setCachedData = (key: string, data: any) => {
-  cache.set(key, {
-    data,
-    timestamp: Date.now()
-  });
-};
+export function setCachedData(key: string, data: ApiStatus): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}

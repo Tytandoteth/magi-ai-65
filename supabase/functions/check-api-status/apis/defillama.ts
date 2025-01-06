@@ -1,5 +1,5 @@
-import { fetchWithRetry } from '../utils/fetch';
-import { ApiStatus } from '../types';
+import { fetchWithRetry } from '../utils/fetch.ts';
+import { ApiStatus } from '../types.ts';
 
 export async function checkDefiLlamaAPI(): Promise<ApiStatus> {
   console.log('Checking DefiLlama API...');
