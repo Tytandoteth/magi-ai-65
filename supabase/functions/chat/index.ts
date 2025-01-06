@@ -31,7 +31,9 @@ serve(async (req) => {
     const externalData = await fetchExternalData();
     console.log('Fetched external data:', externalData);
 
-    const systemMessage = createSystemMessage(externalData);
+    // Get the last user message for token detection
+    const lastUserMessage = messages.find((m: any) => m.role === 'user');
+    const systemMessage = await createSystemMessage(externalData, lastUserMessage?.content);
     const enhancedMessages = [
       systemMessage,
       ...messages.map(({ role, content }) => ({

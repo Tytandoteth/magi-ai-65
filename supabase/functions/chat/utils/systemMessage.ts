@@ -1,6 +1,29 @@
-export function createSystemMessage(externalData: any) {
+import { createTokenProfile } from './tokenProfile.ts';
+
+export async function createSystemMessage(externalData: any, userMessage?: string) {
+  let tokenProfile = null;
+  
+  // Check if message contains a token reference (e.g., $PENGU)
+  if (userMessage) {
+    const tokenMatch = userMessage.match(/\$[A-Za-z]+/);
+    if (tokenMatch) {
+      tokenProfile = await createTokenProfile(tokenMatch[0]);
+    }
+  }
+
   const twitterContext = externalData?.twitterData?.data 
     ? `\n\nLatest relevant tweets: ${JSON.stringify(externalData.twitterData.data.slice(0, 3))}`
+    : '';
+
+  const tokenContext = tokenProfile
+    ? `\n\nToken Profile for ${tokenProfile.symbol}:
+       - Name: ${tokenProfile.name}
+       - Price: $${tokenProfile.price?.toFixed(6)}
+       - Market Cap: $${tokenProfile.marketCap?.toLocaleString()}
+       - 24h Volume: $${tokenProfile.volume24h?.toLocaleString()}
+       - Social Metrics:
+         * Twitter Mentions: ${tokenProfile.socialMetrics?.twitterMentions}
+         * Sentiment: ${tokenProfile.socialMetrics?.sentiment}`
     : '';
 
   return {
@@ -24,6 +47,6 @@ Technical Guidelines:
 
 Current conversation context: This is a chat interface where users can interact with you directly.
 ${externalData?.marketData ? `\n\nLatest market data: ${JSON.stringify(externalData.marketData)}` : ''}
-${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}${twitterContext}`
+${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}${twitterContext}${tokenContext}`
   };
 }
