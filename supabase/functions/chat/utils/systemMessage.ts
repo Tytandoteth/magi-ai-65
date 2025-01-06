@@ -1,32 +1,5 @@
 import { createTokenProfile } from './tokenProfile.ts';
-
-function formatMarketData(data: any) {
-  if (!data) return '';
-  
-  try {
-    return Object.entries(data)
-      .map(([key, value]) => `  • ${key}: ${JSON.stringify(value)}`)
-      .join('\n');
-  } catch (error) {
-    console.error('Error formatting market data:', error);
-    return JSON.stringify(data);
-  }
-}
-
-function formatTweets(tweets: any[]) {
-  if (!tweets?.length) return '';
-  
-  try {
-    return tweets.slice(0, 3).map(tweet => {
-      const metrics = tweet.public_metrics || {};
-      return `  • ${tweet.text.substring(0, 100)}... 
-    [💬 ${metrics.reply_count || 0} | 🔄 ${metrics.retweet_count || 0} | ❤️ ${metrics.like_count || 0}]`;
-    }).join('\n');
-  } catch (error) {
-    console.error('Error formatting tweets:', error);
-    return JSON.stringify(tweets);
-  }
-}
+import { formatMarketData } from './formatters.ts';
 
 export async function createSystemMessage(externalData: any, userMessage?: string) {
   console.log('Creating system message with external data:', externalData);
@@ -103,4 +76,19 @@ Current Market Context: ${marketContext}${cryptoContext}${twitterContext}${token
 
 Remember: You are a guide, not a financial advisor. Always remind users to DYOR (Do Their Own Research) and never provide financial advice.`
   };
+}
+
+function formatTweets(tweets: any[]) {
+  if (!tweets?.length) return '';
+  
+  try {
+    return tweets.slice(0, 3).map(tweet => {
+      const metrics = tweet.public_metrics || {};
+      return `  • ${tweet.text.substring(0, 100)}... 
+    [💬 ${metrics.reply_count || 0} | 🔄 ${metrics.retweet_count || 0} | ❤️ ${metrics.like_count || 0}]`;
+    }).join('\n');
+  } catch (error) {
+    console.error('Error formatting tweets:', error);
+    return JSON.stringify(tweets);
+  }
 }
