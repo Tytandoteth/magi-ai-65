@@ -42,6 +42,19 @@ export async function fetchTokenData(address: string) {
     const holdersData = await holdersResponse.json();
     console.log('Etherscan holders data:', holdersData);
     
+    // Store the data in our database
+    const { data: insertData, error } = await supabase
+      .from('etherscan_scraper')
+      .insert([
+        { 
+          address: address,
+          holders: holdersData.result?.length || 0
+        }
+      ])
+      .select();
+      
+    if (error) console.error('Error storing token data:', error);
+    
     return {
       tokenInfo: data.result,
       holders: holdersData.result?.length || 0
@@ -53,6 +66,7 @@ export async function fetchTokenData(address: string) {
 }
 
 import { fetchLatestTweets } from './twitter.ts';
+import { supabase } from '../../../src/integrations/supabase/client';
 
 export async function fetchExternalData() {
   const penguAddress = '0x1234...'; // Replace with actual $PENGU contract address
