@@ -55,19 +55,18 @@ const Index = () => {
     const apiLog: ApiLog = {
       timestamp: new Date(),
       request: {
-        messages: currentMessages.map(({ role, content }) => ({
-          role,
-          content,
-        })),
+        messages: currentMessages,
       },
     };
 
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
-          messages: currentMessages.map(({ role, content }) => ({
+          messages: currentMessages.map(({ role, content, id, timestamp }) => ({
             role,
             content,
+            id,
+            timestamp,
           })),
         },
       });
