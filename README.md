@@ -1,69 +1,87 @@
-# Welcome to your Lovable project
+# 🌟 Magi AI - Your Gateway to DeFAI
 
-## Project info
+Magi AI is the official AI agent for Magnify.cash, pioneering the concept of DeFAI (Decentralized Finance Augmented by Artificial Intelligence). Our mission is to simplify decentralized finance, empower users with real-time insights, and provide seamless interactions with the MAG token ecosystem and Smart Banks.
 
-**URL**: https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477
+## 🔗 Quick Links
 
-## How can I edit this code?
+- **Live Project**: [Magi AI on Lovable](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477)
+- **Documentation**: [Custom Domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
 
-There are several ways of editing your application.
+## 🚀 Getting Started
 
-**Use Lovable**
+### 1. Using Lovable (Recommended)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477) and start prompting.
+Simply visit the [Magi AI Project](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477) and start interacting with the AI. Changes made via Lovable are automatically committed to the repository.
 
-Changes made via Lovable will be committed automatically to this repo.
+### 2. Local Development
 
-**Use your preferred IDE**
+Prerequisites:
+- Node.js & npm - [Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### 3. GitHub Integration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+#### Direct Editing
+1. Navigate to the desired file
+2. Click the "Edit" button (pencil icon)
+3. Make your changes
+4. Commit directly to the repository
 
-**Use GitHub Codespaces**
+#### Using Codespaces
+1. Go to the repository's main page
+2. Click "Code" (green button)
+3. Select "Codespaces"
+4. Click "New codespace"
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🛠 Technology Stack
 
-## What technologies are used for this project?
+Our platform leverages modern technologies for optimal performance:
 
-This project is built with .
+- **Vite** - Lightning-fast build tool
+- **TypeScript** - Enhanced code reliability
+- **React** - Dynamic UI components
+- **shadcn-ui** - Accessible component library
+- **Tailwind CSS** - Utility-first styling
+- **Supabase** - Backend and database management
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📦 Deployment
 
-## How can I deploy this project?
+### Quick Deploy
+1. Open [Lovable](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477)
+2. Click Share → Publish
 
-Simply open [Lovable](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477) and click on Share -> Publish.
+### Custom Domain
+While Lovable doesn't currently support custom domains, you can deploy to platforms like Netlify for custom domain support. See our [Custom Domains Documentation](https://docs.lovable.dev/tips-tricks/custom-domain/) for details.
 
-## I want to use a custom domain - is that possible?
+## 🎯 Core Features
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Real-time DeFi insights and analytics
+- MAG token ecosystem integration
+- Smart Bank management
+- AI-powered financial guidance
+- Market trend analysis
+
+## 🤝 Contributing
+
+We welcome contributions! Please feel free to submit pull requests or open issues for any improvements you'd like to suggest.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+Built with ❤️ by the Magnify.cash team
