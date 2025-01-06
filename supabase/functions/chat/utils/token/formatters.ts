@@ -1,45 +1,53 @@
-export function formatTokenProfile(profile: any): string {
-  if (!profile) return 'No data available for this token';
-  
-  const name = profile.name || 'Unknown';
-  const priceStr = profile.price ? 
-    `$${Number(profile.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 
-    'Not available';
-  
-  const marketCapStr = profile.marketCap ? 
-    `$${(profile.marketCap / 1e6).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M` : 
-    'Not available';
-  
-  const volumeStr = profile.volume24h ? 
-    `$${(profile.volume24h / 1e6).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M` : 
-    'Not available';
-
-  let defiMetricsStr = '';
-  if (profile.defiMetrics) {
-    const tvl = profile.defiMetrics.tvl ? 
-      `$${(profile.defiMetrics.tvl / 1e6).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M` : 
-      'Not available';
-    const change24h = profile.defiMetrics.change24h ? 
-      `${profile.defiMetrics.change24h.toFixed(2)}%` : 
-      'Not available';
-    const apy = profile.defiMetrics.apy ? 
-      `${profile.defiMetrics.apy.toFixed(2)}%` : 
-      'Not available';
-    
-    defiMetricsStr = `\n\nDeFi Metrics:\n• Protocol: ${profile.defiMetrics.protocol || 'Unknown'}\n• Total Value Locked: ${tvl}\n• 24h Change: ${change24h}\n• APY: ${apy}\n• Category: ${profile.defiMetrics.category || 'Unknown'}\n• Active Chains: ${profile.defiMetrics.chains?.join(', ') || 'Unknown'}`;
+export const formatTokenProfile = (profile: any) => {
+  if (!profile || !profile.price) {
+    return `I apologize, but I cannot provide complete information about this token at the moment due to data availability issues.`;
   }
 
-  const description = profile.description ? `\n\nDescription: ${profile.description}` : '';
-  
-  return `Hi! I'm Magi, your DeFAI guide. Let me tell you about ${name} (${profile.symbol}):
+  const formatNumber = (num: number) => {
+    if (num >= 1e9) {
+      return `$${(num / 1e9).toFixed(2)} billion`;
+    } else if (num >= 1e6) {
+      return `$${(num / 1e6).toFixed(2)} million`;
+    }
+    return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
-Current Price: ${priceStr}
-Market Cap: ${marketCapStr}
-24h Trading Volume: ${volumeStr}${defiMetricsStr}${description}
+  const formatPercentage = (num: number) => {
+    return `${num.toFixed(2)}%`;
+  };
 
-Social Activity:
-• Twitter Mentions (24h): ${profile.socialMetrics?.twitterMentions || 0}
-• Sentiment Score: ${(profile.socialMetrics?.sentiment || 0).toFixed(2)}
+  let response = `Here are the current metrics for ${profile.name} (${profile.symbol}):\n\n`;
 
-Remember to conduct your own research before making any investment decisions.`;
-}
+  if (profile.price) {
+    response += `Current Price: ${formatNumber(profile.price)}\n`;
+  }
+
+  if (profile.marketCap) {
+    response += `Market Cap: ${formatNumber(profile.marketCap)}\n`;
+  }
+
+  if (profile.volume24h) {
+    response += `24h Trading Volume: ${formatNumber(profile.volume24h)}\n`;
+  }
+
+  if (profile.defiMetrics?.tvl) {
+    response += `\nProtocol Metrics:\n`;
+    response += `Total Value Locked (TVL): ${formatNumber(profile.defiMetrics.tvl)}\n`;
+    
+    if (profile.defiMetrics.change24h) {
+      response += `24h TVL Change: ${formatPercentage(profile.defiMetrics.change24h)}\n`;
+    }
+  }
+
+  if (profile.socialMetrics) {
+    response += `\nSocial Metrics:\n`;
+    response += `Twitter Mentions (24h): ${profile.socialMetrics.twitterMentions}\n`;
+    if (profile.socialMetrics.sentiment) {
+      response += `Social Sentiment Score: ${profile.socialMetrics.sentiment.toFixed(2)}\n`;
+    }
+  }
+
+  response += `\nPlease note that cryptocurrency investments carry risks. Always conduct thorough research before making investment decisions.`;
+
+  return response;
+};
