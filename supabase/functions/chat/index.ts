@@ -21,8 +21,16 @@ async function fetchMarketData() {
 
 // Utility function to fetch CoinGecko data
 async function fetchCoinGeckoData() {
+  const apiKey = Deno.env.get('COINGECKO_API_KEY');
   try {
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true');
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true',
+      {
+        headers: {
+          'x-cg-demo-api-key': apiKey
+        }
+      }
+    );
     const data = await response.json();
     console.log('CoinGecko API data:', data);
     return data;
