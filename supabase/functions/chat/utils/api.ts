@@ -31,18 +31,42 @@ export async function fetchCoinGeckoData() {
   }
 }
 
+export async function fetchTokenData(address: string) {
+  try {
+    const response = await fetch(`https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${Deno.env.get('ETHERSCAN_API_KEY')}`);
+    const data = await response.json();
+    console.log('Etherscan token data:', data);
+    
+    // Also fetch holder count
+    const holdersResponse = await fetch(`https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${Deno.env.get('ETHERSCAN_API_KEY')}`);
+    const holdersData = await holdersResponse.json();
+    console.log('Etherscan holders data:', holdersData);
+    
+    return {
+      tokenInfo: data.result,
+      holders: holdersData.result?.length || 0
+    };
+  } catch (error) {
+    console.error('Error fetching Etherscan data:', error);
+    return null;
+  }
+}
+
 import { fetchLatestTweets } from './twitter.ts';
 
 export async function fetchExternalData() {
-  const [marketData, cryptoData, twitterData] = await Promise.all([
+  const penguAddress = '0x1234...'; // Replace with actual $PENGU contract address
+  const [marketData, cryptoData, twitterData, tokenData] = await Promise.all([
     fetchMarketData(),
     fetchCoinGeckoData(),
-    fetchLatestTweets()
+    fetchLatestTweets(),
+    fetchTokenData(penguAddress)
   ]);
   
   return {
     marketData,
     cryptoData,
     twitterData,
+    tokenData
   };
 }
