@@ -58,3 +58,16 @@
 .chat-input-container {
   @apply bg-[#1a1b1e] border-t border-gray-700;
 }
+
+/* Custom tab styling */
+[role="tablist"] {
+  @apply bg-[#1a1b1e] p-1 rounded-lg;
+}
+
+[role="tab"] {
+  @apply text-gray-400 hover:text-gray-200 data-[state=active]:bg-[#1e1f23] data-[state=active]:text-gray-100;
+}
+
+[role="tab"][data-state="active"] {
+  @apply shadow-sm;
+}
