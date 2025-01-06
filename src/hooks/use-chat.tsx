@@ -1,7 +1,7 @@
 import { useToast } from "@/components/ui/use-toast";
 import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
-import { useApiLogs } from "./use-api-logs";
+import { useApiLogs, ApiLog } from "./use-api-logs";
 import { useChatMessages } from "./use-chat-messages";
 
 export const useChat = () => {
@@ -24,7 +24,7 @@ export const useChat = () => {
     setError(null);
 
     const currentMessages = [...chatState.messages, userMessage];
-    const apiLog = {
+    const apiLog: ApiLog = {
       timestamp: new Date(),
       request: {
         messages: currentMessages,
