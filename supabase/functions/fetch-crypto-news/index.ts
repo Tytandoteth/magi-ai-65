@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -20,57 +19,58 @@ serve(async (req) => {
 
     console.log('Fetching crypto news...')
     
-    // For this example, we'll use a mock news API response
-    // In a real implementation, you would integrate with a proper news API
-    const mockNews = [
-      {
-        title: "Bitcoin Reaches New Heights",
-        url: "https://example.com/news/1",
-        source: "Crypto News",
-        published_at: new Date().toISOString(),
-        sentiment: 0.8,
-        categories: ["bitcoin", "market"]
-      },
-      {
-        title: "DeFi Protocol Launch",
-        url: "https://example.com/news/2",
-        source: "DeFi Daily",
-        published_at: new Date().toISOString(),
-        sentiment: 0.6,
-        categories: ["defi", "launch"]
-      }
-    ]
-
-    // Store news in Supabase
-    for (const article of mockNews) {
-      const { data: insertedData, error } = await supabase
-        .from('crypto_news')
-        .insert({
-          title: article.title,
-          url: article.url,
-          source: article.source,
-          published_at: article.published_at,
-          sentiment: article.sentiment,
-          categories: article.categories,
-          raw_data: article
-        })
-
-      if (error) {
-        console.error('Error inserting news:', error)
-        throw error
-      }
-      console.log('Inserted news article:', article.title)
+    const cryptoNewsApiKey = Deno.env.get('CRYPTONEWS_API_KEY')
+    if (!cryptoNewsApiKey) {
+      throw new Error('CRYPTONEWS_API_KEY not found')
     }
 
-    return new Response(JSON.stringify({ success: true, data: mockNews }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Fetch news from the API
+    const response = await fetch(
+      `https://cryptonews-api.com/api/v1/top-mention?&date=last7days&token=${cryptoNewsApiKey}`
+    )
+
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('Fetched news data:', data)
+
+    // Store each news item
+    const { data: insertedData, error } = await supabase
+      .from('crypto_news')
+      .upsert(
+        data.data.map((item: any) => ({
+          title: item.title,
+          url: item.news_url,
+          source: item.source_name,
+          published_at: new Date(item.date).toISOString(),
+          sentiment: item.sentiment,
+          categories: item.categories || [],
+          raw_data: item
+        })),
+        { onConflict: 'url' } // Avoid duplicates based on URL
+      )
+
+    if (error) {
+      console.error('Error inserting news:', error)
+      throw error
+    }
+
+    console.log('Successfully stored news articles')
+    return new Response(
+      JSON.stringify({ success: true, count: data.data.length }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
 })
