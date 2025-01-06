@@ -5,6 +5,20 @@ import { FeedbackButtons } from "./FeedbackButtons";
 export const ChatMessage = ({ message }: { message: Message }) => {
   const isUser = message.role === "user";
   
+  // Format numbers in the message content
+  const formatContent = (content: string) => {
+    return content.replace(
+      /\$\d+(?:\.\d{2})?/g,
+      match => {
+        const num = parseFloat(match.replace('$', ''));
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(num);
+      }
+    );
+  };
+  
   return (
     <div
       className={cn(
@@ -26,7 +40,7 @@ export const ChatMessage = ({ message }: { message: Message }) => {
           </div>
         )}
         <p className="text-sm sm:text-base whitespace-pre-wrap break-words leading-relaxed">
-          {message.content}
+          {formatContent(message.content)}
         </p>
         {!isUser && <FeedbackButtons messageId={message.id} />}
       </div>
