@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Message } from "@/types/chat";
 
-interface ApiLog {
+export interface ApiLog {
   timestamp: Date;
   request: {
     messages: Message[];
+    apis?: {
+      name: string;
+      status: 'success' | 'error';
+      responseTime?: number;
+      error?: string;
+    }[];
   };
   response?: {
     content: string;

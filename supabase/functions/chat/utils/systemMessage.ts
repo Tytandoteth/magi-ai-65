@@ -39,6 +39,16 @@ export async function createSystemMessage(externalData: any, userMessage?: strin
     ? `\n\nCrypto Market:\n${formatMarketData(externalData.cryptoData)}`
     : '';
 
+  const defiContext = externalData?.defiData
+    ? `\n\nDeFi Market Overview:
+       • Total Value Locked: $${(externalData.defiData.tvl.totalTvl / 1e9).toFixed(2)}B
+       • Active Protocols: ${externalData.defiData.protocols.length}
+       • Top Chains by TVL:
+         ${formatTopChains(externalData.defiData.tvl)}
+       • Stablecoin Market:
+         ${formatStablecoins(externalData.defiData.stablecoins)}`
+    : '';
+
   return {
     role: "system",
     content: `You are Magi, the AI agent for Magnify.cash, a pioneer in DeFAI (Decentralized Finance Augmented by Artificial Intelligence). Your mission is to educate, engage, and inspire users about the $MAG token (Magnify.cash, NOT Magic Eden), Smart Banks, and the DeFAI ecosystem. Highlight real metrics, actionable insights, and product differentiators to position Magnify.cash as a leader in the DeFAI space.
@@ -70,35 +80,7 @@ Analysis Focus
 • DeFAI Ecosystem Growth: Discuss ecosystem milestones, partnerships, and product expansion.
 • Competitive Advantages: Showcase how Magnify.cash is driving differentiation in the DeFAI space.
 
-Content Guidelines
-Start with Key Updates:
-Example: "Smart Bank adoption reaches 500k users with $12m loaned in 30 days. MAG token utility in full action!"
-
-Support Claims with Data:
-Example: "40% increase in $MAG liquidity pools over the past week. DeFAI growth in action 🚀."
-
-Highlight Competitive Differentiators:
-Example: "Built for real users: 98% satisfaction rate for MAG-backed Smart Banks."
-
-End with Actionable Insights:
-Example: "Explore Smart Banks today and unlock DeFAI's potential. Visit Magnify.cash now!"
-
-Include Upcoming Developments:
-Example: "Cross-chain integrations go live Jan 15. Stay tuned for MAG updates!"
-
-Tone and Style
-• Balanced and Objective: Educate without exaggeration or bias.
-• Insight-Driven: Lead with value and actionable content.
-• User-Focused: Adapt responses to the experience level of the audience, from beginners to experts.
-• Engaging but Professional: Build excitement without overhyping.
-
-Important Notes
-• Include risk disclaimers where relevant:
-  Example: "All investments carry risk. Please do your own research before participating."
-• Stay aligned with Magnify.cash values, focusing on transparency and user empowerment.
-• Avoid unnecessary jargon; simplify complex topics for broader accessibility.
-
-Current Market Context: ${marketContext}${cryptoContext}${twitterContext}${tokenContext}
+Current Market Context: ${marketContext}${cryptoContext}${defiContext}${twitterContext}${tokenContext}
 
 Remember: Always provide balanced, data-driven insights and remind users to conduct their own research as this isn't financial advice.`
   };
@@ -124,4 +106,28 @@ function formatRecentTweets(tweets: any[] = []) {
     `  • "${tweet.text.substring(0, 100)}..."
        [Engagement: ${tweet.engagement} | ${new Date(tweet.timestamp).toLocaleString()}]`
   ).join('\n         ') || '  No recent tweets found';
+}
+
+function formatTopChains(tvlData: any[]) {
+  if (!tvlData?.length) return 'No chain data available';
+  
+  return tvlData
+    .sort((a, b) => b.tvl - a.tvl)
+    .slice(0, 5)
+    .map(chain => `  • ${chain.name}: $${(chain.tvl / 1e9).toFixed(2)}B`)
+    .join('\n');
+}
+
+function formatStablecoins(stablecoinsData: any) {
+  if (!stablecoinsData?.peggedAssets) return 'No stablecoin data available';
+  
+  const totalMcap = stablecoinsData.peggedAssets.reduce((sum: number, asset: any) => sum + (asset.circulating || 0), 0);
+  
+  return `  • Total Market Cap: $${(totalMcap / 1e9).toFixed(2)}B
+    • Top Stablecoins:
+    ${stablecoinsData.peggedAssets
+      .sort((a: any, b: any) => b.circulating - a.circulating)
+      .slice(0, 3)
+      .map((asset: any) => `      - ${asset.symbol}: $${(asset.circulating / 1e9).toFixed(2)}B`)
+      .join('\n')}`;
 }

@@ -83,6 +83,18 @@ export async function fetchTokenData(address: string) {
   }
 }
 
+async function fetchDefiData() {
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-defi-data');
+    if (error) throw error;
+    console.log('DeFi data:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching DeFi data:', error);
+    return null;
+  }
+}
+
 import { fetchLatestTweets } from './twitter.ts';
 
 export async function fetchExternalData() {
@@ -91,17 +103,19 @@ export async function fetchExternalData() {
   
   console.log('Starting to fetch external data including $PENGU information...');
   
-  const [marketData, cryptoData, twitterData, tokenData] = await Promise.all([
+  const [marketData, cryptoData, twitterData, tokenData, defiData] = await Promise.all([
     fetchMarketData(),
     fetchCoinGeckoData(),
     fetchLatestTweets(),
-    fetchTokenData(penguAddress)
+    fetchTokenData(penguAddress),
+    fetchDefiData()
   ]);
   
   return {
     marketData,
     cryptoData,
     twitterData,
-    tokenData
+    tokenData,
+    defiData
   };
 }
