@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ApiStatus } from "@/types/api";
 import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const ApiStatusDashboard = () => {
   const { data: apiStatuses, isLoading, error } = useQuery({
@@ -19,7 +19,7 @@ const ApiStatusDashboard = () => {
   const getStatusColor = (status: ApiStatus['status']) => {
     switch (status) {
       case 'operational':
-        return 'bg-green-500 hover:bg-green-600';
+        return 'bg-emerald-500 hover:bg-emerald-600';
       case 'degraded':
         return 'bg-yellow-500 hover:bg-yellow-600';
       case 'down':
@@ -31,7 +31,6 @@ const ApiStatusDashboard = () => {
 
   const formatErrorMessage = (error: string) => {
     try {
-      // Try to parse JSON error message
       const parsedError = JSON.parse(error);
       if (parsedError.detail) {
         return parsedError.detail;
@@ -39,13 +38,11 @@ const ApiStatusDashboard = () => {
       if (parsedError.message) {
         return parsedError.message;
       }
-      // If it's HTML, return a generic message
       if (error.includes('<!DOCTYPE html>')) {
         return 'Service unavailable';
       }
       return String(parsedError);
     } catch {
-      // If not JSON, clean up HTML content
       if (error.includes('<!DOCTYPE html>')) {
         return 'Service unavailable';
       }
@@ -55,10 +52,10 @@ const ApiStatusDashboard = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-[#1a1b1e]">
         <CardHeader>
-          <CardTitle>API Status</CardTitle>
-          <CardDescription>Loading API status information...</CardDescription>
+          <CardTitle className="text-gray-100">API Status</CardTitle>
+          <CardDescription className="text-gray-400">Loading API status information...</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -66,10 +63,10 @@ const ApiStatusDashboard = () => {
 
   if (error) {
     return (
-      <Card>
+      <Card className="bg-[#1a1b1e]">
         <CardHeader>
-          <CardTitle>API Status</CardTitle>
-          <CardDescription className="text-red-500">
+          <CardTitle className="text-gray-100">API Status</CardTitle>
+          <CardDescription className="text-red-400">
             Error loading API status: {error.message}
           </CardDescription>
         </CardHeader>
@@ -78,10 +75,10 @@ const ApiStatusDashboard = () => {
   }
 
   return (
-    <Card>
+    <Card className="bg-[#1a1b1e]">
       <CardHeader>
-        <CardTitle>API Status</CardTitle>
-        <CardDescription>Real-time status of integrated APIs</CardDescription>
+        <CardTitle className="text-gray-100">API Status</CardTitle>
+        <CardDescription className="text-gray-400">Real-time status of integrated APIs</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
@@ -89,29 +86,29 @@ const ApiStatusDashboard = () => {
             {apiStatuses && Object.entries(apiStatuses).map(([name, status]) => (
               <div 
                 key={name} 
-                className="flex flex-col p-4 bg-secondary rounded-lg border border-secondary-foreground/10"
+                className="flex flex-col p-4 bg-[#1e1f23] rounded-lg border border-gray-800"
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <h3 className="font-medium capitalize">{name}</h3>
-                    <Badge className={getStatusColor(status.status)}>
+                    <h3 className="text-lg font-medium text-gray-100 capitalize">{name}</h3>
+                    <Badge className={`${getStatusColor(status.status)} text-white`}>
                       {status.status}
                     </Badge>
                   </div>
                   {status.responseTime && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-gray-400">
                       {status.responseTime}ms
                     </span>
                   )}
                 </div>
                 
                 <div className="flex flex-col space-y-2">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500">
                     Last checked: {new Date(status.lastChecked).toLocaleTimeString()}
                   </p>
                   
                   {status.error && (
-                    <p className="text-sm text-destructive">
+                    <p className="text-sm text-red-400">
                       {formatErrorMessage(status.error)}
                     </p>
                   )}
