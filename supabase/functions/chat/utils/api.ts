@@ -31,14 +31,18 @@ export async function fetchCoinGeckoData() {
   }
 }
 
+import { fetchLatestTweets } from './twitter.ts';
+
 export async function fetchExternalData() {
-  const [marketData, cryptoData] = await Promise.all([
+  const [marketData, cryptoData, twitterData] = await Promise.all([
     fetchMarketData(),
-    fetchCoinGeckoData()
+    fetchCoinGeckoData(),
+    fetchLatestTweets()
   ]);
   
   return {
     marketData,
     cryptoData,
+    twitterData,
   };
 }

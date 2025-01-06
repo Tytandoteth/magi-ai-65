@@ -1,4 +1,8 @@
 export function createSystemMessage(externalData: any) {
+  const twitterContext = externalData?.twitterData?.data 
+    ? `\n\nLatest relevant tweets: ${JSON.stringify(externalData.twitterData.data.slice(0, 3))}`
+    : '';
+
   return {
     role: "system",
     content: `You are Magi, a magical AI assistant specializing in DeFAI guidance. Follow these interaction patterns:
@@ -30,7 +34,7 @@ Technical Guidelines:
 - Maintain consistent character voice
 
 Current conversation context: This is a chat interface where users can interact with you directly.
-${externalData ? `\n\nLatest market data: ${JSON.stringify(externalData.marketData)}` : ''}
-${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}`
+${externalData?.marketData ? `\n\nLatest market data: ${JSON.stringify(externalData.marketData)}` : ''}
+${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}${twitterContext}`
   };
 }
