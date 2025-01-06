@@ -1,3 +1,5 @@
+import { fetchLatestTweets } from './twitter.ts';
+
 interface TokenProfile {
   symbol: string;
   name: string;
@@ -8,6 +10,11 @@ interface TokenProfile {
   socialMetrics?: {
     twitterMentions: number;
     sentiment: 'positive' | 'neutral' | 'negative';
+    recentTweets?: {
+      text: string;
+      engagement: number;
+      timestamp: string;
+    }[];
   };
 }
 
@@ -51,20 +58,48 @@ async function getTokenMarketData(coinId: string): Promise<any> {
   }
 }
 
-async function analyzeSentiment(tweets: any[]): Promise<'positive' | 'neutral' | 'negative'> {
-  if (!tweets || tweets.length === 0) return 'neutral';
+async function analyzeSentiment(tweets: any[]): Promise<{
+  sentiment: 'positive' | 'neutral' | 'negative';
+  recentTweets: any[];
+}> {
+  if (!tweets || tweets.length === 0) {
+    return { 
+      sentiment: 'neutral',
+      recentTweets: []
+    };
+  }
   
-  // Simple sentiment analysis based on tweet metrics
-  const totalEngagement = tweets.reduce((acc, tweet) => {
+  // Process tweets and calculate engagement
+  const processedTweets = tweets.map(tweet => {
     const metrics = tweet.public_metrics || {};
-    return acc + (metrics.like_count || 0) + (metrics.retweet_count || 0);
-  }, 0);
+    const engagement = (metrics.like_count || 0) + 
+                      (metrics.retweet_count || 0) * 2 + 
+                      (metrics.reply_count || 0) * 3;
+    
+    return {
+      text: tweet.text,
+      engagement,
+      timestamp: tweet.created_at
+    };
+  });
+
+  // Sort by engagement and get top tweets
+  const topTweets = processedTweets
+    .sort((a, b) => b.engagement - a.engagement)
+    .slice(0, 3);
   
+  // Calculate overall sentiment based on engagement
+  const totalEngagement = processedTweets.reduce((acc, tweet) => acc + tweet.engagement, 0);
   const averageEngagement = totalEngagement / tweets.length;
   
-  if (averageEngagement > 100) return 'positive';
-  if (averageEngagement > 50) return 'neutral';
-  return 'negative';
+  let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+  if (averageEngagement > 1000) sentiment = 'positive';
+  else if (averageEngagement < 100) sentiment = 'negative';
+  
+  return {
+    sentiment,
+    recentTweets: topTweets
+  };
 }
 
 export async function createTokenProfile(symbol: string): Promise<TokenProfile | null> {
@@ -80,13 +115,27 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
   // Get detailed market data
   const marketData = await getTokenMarketData(coinGeckoData.id);
   
-  // Get Twitter mentions
-  const { fetchLatestTweets } = await import('./twitter.ts');
-  const twitterData = await fetchLatestTweets(`${symbol} crypto`, 10);
-  const tweets = twitterData?.data || [];
+  // Get Twitter mentions with enhanced search
+  const searchQueries = [
+    `${symbol} crypto`,
+    `${symbol} token`,
+    coinGeckoData.name
+  ];
   
-  // Analyze sentiment
-  const sentiment = await analyzeSentiment(tweets);
+  const twitterPromises = searchQueries.map(query => fetchLatestTweets(query, 10));
+  const twitterResults = await Promise.all(twitterPromises);
+  
+  // Combine and deduplicate tweets
+  const allTweets = twitterResults
+    .flatMap(result => result?.data || [])
+    .filter((tweet, index, self) => 
+      index === self.findIndex(t => t.id === tweet.id)
+    );
+  
+  console.log(`Found ${allTweets.length} unique tweets for ${symbol}`);
+  
+  // Analyze sentiment and get top tweets
+  const { sentiment, recentTweets } = await analyzeSentiment(allTweets);
   
   const profile: TokenProfile = {
     symbol: symbol,
@@ -95,8 +144,9 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
     price: marketData?.market_data?.current_price?.usd,
     volume24h: marketData?.market_data?.total_volume?.usd,
     socialMetrics: {
-      twitterMentions: tweets.length,
-      sentiment: sentiment
+      twitterMentions: allTweets.length,
+      sentiment: sentiment,
+      recentTweets: recentTweets
     }
   };
   

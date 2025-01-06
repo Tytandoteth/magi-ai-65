@@ -24,12 +24,12 @@ export async function createSystemMessage(externalData: any, userMessage?: strin
        • Current Price: $${tokenProfile.price?.toFixed(6)}
        • Market Cap: $${tokenProfile.marketCap?.toLocaleString()}
        • 24h Volume: $${tokenProfile.volume24h?.toLocaleString()}
-       • Market Sentiment: ${tokenProfile.marketSentiment || 'Neutral'}
        
        📱 Social Metrics:
-       • Twitter Mentions: ${tokenProfile.socialMetrics?.twitterMentions}
+       • Twitter Mentions (24h): ${tokenProfile.socialMetrics?.twitterMentions}
        • Social Sentiment: ${tokenProfile.socialMetrics?.sentiment}
-       • Community Engagement: ${tokenProfile.socialMetrics?.twitterMentions > 100 ? 'High' : 'Moderate'}`
+       • Top Recent Tweets:
+         ${formatRecentTweets(tokenProfile.socialMetrics?.recentTweets)}`
     : '';
 
   const marketContext = externalData?.marketData 
@@ -91,4 +91,11 @@ function formatTweets(tweets: any[]) {
     console.error('Error formatting tweets:', error);
     return JSON.stringify(tweets);
   }
+}
+
+function formatRecentTweets(tweets: any[] = []) {
+  return tweets.map(tweet => 
+    `  • "${tweet.text.substring(0, 100)}..."
+       [Engagement: ${tweet.engagement} | ${new Date(tweet.timestamp).toLocaleString()}]`
+  ).join('\n         ') || '  No recent tweets found';
 }
