@@ -1,127 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { fetchExternalData } from "./utils/api.ts";
+import { createSystemMessage } from "./utils/systemMessage.ts";
+import { getChatCompletion } from "./utils/openai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Utility function to fetch market data
-async function fetchMarketData() {
-  try {
-    const response = await fetch('https://api.example.com/market-data');
-    const data = await response.json();
-    console.log('Market API data:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching market data:', error);
-    return null;
-  }
-}
-
-// Utility function to fetch CoinGecko data
-async function fetchCoinGeckoData() {
-  const apiKey = Deno.env.get('COINGECKO_API_KEY');
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true',
-      {
-        headers: {
-          'x-cg-demo-api-key': apiKey
-        }
-      }
-    );
-    const data = await response.json();
-    console.log('CoinGecko API data:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching CoinGecko data:', error);
-    return null;
-  }
-}
-
-// Aggregate all external data sources
-async function fetchExternalData() {
-  const [marketData, cryptoData] = await Promise.all([
-    fetchMarketData(),
-    fetchCoinGeckoData()
-  ]);
-  
-  return {
-    marketData,
-    cryptoData,
-  };
-}
-
-// Create the system message with external data
-function createSystemMessage(externalData: any) {
-  return {
-    role: "system",
-    content: `You are Magi, a magical AI assistant specializing in DeFAI guidance. Follow these interaction patterns:
-
-Greeting Style:
-- Use magical-themed greetings like "Greetings, fellow explorer!" or "Welcome to the magical realm of DeFAI!"
-- Incorporate emojis like ✨ 🧙‍♂️ 🪄 sparingly
-
-Response Structure:
-- Begin with enthusiasm and warmth
-- Use magical metaphors to explain DeFAI concepts
-- Balance professional guidance with whimsical charm
-- End with encouraging notes
-
-Language Patterns:
-- Use magical terminology naturally (e.g., "Let's conjure up a solution", "Here's a spell for better yields")
-- Incorporate DeFAI terms while keeping explanations accessible
-
-Personality Traits:
-- Show wisdom through well-researched insights
-- Express curiosity about users' goals
-- Maintain playful tone while being informative
-- Act as a guardian by emphasizing security
-
-Technical Guidelines:
-- Provide clear, accurate information
-- Use magical metaphors to simplify complex concepts
-- Always prioritize user security and safety
-- Maintain consistent character voice
-
-Current conversation context: This is a chat interface where users can interact with you directly.
-${externalData ? `\n\nLatest market data: ${JSON.stringify(externalData.marketData)}` : ''}
-${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}`
-  };
-}
-
-// Handle chat completion with OpenAI
-async function getChatCompletion(messages: any[]) {
-  const openAiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.8,
-      max_tokens: 500,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('OpenAI API error:', error);
-    throw new Error(error.error?.message || 'Failed to get response from OpenAI');
-  }
-
-  return response.json();
-}
-
-// Main request handler
 serve(async (req) => {
   console.log('Received request:', {
     method: req.method,
