@@ -1,16 +1,15 @@
-import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { createHmac } from "node:crypto";
 
 const API_KEY = Deno.env.get("TWITTER_CONSUMER_KEY")?.trim();
 const API_SECRET = Deno.env.get("TWITTER_CONSUMER_SECRET")?.trim();
 const ACCESS_TOKEN = Deno.env.get("TWITTER_ACCESS_TOKEN")?.trim();
 const ACCESS_TOKEN_SECRET = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET")?.trim();
 
-function validateTwitterCredentials() {
-  if (!API_KEY || !API_SECRET || !ACCESS_TOKEN || !ACCESS_TOKEN_SECRET) {
-    console.error("Missing Twitter credentials");
-    return false;
-  }
-  return true;
+function validateEnvironmentVariables() {
+  if (!API_KEY) throw new Error("Missing TWITTER_CONSUMER_KEY");
+  if (!API_SECRET) throw new Error("Missing TWITTER_CONSUMER_SECRET");
+  if (!ACCESS_TOKEN) throw new Error("Missing TWITTER_ACCESS_TOKEN");
+  if (!ACCESS_TOKEN_SECRET) throw new Error("Missing TWITTER_ACCESS_TOKEN_SECRET");
 }
 
 function generateOAuthSignature(
@@ -28,8 +27,9 @@ function generateOAuthSignature(
       .map(([k, v]) => `${k}=${v}`)
       .join("&")
   )}`;
-  
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  const signingKey = `${encodeURIComponent(
+    consumerSecret
+  )}&${encodeURIComponent(tokenSecret)}`;
   const hmacSha1 = createHmac("sha1", signingKey);
   return hmacSha1.update(signatureBaseString).digest("base64");
 }
@@ -52,38 +52,46 @@ function generateOAuthHeader(method: string, url: string): string {
     ACCESS_TOKEN_SECRET!
   );
 
-  return "OAuth " + Object.entries({
-    ...oauthParams,
-    oauth_signature: signature,
-  })
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
-    .join(", ");
+  return (
+    "OAuth " +
+    Object.entries({ ...oauthParams, oauth_signature: signature })
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
+      .join(", ")
+  );
 }
 
-export async function fetchLatestTweets(query: string = "defi OR crypto", count: number = 10) {
-  if (!validateTwitterCredentials()) {
-    return null;
-  }
-
-  const url = `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&max_results=${count}`;
-  const method = "GET";
-  
+export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 10) {
   try {
+    validateEnvironmentVariables();
+    
+    const baseUrl = "https://api.twitter.com/2/tweets/search/recent";
+    const searchParams = new URLSearchParams({
+      query,
+      "tweet.fields": "created_at,public_metrics",
+      max_results: maxResults.toString(),
+    });
+    
+    const url = `${baseUrl}?${searchParams.toString()}`;
+    const oauthHeader = generateOAuthHeader("GET", baseUrl);
+    
+    console.log("Fetching tweets with URL:", url);
+    
     const response = await fetch(url, {
-      method: method,
       headers: {
-        Authorization: generateOAuthHeader(method, url),
+        Authorization: oauthHeader,
+        "Content-Type": "application/json",
       },
     });
 
     if (!response.ok) {
-      console.error("Twitter API error:", await response.text());
-      return null;
+      const errorText = await response.text();
+      console.error("Twitter API Error:", errorText);
+      throw new Error(`Twitter API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("Twitter API response:", data);
+    console.log("Twitter API Response:", data);
     return data;
   } catch (error) {
     console.error("Error fetching tweets:", error);
