@@ -9,7 +9,9 @@ import { checkDefiLlamaAPI } from './apis/defillama.ts';
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -37,11 +39,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error checking API status:', error);
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
