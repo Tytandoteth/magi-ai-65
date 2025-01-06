@@ -89,10 +89,10 @@ const ApiStatusDashboard = () => {
             {apiStatuses && Object.entries(apiStatuses).map(([name, status]) => (
               <div 
                 key={name} 
-                className="flex flex-col space-y-2 p-4 bg-secondary rounded-lg border border-secondary-foreground/10"
+                className="flex flex-col p-4 bg-secondary rounded-lg border border-secondary-foreground/10"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-3">
                     <h3 className="font-medium capitalize">{name}</h3>
                     <Badge className={getStatusColor(status.status)}>
                       {status.status}
@@ -105,17 +105,17 @@ const ApiStatusDashboard = () => {
                   )}
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
-                  Last checked: {new Date(status.lastChecked).toLocaleTimeString()}
-                </p>
-                
-                {status.error && (
-                  <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                <div className="flex flex-col space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Last checked: {new Date(status.lastChecked).toLocaleTimeString()}
+                  </p>
+                  
+                  {status.error && (
                     <p className="text-sm text-destructive">
                       {formatErrorMessage(status.error)}
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>
