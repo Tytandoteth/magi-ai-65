@@ -21,15 +21,20 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
         throw new Error("Invalid message ID");
       }
 
-      // First verify the message exists
+      // First verify the message exists using maybeSingle() instead of single()
       const { data: message, error: messageError } = await supabase
         .from("chat_messages")
         .select("id")
         .eq("id", messageIdNumber)
-        .single();
+        .maybeSingle();
 
-      if (messageError || !message) {
-        console.error("Message not found:", messageError);
+      if (messageError) {
+        console.error("Error checking message:", messageError);
+        throw messageError;
+      }
+
+      if (!message) {
+        console.error("Message not found for ID:", messageIdNumber);
         throw new Error("Message not found");
       }
 
