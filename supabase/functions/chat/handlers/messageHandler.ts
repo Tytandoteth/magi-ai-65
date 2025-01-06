@@ -76,10 +76,22 @@ export async function handleChatMessage(messages: any[]) {
     const systemMessage = await createSystemMessage(externalData, userMessage.content);
     console.log('Generated system message:', systemMessage);
 
+    // Format response to be more professional and remove emojis
+    const cleanMessage = (msg: string) => {
+      // Remove emojis using regex
+      return msg.replace(
+        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, 
+        ''
+      ).trim();
+    };
+
     // Prepare messages for OpenAI
     const openAiMessages = [
       systemMessage,
-      ...messages
+      ...messages.map(msg => ({
+        ...msg,
+        content: cleanMessage(msg.content)
+      }))
     ];
 
     return { openAiMessages, apiStatuses, conversation };
