@@ -10,6 +10,7 @@ export async function createSystemMessage(externalData: any, userMessage?: strin
     if (tokenMatch) {
       console.log('Token match found:', tokenMatch[0]);
       tokenProfile = await createTokenProfile(tokenMatch[0]);
+      console.log('Generated token profile:', tokenProfile);
     }
   }
 
@@ -18,17 +19,7 @@ export async function createSystemMessage(externalData: any, userMessage?: strin
     : '';
 
   const tokenContext = tokenProfile
-    ? `\n\nToken Analysis for ${tokenProfile.symbol}:
-       • Name: ${tokenProfile.name}
-       • Price: $${tokenProfile.price?.toFixed(6)}
-       • Market Cap: $${tokenProfile.marketCap?.toLocaleString()}
-       • 24h Volume: $${tokenProfile.volume24h?.toLocaleString()}
-       
-       Social Stats:
-       • Twitter Mentions (24h): ${tokenProfile.socialMetrics?.twitterMentions}
-       • Sentiment: ${tokenProfile.socialMetrics?.sentiment}
-       • Recent Tweets:
-         ${formatRecentTweets(tokenProfile.socialMetrics?.recentTweets)}`
+    ? `\n\n${formatTokenProfile(tokenProfile)}`
     : '';
 
   const marketContext = externalData?.marketData 
@@ -84,6 +75,25 @@ Current Market Context: ${marketContext}${cryptoContext}${defiContext}${twitterC
 
 Remember: Always provide balanced, data-driven insights and remind users to conduct their own research as this isn't financial advice.`
   };
+}
+
+function formatTokenProfile(profile: any) {
+  if (!profile) return 'No data available for this token';
+  
+  const priceStr = profile.price ? `$${profile.price.toFixed(6)}` : 'Not available';
+  const marketCapStr = profile.marketCap ? `$${(profile.marketCap / 1e6).toFixed(2)}M` : 'Not available';
+  const volumeStr = profile.volume24h ? `$${(profile.volume24h / 1e6).toFixed(2)}M` : 'Not available';
+  
+  return `Token Analysis for ${profile.symbol}:
+• Name: ${profile.name}
+• Price: ${priceStr}
+• Market Cap: ${marketCapStr}
+• 24h Volume: ${volumeStr}
+
+Social Stats:
+• Twitter Mentions (24h): ${profile.socialMetrics?.twitterMentions || 0}
+• Sentiment Score: ${(profile.socialMetrics?.sentiment || 0).toFixed(2)}
+${formatRecentTweets(profile.socialMetrics?.recentTweets)}`;
 }
 
 function formatTweets(tweets: any[]) {
