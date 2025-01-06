@@ -31,7 +31,14 @@ function generateOAuthSignature(
     consumerSecret
   )}&${encodeURIComponent(tokenSecret)}`;
   const hmacSha1 = createHmac("sha1", signingKey);
-  return hmacSha1.update(signatureBaseString).digest("base64");
+  const signature = hmacSha1.update(signatureBaseString).digest("base64");
+
+  // Add debug logging
+  console.log("Signature Base String:", signatureBaseString);
+  console.log("Signing Key:", signingKey);
+  console.log("Generated Signature:", signature);
+
+  return signature;
 }
 
 function generateOAuthHeader(method: string, url: string): string {
@@ -65,7 +72,7 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
   try {
     validateEnvironmentVariables();
     
-    const baseUrl = "https://api.twitter.com/2/tweets/search/recent";
+    const baseUrl = "https://api.x.com/2/tweets/search/recent";
     const searchParams = new URLSearchParams({
       query,
       "tweet.fields": "created_at,public_metrics",
@@ -76,6 +83,7 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
     const oauthHeader = generateOAuthHeader("GET", baseUrl);
     
     console.log("Fetching tweets with URL:", url);
+    console.log("OAuth Header:", oauthHeader);
     
     const response = await fetch(url, {
       headers: {
@@ -84,15 +92,15 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
       },
     });
 
+    const responseText = await response.text();
+    console.log("Response Status:", response.status);
+    console.log("Response Body:", responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Twitter API Error:", errorText);
-      throw new Error(`Twitter API error: ${response.status} ${errorText}`);
+      throw new Error(`Twitter API error: ${response.status} ${responseText}`);
     }
 
-    const data = await response.json();
-    console.log("Twitter API Response:", data);
-    return data;
+    return JSON.parse(responseText);
   } catch (error) {
     console.error("Error fetching tweets:", error);
     return null;
