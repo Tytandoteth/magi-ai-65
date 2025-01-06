@@ -4,7 +4,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 // Utility function to fetch market data
@@ -20,14 +19,29 @@ async function fetchMarketData() {
   }
 }
 
+// Utility function to fetch CoinGecko data
+async function fetchCoinGeckoData() {
+  try {
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true');
+    const data = await response.json();
+    console.log('CoinGecko API data:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching CoinGecko data:', error);
+    return null;
+  }
+}
+
 // Aggregate all external data sources
 async function fetchExternalData() {
-  const marketData = await fetchMarketData();
-  // Add more data sources here as needed
+  const [marketData, cryptoData] = await Promise.all([
+    fetchMarketData(),
+    fetchCoinGeckoData()
+  ]);
   
   return {
     marketData,
-    // Add other data sources here
+    cryptoData,
   };
 }
 
@@ -64,7 +78,8 @@ Technical Guidelines:
 - Maintain consistent character voice
 
 Current conversation context: This is a chat interface where users can interact with you directly.
-${externalData ? `\n\nLatest data: ${JSON.stringify(externalData)}` : ''}`
+${externalData ? `\n\nLatest market data: ${JSON.stringify(externalData.marketData)}` : ''}
+${externalData?.cryptoData ? `\n\nLatest crypto prices: ${JSON.stringify(externalData.cryptoData)}` : ''}`
   };
 }
 
