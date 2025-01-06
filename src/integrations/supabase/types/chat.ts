@@ -22,6 +22,13 @@ export interface ChatConversation {
     context?: Json | null;
     metadata?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }
 
 export interface ChatMessage {
@@ -52,6 +59,13 @@ export interface ChatMessage {
     tokens_used?: number | null;
     metadata?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }
 
 export interface AIAgentMetrics {
@@ -91,4 +105,11 @@ export interface AIAgentMetrics {
     effectiveness_score?: number | null;
     feedback?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }

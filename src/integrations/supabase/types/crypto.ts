@@ -34,6 +34,13 @@ export interface CryptoNews {
     categories?: string[] | null;
     raw_data?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }
 
 export interface DefiMarketData {
@@ -79,4 +86,11 @@ export interface DefiMarketData {
     total_value_locked?: number | null;
     raw_data?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }

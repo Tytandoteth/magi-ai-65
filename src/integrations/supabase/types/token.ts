@@ -37,6 +37,13 @@ export interface MagTokenAnalytics {
     market_cap?: number | null;
     raw_data?: Json | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }
 
 export interface EtherscanScraper {
@@ -58,4 +65,11 @@ export interface EtherscanScraper {
     address?: string | null;
     holders?: number | null;
   };
+  Relationships: {
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }[];
 }
