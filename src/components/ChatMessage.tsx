@@ -13,12 +13,17 @@ export const ChatMessage = ({ message }: { message: Message }) => {
     >
       <div
         className={cn(
-          "max-w-[80%] rounded-lg px-4 py-3",
+          "relative max-w-[80%] rounded-lg px-4 py-3",
           isUser 
             ? "bg-[#3B3D40] text-gray-100"
             : "bg-[#2A2B2D] text-gray-100 border border-gray-700"
         )}
       >
+        {!isUser && (
+          <div className="absolute -left-1 -top-6 text-sm text-gray-400">
+            Magi
+          </div>
+        )}
         <p className="text-sm sm:text-base whitespace-pre-wrap break-words leading-relaxed">
           {message.content}
         </p>
