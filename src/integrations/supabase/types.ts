@@ -154,6 +154,90 @@ export type Database = {
         }
         Relationships: []
       }
+      defi_llama_news: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: number
+          link: string
+          published_at: string
+          raw_data: Json | null
+          sentiment: number | null
+          source: string
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: number
+          link: string
+          published_at: string
+          raw_data?: Json | null
+          sentiment?: number | null
+          source: string
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: number
+          link?: string
+          published_at?: string
+          raw_data?: Json | null
+          sentiment?: number | null
+          source?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      defi_llama_protocols: {
+        Row: {
+          category: string | null
+          change_1d: number | null
+          change_1h: number | null
+          change_7d: number | null
+          created_at: string
+          derivatives: number | null
+          id: number
+          name: string
+          protocol_id: string
+          raw_data: Json | null
+          staking: number | null
+          symbol: string | null
+          tvl: number | null
+        }
+        Insert: {
+          category?: string | null
+          change_1d?: number | null
+          change_1h?: number | null
+          change_7d?: number | null
+          created_at?: string
+          derivatives?: number | null
+          id?: number
+          name: string
+          protocol_id: string
+          raw_data?: Json | null
+          staking?: number | null
+          symbol?: string | null
+          tvl?: number | null
+        }
+        Update: {
+          category?: string | null
+          change_1d?: number | null
+          change_1h?: number | null
+          change_7d?: number | null
+          created_at?: string
+          derivatives?: number | null
+          id?: number
+          name?: string
+          protocol_id?: string
+          raw_data?: Json | null
+          staking?: number | null
+          symbol?: string | null
+          tvl?: number | null
+        }
+        Relationships: []
+      }
       defi_market_data: {
         Row: {
           coin_id: string
