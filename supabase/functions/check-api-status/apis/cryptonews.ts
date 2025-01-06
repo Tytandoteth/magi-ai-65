@@ -1,5 +1,5 @@
-import { fetchWithRetry } from '../utils/fetch';
-import { ApiStatus } from '../types';
+import { fetchWithRetry } from '../utils/fetch.ts';
+import { ApiStatus } from '../types.ts';
 
 export async function checkCryptoNewsAPI(): Promise<ApiStatus> {
   console.log('Checking CryptoNews API...');
