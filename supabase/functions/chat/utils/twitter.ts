@@ -1,22 +1,23 @@
 const BEARER_TOKEN = Deno.env.get("Bearer Token")?.trim();
 
-export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 10) {
+export async function fetchLatestTweets(query = "", maxResults = 10) {
   try {
     if (!BEARER_TOKEN) {
       console.error("Missing Twitter Bearer Token");
       return null;
     }
 
+    console.log(`Fetching tweets for query: "${query}" with max results: ${maxResults}`);
+
     const baseUrl = "https://api.twitter.com/2/tweets/search/recent";
     const queryParams = new URLSearchParams({
-      query,
+      query: `${query} -is:retweet`,
       "tweet.fields": "created_at,public_metrics",
       "max_results": maxResults.toString(),
     });
     
     const url = `${baseUrl}?${queryParams.toString()}`;
-    console.log("Fetching tweets from URL:", url);
-    console.log("Using Bearer token:", BEARER_TOKEN.substring(0, 5) + "...");
+    console.log("Twitter API URL:", url);
     
     const response = await fetch(url, {
       headers: {
@@ -32,7 +33,7 @@ export async function fetchLatestTweets(query = "defi OR crypto", maxResults = 1
     }
 
     const data = await response.json();
-    console.log("Successfully fetched tweets:", data);
+    console.log("Twitter API response:", JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     console.error("Error fetching tweets:", error);

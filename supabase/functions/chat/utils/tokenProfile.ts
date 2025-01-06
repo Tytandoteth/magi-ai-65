@@ -74,7 +74,6 @@ async function analyzeSentiment(tweets: any[]): Promise<{
   
   console.log('Analyzing sentiment for tweets:', tweets.length);
   
-  // Process tweets and calculate engagement
   const processedTweets = tweets.map(tweet => {
     const metrics = tweet.public_metrics || {};
     const engagement = (metrics.like_count || 0) + 
@@ -88,12 +87,10 @@ async function analyzeSentiment(tweets: any[]): Promise<{
     };
   });
 
-  // Sort by engagement and get top tweets
   const topTweets = processedTweets
     .sort((a, b) => b.engagement - a.engagement)
     .slice(0, 3);
   
-  // Calculate overall sentiment based on engagement
   const totalEngagement = processedTweets.reduce((acc, tweet) => acc + tweet.engagement, 0);
   const averageEngagement = totalEngagement / tweets.length;
   
@@ -112,8 +109,10 @@ async function analyzeSentiment(tweets: any[]): Promise<{
 export async function createTokenProfile(symbol: string): Promise<TokenProfile | null> {
   console.log(`Creating token profile for ${symbol}...`);
   
+  const cleanSymbol = symbol.replace('$', '').toLowerCase();
+  
   // Search for token on CoinGecko
-  const coinGeckoData = await searchCoinGecko(symbol.replace('$', ''));
+  const coinGeckoData = await searchCoinGecko(cleanSymbol);
   if (!coinGeckoData) {
     console.log('Token not found on CoinGecko');
     return null;
