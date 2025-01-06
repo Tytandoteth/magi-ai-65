@@ -1,5 +1,6 @@
 import { Message } from "@/types/chat";
 import { cn } from "@/lib/utils";
+import { FeedbackButtons } from "./FeedbackButtons";
 
 export const ChatMessage = ({ message }: { message: Message }) => {
   const isUser = message.role === "user";
@@ -27,6 +28,7 @@ export const ChatMessage = ({ message }: { message: Message }) => {
         <p className="text-sm sm:text-base whitespace-pre-wrap break-words leading-relaxed">
           {message.content}
         </p>
+        {!isUser && <FeedbackButtons messageId={message.id} />}
       </div>
     </div>
   );
