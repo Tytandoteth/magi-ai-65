@@ -21,6 +21,21 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
         throw new Error("Invalid message ID");
       }
 
+      // First verify the message exists
+      const { data: message, error: messageError } = await supabase
+        .from("chat_messages")
+        .select("id")
+        .eq("id", messageIdNumber)
+        .single();
+
+      if (messageError || !message) {
+        console.error("Message not found:", messageError);
+        throw new Error("Message not found");
+      }
+
+      console.log("Found message:", message);
+
+      // Now insert the feedback
       const { error } = await supabase
         .from("ai_agent_metrics")
         .insert({
@@ -29,8 +44,12 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
           effectiveness_score: type === "positive" ? 1 : 0,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting feedback:", error);
+        throw error;
+      }
 
+      console.log("Feedback submitted successfully");
       setFeedback(type);
       toast({
         description: "Thank you for your feedback!",
@@ -41,7 +60,7 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
       console.error("Error submitting feedback:", error);
       toast({
         variant: "destructive",
-        description: "Failed to submit feedback. Please try again.",
+        description: error.message || "Failed to submit feedback. Please try again.",
       });
     }
   };
