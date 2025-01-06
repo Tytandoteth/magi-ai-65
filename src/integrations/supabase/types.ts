@@ -199,6 +199,141 @@ export type Database = {
         }
         Relationships: []
       }
+      defi_market_data_partitioned: {
+        Row: {
+          coin_id: string
+          created_at: string
+          current_price: number | null
+          id: number
+          market_cap: number | null
+          name: string
+          price_change_24h: number | null
+          price_change_percentage_24h: number | null
+          raw_data: Json | null
+          symbol: string
+          total_value_locked: number | null
+          total_volume: number | null
+        }
+        Insert: {
+          coin_id: string
+          created_at: string
+          current_price?: number | null
+          id: number
+          market_cap?: number | null
+          name: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Update: {
+          coin_id?: string
+          created_at?: string
+          current_price?: number | null
+          id?: number
+          market_cap?: number | null
+          name?: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol?: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Relationships: []
+      }
+      defi_market_data_y2024m01: {
+        Row: {
+          coin_id: string
+          created_at: string
+          current_price: number | null
+          id: number
+          market_cap: number | null
+          name: string
+          price_change_24h: number | null
+          price_change_percentage_24h: number | null
+          raw_data: Json | null
+          symbol: string
+          total_value_locked: number | null
+          total_volume: number | null
+        }
+        Insert: {
+          coin_id: string
+          created_at: string
+          current_price?: number | null
+          id: number
+          market_cap?: number | null
+          name: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Update: {
+          coin_id?: string
+          created_at?: string
+          current_price?: number | null
+          id?: number
+          market_cap?: number | null
+          name?: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol?: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Relationships: []
+      }
+      defi_market_data_y2024m02: {
+        Row: {
+          coin_id: string
+          created_at: string
+          current_price: number | null
+          id: number
+          market_cap: number | null
+          name: string
+          price_change_24h: number | null
+          price_change_percentage_24h: number | null
+          raw_data: Json | null
+          symbol: string
+          total_value_locked: number | null
+          total_volume: number | null
+        }
+        Insert: {
+          coin_id: string
+          created_at: string
+          current_price?: number | null
+          id: number
+          market_cap?: number | null
+          name: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Update: {
+          coin_id?: string
+          created_at?: string
+          current_price?: number | null
+          id?: number
+          market_cap?: number | null
+          name?: string
+          price_change_24h?: number | null
+          price_change_percentage_24h?: number | null
+          raw_data?: Json | null
+          symbol?: string
+          total_value_locked?: number | null
+          total_volume?: number | null
+        }
+        Relationships: []
+      }
       "etherscan scraper": {
         Row: {
           address: string | null
