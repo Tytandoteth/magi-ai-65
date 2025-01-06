@@ -36,22 +36,27 @@ export async function fetchTokenData(address: string) {
     const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
     console.log('Fetching token data for address:', address);
     
-    const response = await fetch(`https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`);
+    // Fetch token info
+    const response = await fetch(
+      `https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`
+    );
     const data = await response.json();
     console.log('Etherscan token data:', data);
     
-    // Also fetch holder count
-    const holdersResponse = await fetch(`https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`);
+    // Fetch holder count
+    const holdersResponse = await fetch(
+      `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`
+    );
     const holdersData = await holdersResponse.json();
     console.log('Etherscan holders data:', holdersData);
-    
-    // Create Supabase client
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+
+    // Create Supabase client directly in the function
+    const { createClient } = await import('@supabase/supabase-js');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Store the data in our database
+    // Store the data
     const { data: insertData, error } = await supabase
       .from('etherscan_scraper')
       .insert([
@@ -62,7 +67,10 @@ export async function fetchTokenData(address: string) {
       ])
       .select();
       
-    if (error) console.error('Error storing token data:', error);
+    if (error) {
+      console.error('Error storing token data:', error);
+      throw error;
+    }
     console.log('Stored token data:', insertData);
     
     return {
@@ -70,8 +78,8 @@ export async function fetchTokenData(address: string) {
       holders: holdersData.result?.length || 0
     };
   } catch (error) {
-    console.error('Error fetching Etherscan data:', error);
-    return null;
+    console.error('Error in fetchTokenData:', error);
+    throw error;
   }
 }
 
