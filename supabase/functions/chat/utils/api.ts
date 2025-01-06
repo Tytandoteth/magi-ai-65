@@ -1,4 +1,5 @@
-// Utility functions for external API calls
+import { fetchLatestTweets } from './twitter.ts';
+
 export async function fetchMarketData() {
   try {
     const response = await fetch('https://api.example.com/market-data');
@@ -95,27 +96,69 @@ async function fetchDefiData() {
   }
 }
 
-import { fetchLatestTweets } from './twitter.ts';
-
 export async function fetchExternalData() {
-  // $PENGU contract address on Ethereum mainnet
-  const penguAddress = '0x2Fd9a39ACF071Aa61f92F3D7A98332c68d6B6602';
+  console.log('Starting to fetch external data...');
   
-  console.log('Starting to fetch external data including $PENGU information...');
+  const startTime = Date.now();
+  const apiStatuses = [];
   
   const [marketData, cryptoData, twitterData, tokenData, defiData] = await Promise.all([
     fetchMarketData(),
     fetchCoinGeckoData(),
     fetchLatestTweets(),
-    fetchTokenData(penguAddress),
+    fetchTokenData('0x2Fd9a39ACF071Aa61f92F3D7A98332c68d6B6602'),
     fetchDefiData()
   ]);
+
+  // Track API statuses
+  if (marketData) {
+    apiStatuses.push({
+      name: 'Market API',
+      status: 'success',
+      responseTime: Date.now() - startTime
+    });
+  } else {
+    apiStatuses.push({
+      name: 'Market API',
+      status: 'error',
+      error: 'Failed to fetch market data'
+    });
+  }
+
+  if (cryptoData) {
+    apiStatuses.push({
+      name: 'CoinGecko API',
+      status: 'success',
+      responseTime: Date.now() - startTime
+    });
+  } else {
+    apiStatuses.push({
+      name: 'CoinGecko API',
+      status: 'error',
+      error: 'Failed to fetch crypto data'
+    });
+  }
+
+  if (twitterData) {
+    apiStatuses.push({
+      name: 'Twitter API',
+      status: 'success',
+      responseTime: Date.now() - startTime
+    });
+  } else {
+    apiStatuses.push({
+      name: 'Twitter API',
+      status: 'error',
+      error: 'Failed to fetch Twitter data'
+    });
+  }
   
   return {
     marketData,
     cryptoData,
     twitterData,
     tokenData,
-    defiData
+    defiData,
+    apiStatuses
   };
 }
