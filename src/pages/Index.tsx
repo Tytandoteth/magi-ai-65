@@ -4,6 +4,19 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { Message, ChatState } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApiLogs } from "@/components/ApiLogs";
+
+interface ApiLog {
+  timestamp: Date;
+  request: {
+    messages: Message[];
+  };
+  response?: {
+    content: string;
+  };
+  error?: string;
+}
 
 const Index = () => {
   const [chatState, setChatState] = useState<ChatState>({
@@ -11,6 +24,7 @@ const Index = () => {
     isLoading: false,
     error: null,
   });
+  const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -37,10 +51,21 @@ const Index = () => {
       error: null,
     }));
 
+    const currentMessages = [...chatState.messages, userMessage];
+    const apiLog: ApiLog = {
+      timestamp: new Date(),
+      request: {
+        messages: currentMessages.map(({ role, content }) => ({
+          role,
+          content,
+        })),
+      },
+    };
+
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
-          messages: [...chatState.messages, userMessage].map(({ role, content }) => ({
+          messages: currentMessages.map(({ role, content }) => ({
             role,
             content,
           })),
@@ -56,6 +81,9 @@ const Index = () => {
         timestamp: new Date(),
       };
 
+      apiLog.response = data.response;
+      setApiLogs(prev => [...prev, apiLog]);
+
       setChatState((prev) => ({
         ...prev,
         messages: [...prev.messages, assistantMessage],
@@ -63,6 +91,9 @@ const Index = () => {
       }));
     } catch (error) {
       console.error("Error:", error);
+      apiLog.error = error.message;
+      setApiLogs(prev => [...prev, apiLog]);
+      
       setChatState((prev) => ({
         ...prev,
         isLoading: false,
@@ -78,22 +109,35 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
-      <div className="chat-container flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto py-4">
-          {chatState.messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
-          {chatState.isLoading && (
-            <div className="flex justify-start mb-4 px-4">
-              <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
-                <p className="text-sm">Thinking...</p>
-              </div>
+      <Tabs defaultValue="chat" className="flex-1">
+        <TabsList className="mb-4">
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="logs">API Logs</TabsTrigger>
+        </TabsList>
+        <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
+          <div className="chat-container flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto py-4">
+              {chatState.messages.map((message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+              {chatState.isLoading && (
+                <div className="flex justify-start mb-4 px-4">
+                  <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
+                    <p className="text-sm">Thinking...</p>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-        <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
-      </div>
+            <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
+          </div>
+        </TabsContent>
+        <TabsContent value="logs" className="flex-1 flex flex-col mt-0">
+          <div className="chat-container flex-1">
+            <ApiLogs logs={apiLogs} />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
