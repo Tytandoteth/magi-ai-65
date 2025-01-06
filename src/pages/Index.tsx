@@ -37,6 +37,8 @@ const Index = () => {
   }, [chatState.messages]);
 
   const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -89,7 +91,7 @@ const Index = () => {
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error in handleSendMessage:", error);
       apiLog.error = error.message;
       setApiLogs(prev => [...prev, apiLog]);
       
@@ -98,6 +100,7 @@ const Index = () => {
         isLoading: false,
         error: "Failed to get response. Please try again.",
       }));
+
       toast({
         variant: "destructive",
         title: "Error",
@@ -113,12 +116,14 @@ const Index = () => {
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="logs">API Logs</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
           <div className="chat-container flex-1 flex flex-col">
             <div className="flex-1 overflow-y-auto py-4">
               {chatState.messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
+              
               {chatState.isLoading && (
                 <div className="flex justify-start mb-4 px-4">
                   <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
@@ -126,11 +131,17 @@ const Index = () => {
                   </div>
                 </div>
               )}
+              
               <div ref={messagesEndRef} />
             </div>
-            <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
+            
+            <ChatInput 
+              onSend={handleSendMessage} 
+              disabled={chatState.isLoading} 
+            />
           </div>
         </TabsContent>
+        
         <TabsContent value="logs" className="flex-1 flex flex-col mt-0">
           <div className="chat-container flex-1">
             <ApiLogs logs={apiLogs} />

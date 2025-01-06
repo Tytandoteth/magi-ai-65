@@ -12,8 +12,9 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
-    if (message.trim()) {
-      onSend(message.trim());
+    const trimmedMessage = message.trim();
+    if (trimmedMessage) {
+      onSend(trimmedMessage);
       setMessage("");
     }
   };

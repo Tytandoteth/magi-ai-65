@@ -1,10 +1,7 @@
 import { Json } from './base';
 
 /**
- * Represents a chat conversation in the system
- * @property Row - The data structure for reading conversation records
- * @property Insert - The data structure for inserting new conversations
- * @property Update - The data structure for updating existing conversations
+ * Represents a chat conversation
  */
 export interface ChatConversation {
   Row: {
@@ -38,10 +35,7 @@ export interface ChatConversation {
 }
 
 /**
- * Represents an individual message within a chat conversation
- * @property Row - The data structure for reading message records
- * @property Insert - The data structure for inserting new messages
- * @property Update - The data structure for updating existing messages
+ * Represents a chat message within a conversation
  */
 export interface ChatMessage {
   Row: {
