@@ -31,6 +31,29 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    // Enhanced system message for more contextual responses
+    const systemMessage = {
+      role: "system",
+      content: `You are Magi, a highly knowledgeable and context-aware AI assistant. When responding:
+- Always acknowledge the user's previous messages and reference relevant context
+- If the conversation has a specific topic or theme, maintain continuity
+- Provide clear explanations and examples when needed
+- Be concise but thorough in your responses
+- If you're unsure about something, acknowledge that uncertainty
+- Use a friendly and professional tone
+
+Current conversation context: This is a chat interface where users can interact with you directly.`
+    };
+
+    // Add the system message at the start of the conversation
+    const enhancedMessages = [
+      systemMessage,
+      ...messages.map(({ role, content }) => ({
+        role,
+        content,
+      }))
+    ];
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -39,10 +62,9 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages: messages.map(({ role, content }) => ({
-          role,
-          content,
-        })),
+        messages: enhancedMessages,
+        temperature: 0.7, // Slightly increased for more natural responses
+        max_tokens: 500, // Increased to allow for more detailed responses
       }),
     });
 
