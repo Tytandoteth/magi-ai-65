@@ -7,7 +7,7 @@ export const sleep = async (ms: number) => {
 
 export async function fetchWithRetry(
   url: string, 
-  options: RequestInit, 
+  options: RequestInit = {}, 
   retries = MAX_RETRIES, 
   backoff = INITIAL_BACKOFF
 ): Promise<Response> {

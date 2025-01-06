@@ -1,5 +1,5 @@
-import { fetchWithRetry } from '../utils/fetch';
-import { ApiStatus } from '../types';
+import { fetchWithRetry } from '../utils/fetch.ts';
+import { ApiStatus } from '../types.ts';
 
 export async function checkCoinGeckoAPI(): Promise<ApiStatus> {
   console.log('Checking CoinGecko API...');
@@ -11,9 +11,9 @@ export async function checkCoinGeckoAPI(): Promise<ApiStatus> {
     const response = await fetchWithRetry(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
       {
-        headers: {
-          'x-cg-demo-api-key': cgApiKey || ''
-        }
+        headers: cgApiKey ? {
+          'x-cg-demo-api-key': cgApiKey
+        } : {}
       }
     );
 
