@@ -1,5 +1,11 @@
 import { Json } from './base';
 
+/**
+ * Represents analytics data for the MAG token
+ * @property Row - The data structure for reading token analytics records
+ * @property Insert - The data structure for inserting new analytics data
+ * @property Update - The data structure for updating existing analytics data
+ */
 export interface MagTokenAnalytics {
   Row: {
     id: number;
@@ -35,7 +41,7 @@ export interface MagTokenAnalytics {
     transactions_24h?: number | null;
     volume_24h?: number | null;
     market_cap?: number | null;
-    raw_data?: Json | null;
+    raw_data?: number | null;
   };
   Relationships: {
     foreignKeyName: string;
@@ -46,6 +52,12 @@ export interface MagTokenAnalytics {
   }[];
 }
 
+/**
+ * Represents data from Etherscan blockchain explorer
+ * @property Row - The data structure for reading Etherscan data records
+ * @property Insert - The data structure for inserting new Etherscan data
+ * @property Update - The data structure for updating existing Etherscan data
+ */
 export interface EtherscanScraper {
   Row: {
     id: number;

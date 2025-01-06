@@ -1,5 +1,11 @@
 import { Json } from './base';
 
+/**
+ * Represents a chat conversation in the system
+ * @property Row - The data structure for reading conversation records
+ * @property Insert - The data structure for inserting new conversations
+ * @property Update - The data structure for updating existing conversations
+ */
 export interface ChatConversation {
   Row: {
     id: number;
@@ -31,6 +37,12 @@ export interface ChatConversation {
   }[];
 }
 
+/**
+ * Represents an individual message within a chat conversation
+ * @property Row - The data structure for reading message records
+ * @property Insert - The data structure for inserting new messages
+ * @property Update - The data structure for updating existing messages
+ */
 export interface ChatMessage {
   Row: {
     id: number;
@@ -68,6 +80,12 @@ export interface ChatMessage {
   }[];
 }
 
+/**
+ * Represents metrics and analytics data for AI agent interactions
+ * @property Row - The data structure for reading metric records
+ * @property Insert - The data structure for inserting new metrics
+ * @property Update - The data structure for updating existing metrics
+ */
 export interface AIAgentMetrics {
   Row: {
     id: number;

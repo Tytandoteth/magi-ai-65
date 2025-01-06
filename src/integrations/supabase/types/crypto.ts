@@ -1,5 +1,11 @@
 import { Json } from './base';
 
+/**
+ * Represents cryptocurrency news articles and their metadata
+ * @property Row - The data structure for reading news records
+ * @property Insert - The data structure for inserting new news articles
+ * @property Update - The data structure for updating existing news articles
+ */
 export interface CryptoNews {
   Row: {
     id: number;
@@ -43,6 +49,12 @@ export interface CryptoNews {
   }[];
 }
 
+/**
+ * Represents DeFi market data for various cryptocurrencies
+ * @property Row - The data structure for reading market data records
+ * @property Insert - The data structure for inserting new market data
+ * @property Update - The data structure for updating existing market data
+ */
 export interface DefiMarketData {
   Row: {
     id: number;
