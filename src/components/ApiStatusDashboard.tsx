@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiStatus } from "@/types/api";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const ApiStatusDashboard = () => {
   const { data: apiStatuses, isLoading, error } = useQuery({
@@ -18,13 +19,37 @@ const ApiStatusDashboard = () => {
   const getStatusColor = (status: ApiStatus['status']) => {
     switch (status) {
       case 'operational':
-        return 'bg-green-500';
+        return 'bg-green-500 hover:bg-green-600';
       case 'degraded':
-        return 'bg-yellow-500';
+        return 'bg-yellow-500 hover:bg-yellow-600';
       case 'down':
-        return 'bg-red-500';
+        return 'bg-red-500 hover:bg-red-600';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-500 hover:bg-gray-600';
+    }
+  };
+
+  const formatErrorMessage = (error: string) => {
+    try {
+      // Try to parse JSON error message
+      const parsedError = JSON.parse(error);
+      if (parsedError.detail) {
+        return parsedError.detail;
+      }
+      if (parsedError.message) {
+        return parsedError.message;
+      }
+      // If it's HTML, return a generic message
+      if (error.includes('<!DOCTYPE html>')) {
+        return 'Service unavailable';
+      }
+      return String(parsedError);
+    } catch {
+      // If not JSON, clean up HTML content
+      if (error.includes('<!DOCTYPE html>')) {
+        return 'Service unavailable';
+      }
+      return error;
     }
   };
 
@@ -59,31 +84,42 @@ const ApiStatusDashboard = () => {
         <CardDescription>Real-time status of integrated APIs</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {apiStatuses && Object.entries(apiStatuses).map(([name, status]) => (
-            <div key={name} className="flex items-center justify-between p-4 bg-secondary rounded-lg">
-              <div>
-                <h3 className="font-medium">{name}</h3>
+        <ScrollArea className="h-[400px] pr-4">
+          <div className="space-y-4">
+            {apiStatuses && Object.entries(apiStatuses).map(([name, status]) => (
+              <div 
+                key={name} 
+                className="flex flex-col space-y-2 p-4 bg-secondary rounded-lg border border-secondary-foreground/10"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-medium capitalize">{name}</h3>
+                    <Badge className={getStatusColor(status.status)}>
+                      {status.status}
+                    </Badge>
+                  </div>
+                  {status.responseTime && (
+                    <span className="text-sm text-muted-foreground">
+                      {status.responseTime}ms
+                    </span>
+                  )}
+                </div>
+                
                 <p className="text-sm text-muted-foreground">
                   Last checked: {new Date(status.lastChecked).toLocaleTimeString()}
                 </p>
+                
                 {status.error && (
-                  <p className="text-sm text-red-400 mt-1">{status.error}</p>
+                  <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                    <p className="text-sm text-destructive">
+                      {formatErrorMessage(status.error)}
+                    </p>
+                  </div>
                 )}
               </div>
-              <div className="flex items-center gap-4">
-                {status.responseTime && (
-                  <span className="text-sm text-muted-foreground">
-                    {status.responseTime}ms
-                  </span>
-                )}
-                <Badge className={getStatusColor(status.status)}>
-                  {status.status}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
