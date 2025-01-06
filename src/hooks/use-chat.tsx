@@ -1,27 +1,13 @@
-import { useState } from "react";
-import { Message, ChatState } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
+import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
-
-interface ApiLog {
-  timestamp: Date;
-  request: {
-    messages: Message[];
-  };
-  response?: {
-    content: string;
-  };
-  error?: string;
-}
+import { useApiLogs } from "./use-api-logs";
+import { useChatMessages } from "./use-chat-messages";
 
 export const useChat = () => {
-  const [chatState, setChatState] = useState<ChatState>({
-    messages: [],
-    isLoading: false,
-    error: null,
-  });
-  const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
   const { toast } = useToast();
+  const { apiLogs, addApiLog } = useApiLogs();
+  const { chatState, addMessage, setLoading, setError } = useChatMessages();
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -33,15 +19,12 @@ export const useChat = () => {
       timestamp: new Date(),
     };
 
-    setChatState((prev) => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      isLoading: true,
-      error: null,
-    }));
+    addMessage(userMessage);
+    setLoading(true);
+    setError(null);
 
     const currentMessages = [...chatState.messages, userMessage];
-    const apiLog: ApiLog = {
+    const apiLog = {
       timestamp: new Date(),
       request: {
         messages: currentMessages,
@@ -70,23 +53,16 @@ export const useChat = () => {
       };
 
       apiLog.response = data.response;
-      setApiLogs(prev => [...prev, apiLog]);
-
-      setChatState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, assistantMessage],
-        isLoading: false,
-      }));
+      addApiLog(apiLog);
+      addMessage(assistantMessage);
+      setLoading(false);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
       apiLog.error = error.message;
-      setApiLogs(prev => [...prev, apiLog]);
+      addApiLog(apiLog);
       
-      setChatState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Failed to get response. Please try again.",
-      }));
+      setError("Failed to get response. Please try again.");
+      setLoading(false);
 
       toast({
         variant: "destructive",
