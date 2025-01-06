@@ -130,12 +130,16 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
   
   console.log('Fetching tweets for queries:', searchQueries);
   
-  const twitterPromises = searchQueries.map(query => fetchLatestTweets(query, 10));
+  const twitterPromises = searchQueries.map(async (query) => {
+    const response = await searchTweets({ query, maxResults: 10 });
+    return response.data || [];
+  });
+  
   const twitterResults = await Promise.all(twitterPromises);
   
   // Combine and deduplicate tweets
   const allTweets = twitterResults
-    .flatMap(result => result?.data || [])
+    .flat()
     .filter((tweet, index, self) => 
       index === self.findIndex(t => t.id === tweet.id)
     );
