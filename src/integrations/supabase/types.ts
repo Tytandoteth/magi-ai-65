@@ -499,6 +499,48 @@ export type Database = {
         }
         Relationships: []
       }
+      token_metadata: {
+        Row: {
+          categories: string[] | null
+          coingecko_id: string | null
+          created_at: string
+          description: string | null
+          id: number
+          last_updated: string | null
+          market_data: Json | null
+          metadata: Json | null
+          name: string
+          platforms: Json | null
+          symbol: string
+        }
+        Insert: {
+          categories?: string[] | null
+          coingecko_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: number
+          last_updated?: string | null
+          market_data?: Json | null
+          metadata?: Json | null
+          name: string
+          platforms?: Json | null
+          symbol: string
+        }
+        Update: {
+          categories?: string[] | null
+          coingecko_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: number
+          last_updated?: string | null
+          market_data?: Json | null
+          metadata?: Json | null
+          name?: string
+          platforms?: Json | null
+          symbol?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,6 +7,7 @@ interface TokenProfile {
   price?: number;
   marketCap?: number;
   volume24h?: number;
+  description?: string;
   defiMetrics?: {
     tvl?: number;
     change24h?: number;
@@ -24,6 +25,96 @@ interface TokenProfile {
       timestamp: string;
     }[];
   };
+}
+
+async function fetchCoinGeckoData(symbol: string): Promise<any> {
+  try {
+    console.log('Fetching CoinGecko data for:', symbol);
+    const apiKey = Deno.env.get('COINGECKO_API_KEY');
+    
+    // First try to get from our database
+    const { data: storedData, error: dbError } = await supabase
+      .from('token_metadata')
+      .select('*')
+      .ilike('symbol', symbol)
+      .order('last_updated', { ascending: false })
+      .limit(1);
+
+    if (dbError) {
+      console.error('Error fetching from database:', dbError);
+    } else if (storedData && storedData.length > 0) {
+      const lastUpdated = new Date(storedData[0].last_updated);
+      const now = new Date();
+      // If data is less than 1 hour old, use it
+      if ((now.getTime() - lastUpdated.getTime()) < 3600000) {
+        console.log('Using cached token data');
+        return storedData[0];
+      }
+    }
+
+    // Search CoinGecko API
+    const searchResponse = await fetch(
+      `https://api.coingecko.com/api/v3/search?query=${symbol}`,
+      {
+        headers: {
+          'x-cg-demo-api-key': apiKey || ''
+        }
+      }
+    );
+
+    if (!searchResponse.ok) {
+      throw new Error(`CoinGecko search API error: ${searchResponse.status}`);
+    }
+
+    const searchData = await searchResponse.json();
+    const topResult = searchData.coins[0];
+
+    if (!topResult) {
+      console.log('No results found for symbol:', symbol);
+      return null;
+    }
+
+    // Fetch detailed data for the top result
+    const detailResponse = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${topResult.id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
+      {
+        headers: {
+          'x-cg-demo-api-key': apiKey || ''
+        }
+      }
+    );
+
+    if (!detailResponse.ok) {
+      throw new Error(`CoinGecko detail API error: ${detailResponse.status}`);
+    }
+
+    const tokenData = await detailResponse.json();
+    console.log('Fetched token data:', tokenData);
+
+    // Store in our database
+    const { error: insertError } = await supabase
+      .from('token_metadata')
+      .insert({
+        symbol: tokenData.symbol.toUpperCase(),
+        name: tokenData.name,
+        coingecko_id: tokenData.id,
+        description: tokenData.description?.en,
+        categories: tokenData.categories,
+        platforms: tokenData.platforms,
+        market_data: tokenData.market_data,
+        last_updated: new Date().toISOString(),
+        metadata: tokenData
+      });
+
+    if (insertError) {
+      console.error('Error storing token data:', insertError);
+    }
+
+    return tokenData;
+  } catch (error) {
+    console.error('Error fetching CoinGecko data:', error);
+    return null;
+  }
 }
 
 async function fetchDefiLlamaData(symbol: string): Promise<any> {
@@ -48,41 +139,6 @@ async function fetchDefiLlamaData(symbol: string): Promise<any> {
       return protocolData[0];
     }
 
-    // If not in cache, try to fetch from DeFi Llama API
-    console.log('Fetching from DeFi Llama API');
-    const response = await fetch('https://api.llama.fi/protocols');
-    const protocols = await response.json();
-    
-    const protocol = protocols.find((p: any) => 
-      p.symbol?.toLowerCase() === symbol.toLowerCase() ||
-      p.name.toLowerCase().includes(symbol.toLowerCase())
-    );
-
-    if (protocol) {
-      console.log('Found protocol in DeFi Llama API:', protocol);
-      
-      // Store in our database for future use
-      const { error: insertError } = await supabase
-        .from('defi_llama_protocols')
-        .insert({
-          protocol_id: protocol.id,
-          name: protocol.name,
-          symbol: protocol.symbol,
-          category: protocol.category,
-          tvl: protocol.tvl,
-          change_1h: protocol.change_1h,
-          change_1d: protocol.change_1d,
-          change_7d: protocol.change_7d,
-          raw_data: protocol
-        });
-
-      if (insertError) {
-        console.error('Error caching DeFi Llama data:', insertError);
-      }
-
-      return protocol;
-    }
-
     return null;
   } catch (error) {
     console.error('Error fetching DeFi Llama data:', error);
@@ -97,17 +153,9 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
     // Clean up symbol (remove $ if present)
     const cleanSymbol = symbol.replace('$', '').toUpperCase();
     
-    // Fetch market data from our database
-    const { data: marketData, error: marketError } = await supabase
-      .from('defi_market_data')
-      .select('*')
-      .or(`symbol.ilike.${cleanSymbol},name.ilike.%${cleanSymbol}%`)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (marketError) {
-      console.error('Error fetching market data:', marketError);
-    }
+    // Fetch CoinGecko data
+    const tokenData = await fetchCoinGeckoData(cleanSymbol);
+    console.log('CoinGecko data:', tokenData);
 
     // Fetch DeFi Llama data
     const defiLlamaData = await fetchDefiLlamaData(cleanSymbol);
@@ -129,14 +177,18 @@ export async function createTokenProfile(symbol: string): Promise<TokenProfile |
     // Calculate sentiment based on tweet content and engagement
     const sentiment = calculateSentiment(tweets);
 
-    const latestMarketData = marketData?.[0];
+    if (!tokenData) {
+      console.log('No token data found for symbol:', cleanSymbol);
+      return null;
+    }
 
     return {
       symbol: cleanSymbol,
-      name: latestMarketData?.name || defiLlamaData?.name || `${cleanSymbol} Token`,
-      price: latestMarketData?.current_price || defiLlamaData?.price,
-      marketCap: latestMarketData?.market_cap || defiLlamaData?.mcap,
-      volume24h: latestMarketData?.total_volume,
+      name: tokenData.name,
+      price: tokenData.market_data?.current_price?.usd,
+      marketCap: tokenData.market_data?.market_cap?.usd,
+      volume24h: tokenData.market_data?.total_volume?.usd,
+      description: tokenData.description?.en,
       defiMetrics: defiLlamaData ? {
         tvl: defiLlamaData.tvl,
         change24h: defiLlamaData.change_1d,
