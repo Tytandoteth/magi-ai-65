@@ -1,140 +1,37 @@
-import { useState, useRef, useEffect } from "react";
-import { ChatInput } from "@/components/ChatInput";
-import { ChatMessage } from "@/components/ChatMessage";
-import { Message, ChatState } from "@/types/chat";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ApiLogs } from "@/components/ApiLogs";
-
-interface ApiLog {
-  timestamp: Date;
-  request: {
-    messages: Message[];
-  };
-  response?: {
-    content: string;
-  };
-  error?: string;
-}
+import { MarketDataSection } from "@/components/MarketDataSection";
+import { CryptoNewsSection } from "@/components/CryptoNewsSection";
+import { MagAnalyticsSection } from "@/components/MagAnalyticsSection";
+import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [chatState, setChatState] = useState<ChatState>({
-    messages: [],
-    isLoading: false,
-    error: null,
-  });
-  const [apiLogs, setApiLogs] = useState<ApiLog[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatState.messages]);
-
-  const handleSendMessage = async (content: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      role: "user",
-      timestamp: new Date(),
-    };
-
-    setChatState((prev) => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      isLoading: true,
-      error: null,
-    }));
-
-    const currentMessages = [...chatState.messages, userMessage];
-    const apiLog: ApiLog = {
-      timestamp: new Date(),
-      request: {
-        messages: currentMessages,
-      },
-    };
-
-    try {
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
-          messages: currentMessages.map(({ role, content, id, timestamp }) => ({
-            role,
-            content,
-            id,
-            timestamp,
-          })),
-        },
-      });
-
-      if (error) throw error;
-
-      const assistantMessage: Message = {
-        id: Date.now().toString(),
-        content: data.response.content,
-        role: "assistant",
-        timestamp: new Date(),
-      };
-
-      apiLog.response = data.response;
-      setApiLogs(prev => [...prev, apiLog]);
-
-      setChatState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, assistantMessage],
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error("Error:", error);
-      apiLog.error = error.message;
-      setApiLogs(prev => [...prev, apiLog]);
-      
-      setChatState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Failed to get response. Please try again.",
-      }));
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to get response. Please try again.",
-      });
-    }
-  };
+  const [activeTab, setActiveTab] = useState("market");
 
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
-      <Tabs defaultValue="chat" className="flex-1">
-        <TabsList className="mb-4">
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="logs">API Logs</TabsTrigger>
+    <div className="container mx-auto p-4 space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight">Crypto Dashboard</h1>
+      
+      <Tabs defaultValue="market" className="space-y-4" onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="market">Market Data</TabsTrigger>
+          <TabsTrigger value="news">Crypto News</TabsTrigger>
+          <TabsTrigger value="analytics">MAG Analytics</TabsTrigger>
         </TabsList>
-        <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
-          <div className="chat-container flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto py-4">
-              {chatState.messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-              {chatState.isLoading && (
-                <div className="flex justify-start mb-4 px-4">
-                  <div className="bg-[#2A2B2D] text-gray-100 rounded-lg px-4 py-3 border border-gray-700">
-                    <p className="text-sm">Thinking...</p>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-            <ChatInput onSend={handleSendMessage} disabled={chatState.isLoading} />
-          </div>
+
+        <TabsContent value="market" className="space-y-4">
+          <MarketDataSection />
         </TabsContent>
-        <TabsContent value="logs" className="flex-1 flex flex-col mt-0">
-          <div className="chat-container flex-1">
-            <ApiLogs logs={apiLogs} />
-          </div>
+
+        <TabsContent value="news" className="space-y-4">
+          <CryptoNewsSection />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <MagAnalyticsSection />
         </TabsContent>
       </Tabs>
     </div>
