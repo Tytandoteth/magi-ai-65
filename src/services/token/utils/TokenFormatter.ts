@@ -17,7 +17,7 @@ export class TokenFormatter {
       return "I couldn't find reliable data for this token.";
     }
 
-    let response = `Here are the current metrics for ${data.basicInfo.name} (${data.basicInfo.symbol}):\n\n`;
+    let response = `Let me tell you about ${data.basicInfo.name} (${data.basicInfo.symbol}):\n\n`;
 
     // Market Data
     if (data.marketData) {
@@ -34,7 +34,8 @@ export class TokenFormatter {
       }
 
       if (data.marketData.priceChange24h !== undefined) {
-        response += `24h Price Change: ${this.formatPercentage(data.marketData.priceChange24h)}%\n`;
+        const changePrefix = data.marketData.priceChange24h >= 0 ? '📈' : '📉';
+        response += `24h Price Change: ${changePrefix} ${this.formatPercentage(data.marketData.priceChange24h)}%\n`;
       }
     }
 
@@ -47,7 +48,8 @@ export class TokenFormatter {
       }
       
       if (data.defiMetrics.change24h !== undefined) {
-        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
+        const changePrefix = data.defiMetrics.change24h >= 0 ? '📈' : '📉';
+        response += `24h TVL Change: ${changePrefix} ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
       }
 
       if (data.defiMetrics.category) {
@@ -55,11 +57,11 @@ export class TokenFormatter {
       }
 
       if (data.defiMetrics.chains && data.defiMetrics.chains.length > 0) {
-        response += `Chains: ${data.defiMetrics.chains.join(', ')}\n`;
+        response += `Available on: ${data.defiMetrics.chains.join(', ')}\n`;
       }
 
       if (data.defiMetrics.apy !== undefined) {
-        response += `APY: ${this.formatPercentage(data.defiMetrics.apy)}%\n`;
+        response += `Current APY: ${this.formatPercentage(data.defiMetrics.apy)}%\n`;
       }
     }
 
@@ -70,11 +72,11 @@ export class TokenFormatter {
 
     // Description
     if (data.basicInfo.description) {
-      response += `\nDescription:\n${data.basicInfo.description}\n`;
+      response += `\nAbout ${data.basicInfo.symbol}:\n${data.basicInfo.description}\n`;
     }
 
     // Risk Warning
-    response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
+    response += `\n⚠️ Remember: Crypto investments carry significant risks. Always DYOR (Do Your Own Research) and never invest more than you can afford to lose.`;
 
     return response;
   }
