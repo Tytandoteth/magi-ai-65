@@ -64,16 +64,20 @@ export class TokenRepository {
         description: tokenData.description,
         market_data: tokenData.market_data as TokenData['market_data'],
         metadata: {
-          additional_metrics: tokenData.metadata?.additional_metrics
-        },
-        protocol_data: protocolData ? {
+          additional_metrics: tokenData.metadata?.additional_metrics as TokenMetadata['additional_metrics']
+        }
+      };
+
+      // Add protocol data if available
+      if (protocolData) {
+        transformedData.protocol_data = {
           tvl: protocolData.tvl,
           change_24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: protocolData.raw_data?.chains as string[],
-          apy: protocolData.raw_data?.apy as number
-        } : undefined
-      };
+          chains: Array.isArray(protocolData.raw_data?.chains) ? protocolData.raw_data.chains : [],
+          apy: typeof protocolData.raw_data?.apy === 'number' ? protocolData.raw_data.apy : undefined
+        };
+      }
 
       // Cache the result
       this.cache.set(symbol, {
