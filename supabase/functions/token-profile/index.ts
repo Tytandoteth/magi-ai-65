@@ -20,21 +20,26 @@ serve(async (req) => {
     console.log('Supabase client initialized');
 
     // First check our database
-    const tokenData = await getTokenFromDatabase(supabase, cleanSymbol);
+    try {
+      const tokenData = await getTokenFromDatabase(supabase, cleanSymbol);
 
-    // If we have recent data (less than 5 minutes old), use it
-    if (tokenData && tokenData.last_updated) {
-      const lastUpdated = new Date(tokenData.last_updated);
-      const now = new Date();
-      if ((now.getTime() - lastUpdated.getTime()) < 300000) {
-        console.log('Using cached token data for:', cleanSymbol);
-        return new Response(
-          JSON.stringify({
-            data: formatTokenResponse(tokenData)
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // If we have recent data (less than 5 minutes old), use it
+      if (tokenData && tokenData.last_updated) {
+        const lastUpdated = new Date(tokenData.last_updated);
+        const now = new Date();
+        if ((now.getTime() - lastUpdated.getTime()) < 300000) {
+          console.log('Using cached token data for:', cleanSymbol);
+          return new Response(
+            JSON.stringify({
+              data: formatTokenResponse(tokenData)
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
+    } catch (dbError) {
+      console.error('Error fetching from database:', dbError);
+      // Continue to CoinGecko if database fetch fails
     }
 
     // If not in database or data is stale, fetch from CoinGecko
