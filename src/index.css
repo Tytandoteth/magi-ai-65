@@ -52,20 +52,19 @@
 }
 
 .chat-container {
-  @apply bg-[#1a1b1e] rounded-xl shadow-lg relative;
+  @apply bg-[#1a1b1e] rounded-xl shadow-lg;
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
 
 .chat-container::before {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
+  inset: -2px;
   background: linear-gradient(45deg, #FFDEE2, #D3E4FD, #FFDEE2);
   background-size: 400% 400%;
-  border-radius: 0.8rem;
+  border-radius: 1rem;
   z-index: -1;
   animation: glowingBorder 3s ease infinite;
   opacity: 0.4;
@@ -89,7 +88,7 @@
 }
 
 .chat-container:hover::before {
-  opacity: 0.5;
+  opacity: 0.6;
   filter: blur(8px);
 }
 
