@@ -11,25 +11,28 @@ export class TokenOperations {
   combineTokenData(tokenData: any, protocolData: any): any {
     console.log('Combining token data:', { tokenData, protocolData });
 
-    // Only combine protocol data if the symbols match
-    if (protocolData && tokenData && 
-        protocolData.symbol && tokenData.symbol &&
-        protocolData.symbol.toLowerCase() === tokenData.symbol.toLowerCase()) {
-      console.log('Symbols match, combining protocol data');
-      return {
-        ...tokenData,
-        defiMetrics: {
-          tvl: protocolData.tvl,
-          change24h: protocolData.change_1d,
-          category: protocolData.category,
-          chains: protocolData.chains,
-          protocol: protocolData.name
-        }
+    if (!tokenData && !protocolData) {
+      return null;
+    }
+
+    // Create base combined data from token data
+    const combinedData = tokenData ? { ...tokenData } : { 
+      name: protocolData?.name,
+      symbol: protocolData?.symbol
+    };
+
+    // Add protocol metrics if available
+    if (protocolData) {
+      combinedData.defiMetrics = {
+        tvl: protocolData.tvl,
+        change_1d: protocolData.change_1d,
+        category: protocolData.category,
+        chains: protocolData.chains,
+        protocol: protocolData.name
       };
     }
 
-    // If symbols don't match, return token data without protocol metrics
-    console.log('Symbols do not match, returning token data only');
-    return tokenData;
+    console.log('Combined data result:', combinedData);
+    return combinedData;
   }
 }

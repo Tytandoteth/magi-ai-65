@@ -45,14 +45,14 @@ export class TokenFormatter {
       }
     }
 
-    // Add description if available
-    if (data.description) {
-      response += `\nDescription:\n${data.description}\n`;
-    }
-
     // Add market cap rank if available
     if (data.metadata?.additional_metrics?.market_cap_rank) {
       response += `\nMarket Cap Rank: #${data.metadata.additional_metrics.market_cap_rank}\n`;
+    }
+
+    // Add description if available
+    if (data.description) {
+      response += `\nDescription:\n${data.description}\n`;
     }
 
     // Add disclaimer

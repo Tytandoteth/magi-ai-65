@@ -48,11 +48,7 @@ export class TokenInfoService implements ITokenService {
       }
 
       // Combine token and protocol data
-      const combinedData = {
-        ...finalTokenData,
-        defiMetrics: protocolData
-      };
-
+      const combinedData = this.tokenOperations.combineTokenData(finalTokenData, protocolData);
       console.log('Combined data:', combinedData);
 
       // Format the response
