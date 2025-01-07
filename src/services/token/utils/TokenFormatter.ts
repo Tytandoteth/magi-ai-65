@@ -62,12 +62,22 @@ export class TokenFormatter {
   }
 
   private formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: value < 1 ? 8 : 2,
-      maximumFractionDigits: value < 1 ? 8 : 2
-    }).format(value);
+    if (value >= 1) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    } else {
+      // For values less than 1, use more decimal places
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 8
+      }).format(value);
+    }
   }
 
   private formatPercentage(value: number): string {
