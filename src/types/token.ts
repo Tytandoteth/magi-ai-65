@@ -15,6 +15,15 @@ export interface TokenMarketData {
   price_change_percentage_24h?: number;
 }
 
+// Protocol specific data
+export interface ProtocolData {
+  tvl?: number;
+  change_24h?: number;
+  category?: string;
+  chains?: string[];
+  apy?: number;
+}
+
 // Metadata specific interface
 export interface TokenMetadata {
   additional_metrics?: {
@@ -29,37 +38,40 @@ export interface TokenMetadata {
 export interface TokenData extends BaseTokenData {
   market_data?: TokenMarketData;
   metadata?: TokenMetadata;
+  protocol_data?: ProtocolData;
 }
 
-// Raw data from database
-export interface RawTokenData {
-  id: number;
-  created_at: string;
-  symbol: string;
-  name: string;
-  coingecko_id: string | null;
-  description: string | null;
-  categories: string[] | null;
-  platforms: Json | null;
-  market_data: Json | null;
-  last_updated: string | null;
-  metadata: Json | null;
+// Custom error classes
+export class TokenError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+    this.name = 'TokenError';
+  }
 }
 
-// Protocol specific data
-export interface ProtocolData {
-  tvl?: number;
-  change_1d?: number;
-  category?: string;
-  name?: string;
-  chains?: string[];
-  apy?: number;
+export class TokenNotFoundError extends TokenError {
+  constructor(symbol: string) {
+    super(`Token ${symbol} not found`, 'TOKEN_NOT_FOUND');
+    this.name = 'TokenNotFoundError';
+  }
 }
 
-// Combined response interface
-export interface TokenResponse {
-  success: boolean;
-  data?: TokenData;
-  protocolData?: ProtocolData;
-  error?: string;
+export class TokenFetchError extends TokenError {
+  constructor(symbol: string, details?: string) {
+    super(
+      `Failed to fetch data for token ${symbol}${details ? `: ${details}` : ''}`,
+      'TOKEN_FETCH_ERROR'
+    );
+    this.name = 'TokenFetchError';
+  }
+}
+
+// Actions interface
+export interface TokenAction {
+  type: string;
+  payload: {
+    symbol: string;
+    data?: TokenData;
+    error?: string;
+  };
 }
