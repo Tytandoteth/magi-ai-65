@@ -1,32 +1,55 @@
 import { TokenData, ProtocolData, TokenResponse } from "@/types/token";
 
 export class TokenFormatter {
-  static formatTokenResponse(
-    tokenData: TokenData | null, 
-    protocolData: ProtocolData | null, 
-    isTVLQuery: boolean
-  ): TokenResponse {
-    if (!tokenData && !protocolData) {
-      return {
-        success: false,
-        error: "No data available for this token"
-      };
+  private static formatNumber(value: number): string {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  private static formatPercentage(value: number): string {
+    return `${value.toFixed(2)}%`;
+  }
+
+  private static formatMarketData(marketData: TokenData['market_data']): string {
+    let result = '';
+    
+    if (marketData?.current_price?.usd) {
+      result += `Current Price: $${this.formatNumber(marketData.current_price.usd)}\n`;
+    }
+    
+    if (marketData?.market_cap?.usd) {
+      result += `Market Cap: $${this.formatNumber(marketData.market_cap.usd)}\n`;
+    }
+    
+    if (marketData?.total_volume?.usd) {
+      result += `24h Trading Volume: $${this.formatNumber(marketData.total_volume.usd)}\n`;
     }
 
-    // If it's a TVL query but no protocol data
-    if (isTVLQuery && !protocolData?.tvl) {
-      return {
-        success: false,
-        error: `TVL data not available for ${tokenData?.name || 'this token'}`,
-        data: tokenData || undefined
-      };
+    if (marketData?.price_change_percentage_24h) {
+      result += `24h Price Change: ${this.formatPercentage(marketData.price_change_percentage_24h)}\n`;
     }
 
-    return {
-      success: true,
-      data: tokenData || undefined,
-      protocolData: protocolData || undefined
-    };
+    return result;
+  }
+
+  private static formatProtocolData(protocolData: ProtocolData): string {
+    let result = '\nProtocol Metrics:\n';
+    
+    if (protocolData.tvl) {
+      result += `Total Value Locked (TVL): $${this.formatNumber(protocolData.tvl)}\n`;
+    }
+    
+    if (protocolData.change_1d) {
+      result += `24h TVL Change: ${this.formatPercentage(protocolData.change_1d)}\n`;
+    }
+
+    if (protocolData.category) {
+      result += `Category: ${protocolData.category}\n`;
+    }
+
+    return result;
   }
 
   static formatResponse(response: TokenResponse): string {
@@ -38,37 +61,12 @@ export class TokenFormatter {
 
     // Market Data
     if (response.data?.market_data) {
-      const marketData = response.data.market_data;
-      
-      if (marketData.current_price?.usd) {
-        result += `Current Price: $${marketData.current_price.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.market_cap?.usd) {
-        result += `Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.total_volume?.usd) {
-        result += `24h Trading Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
-      }
-
-      if (marketData.price_change_percentage_24h) {
-        result += `24h Price Change: ${marketData.price_change_percentage_24h.toFixed(2)}%\n`;
-      }
+      result += this.formatMarketData(response.data.market_data);
     }
 
     // Protocol Data (TVL)
-    if (response.protocolData?.tvl) {
-      result += `\nProtocol Metrics:\n`;
-      result += `Total Value Locked (TVL): $${response.protocolData.tvl.toLocaleString()}\n`;
-      
-      if (response.protocolData.change_1d) {
-        result += `24h TVL Change: ${response.protocolData.change_1d.toFixed(2)}%\n`;
-      }
-
-      if (response.protocolData.category) {
-        result += `Category: ${response.protocolData.category}\n`;
-      }
+    if (response.protocolData) {
+      result += this.formatProtocolData(response.protocolData);
     }
 
     // Description
