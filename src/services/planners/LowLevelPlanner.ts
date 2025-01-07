@@ -52,6 +52,8 @@ export class LowLevelPlanner {
   }
 
   private async getTokenInfo(symbol: string): Promise<string> {
+    console.log('Getting token info for:', symbol);
+    
     if (!symbol) {
       return "Please provide a token symbol to get information about.";
     }
@@ -86,11 +88,28 @@ export class LowLevelPlanner {
         }
         
         try {
-          const tokenProfile = await createTokenProfile(token);
-          return tokenProfile;
+          // If token not in database, try to get info from CoinGecko
+          const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
+            body: { symbol: token }
+          });
+
+          if (cgError || !cgResponse) {
+            console.log(`No data found for token ${token}`);
+            return `I couldn't find reliable information about ${token}. This token might be:
+            - Not yet listed on major exchanges
+            - A new or emerging project
+            - Using a different symbol
+            
+            Please verify the token symbol and conduct thorough research before considering any investment. Consider checking:
+            - Official project documentation
+            - Major crypto exchanges
+            - Community forums and social media`;
+          }
+
+          return cgResponse.data;
         } catch (error) {
           console.error(`Error fetching info for ${token}:`, error);
-          return `I couldn't find detailed information about ${token}. This token might be new, unverified, or not listed on major exchanges. Please conduct thorough research and exercise caution before considering any investment.`;
+          return `I encountered an error while fetching data for ${token}. Please try again later.`;
         }
       }));
 
