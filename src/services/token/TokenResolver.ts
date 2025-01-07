@@ -25,6 +25,12 @@ export class TokenResolver {
       return null;
     }
 
+    // Special handling for MAG token
+    if (normalizedContent === 'mag' || normalizedContent === 'magnify') {
+      console.log('Special case: MAG token identified');
+      return 'MAG';
+    }
+
     // Special handling for PENGU/Pudgy Penguins
     if (normalizedContent === 'pengu' || normalizedContent === 'pudgy') {
       console.log('Special case: PENGU token identified');
@@ -83,6 +89,11 @@ export class TokenResolver {
     
     if (!cleanContent) {
       return "Please provide a valid token symbol using the $ symbol (e.g., $ETH).";
+    }
+    
+    // Special handling for MAG-related queries
+    if (cleanContent.includes('mag') || cleanContent === 'magnify') {
+      return `To get information about MAG (Magnify), use $MAG.`;
     }
     
     // Special handling for PENGU-related queries

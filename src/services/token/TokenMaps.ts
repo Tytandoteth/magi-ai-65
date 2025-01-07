@@ -19,6 +19,14 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
       56: { address: '0x2170ed0880ac9a755fd29b2688956bd959f933f8', verified: true }
     }
   }],
+  ['MAG', {
+    symbol: 'MAG',
+    commonNames: ['mag', 'magnify', 'magnifycash'],
+    decimals: 18,
+    chainData: {
+      1: { address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', verified: true }
+    }
+  }],
   ['PENGU', {
     symbol: 'PENGU',
     commonNames: ['pengu', 'pudgypenguins', 'pudgy'],
