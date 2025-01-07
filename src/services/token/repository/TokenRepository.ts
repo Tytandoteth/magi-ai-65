@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, TokenNotFoundError, TokenFetchError, TokenError } from "@/types/token";
+import { TokenData, TokenNotFoundError, TokenFetchError, TokenError, TokenMetadata } from "@/types/token";
 
 export class TokenRepository {
   private static instance: TokenRepository;
@@ -70,12 +70,13 @@ export class TokenRepository {
 
       // Add protocol data if available
       if (protocolData) {
+        const rawData = protocolData.raw_data as Record<string, unknown>;
         transformedData.protocol_data = {
           tvl: protocolData.tvl,
           change_24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: Array.isArray(protocolData.raw_data?.chains) ? protocolData.raw_data.chains : [],
-          apy: typeof protocolData.raw_data?.apy === 'number' ? protocolData.raw_data.apy : undefined
+          chains: Array.isArray(rawData?.chains) ? rawData.chains as string[] : [],
+          apy: typeof rawData?.apy === 'number' ? rawData.apy : undefined
         };
       }
 

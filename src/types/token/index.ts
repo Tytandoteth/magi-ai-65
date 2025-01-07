@@ -66,3 +66,18 @@ export class TokenFetchError extends TokenError {
     this.name = 'TokenFetchError';
   }
 }
+
+// Raw data from database
+export interface RawTokenData {
+  id: number;
+  created_at: string;
+  symbol: string;
+  name: string;
+  coingecko_id: string | null;
+  description: string | null;
+  categories: string[] | null;
+  platforms: Json | null;
+  market_data: Json | null;
+  last_updated: string | null;
+  metadata: Json | null;
+}
