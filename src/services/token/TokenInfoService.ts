@@ -28,7 +28,7 @@ export class TokenInfoService implements ITokenService {
     
     try {
       const cleanSymbol = this.tokenOperations.validateTokenSymbol(symbol);
-      const isTVLQuery = this.tokenOperations.isTVLQuery(symbol);
+      console.log('Cleaned symbol:', cleanSymbol);
 
       // Fetch data from different sources
       const [tokenData, protocolData] = await Promise.all([

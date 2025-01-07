@@ -31,17 +31,17 @@ export class TokenFormatter {
 
     // Add protocol metrics if available
     if (data.defiMetrics) {
+      response += `\nProtocol Metrics:\n`;
       if (data.defiMetrics.tvl) {
-        response += `\nProtocol Metrics:\n`;
         response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
-        
-        if (data.defiMetrics.change_1d) {
-          response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change_1d)}%\n`;
-        }
+      }
+      
+      if (data.defiMetrics.change_1d) {
+        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change_1d)}%\n`;
+      }
 
-        if (data.defiMetrics.category) {
-          response += `Category: ${data.defiMetrics.category}\n`;
-        }
+      if (data.defiMetrics.category) {
+        response += `Category: ${data.defiMetrics.category}\n`;
       }
     }
 
