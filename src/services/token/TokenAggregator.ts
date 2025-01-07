@@ -31,18 +31,16 @@ interface AggregatedTokenData {
 
 export class TokenAggregator {
   private tokenRepo: TokenRepository;
-  private tokenResolver: TokenResolver;
 
   constructor() {
     this.tokenRepo = TokenRepository.getInstance();
-    this.tokenResolver = new TokenResolver();
   }
 
   async aggregateTokenData(inputSymbol: string): Promise<AggregatedTokenData> {
     console.log('Starting token data aggregation for:', inputSymbol);
     
-    // Resolve the token symbol
-    const resolvedSymbol = this.tokenResolver.resolveTokenSymbol(inputSymbol);
+    // Resolve the token symbol using the static method
+    const resolvedSymbol = TokenResolver.resolveTokenSymbol(inputSymbol);
     if (!resolvedSymbol) {
       throw new TokenError(`Could not resolve symbol: ${inputSymbol}`, 'INVALID_SYMBOL');
     }
@@ -65,6 +63,9 @@ export class TokenAggregator {
       }
       console.log('Protocol data fetched:', protocolData);
 
+      // Type assertion for raw_data
+      const rawData = protocolData?.raw_data as { chains?: string[]; apy?: number } | null;
+
       // Combine the data
       const aggregatedData: AggregatedTokenData = {
         basicInfo: {
@@ -82,13 +83,13 @@ export class TokenAggregator {
           tvl: protocolData.tvl,
           change24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: protocolData.raw_data?.chains as string[] || [],
-          apy: protocolData.raw_data?.apy as number
+          chains: rawData?.chains || [],
+          apy: rawData?.apy
         } : undefined,
         metadata: tokenData?.metadata?.additional_metrics ? {
           marketCapRank: tokenData.metadata.additional_metrics.market_cap_rank,
           socialScore: tokenData.metadata.additional_metrics.coingecko_score,
-          platforms: tokenData.platforms as Record<string, string>
+          platforms: {} // Initialize with empty object as platforms might not be available
         } : undefined
       };
 

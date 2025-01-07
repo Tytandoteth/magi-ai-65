@@ -32,6 +32,7 @@ export interface TokenMetadata {
     developer_score?: number;
     community_score?: number;
   };
+  platforms?: Record<string, string>;
 }
 
 // Main token data interface
@@ -39,6 +40,7 @@ export interface TokenData extends BaseTokenData {
   market_data?: TokenMarketData;
   metadata?: TokenMetadata;
   protocol_data?: ProtocolData;
+  platforms?: Record<string, string>;
 }
 
 // Custom error classes
