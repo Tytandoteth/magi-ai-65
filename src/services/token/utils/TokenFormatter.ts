@@ -37,8 +37,8 @@ export class TokenFormatter {
         response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
       }
       
-      if (data.defiMetrics.change24h) {
-        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
+      if (data.defiMetrics.change_1d) {
+        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change_1d)}%\n`;
       }
 
       if (data.defiMetrics.category) {

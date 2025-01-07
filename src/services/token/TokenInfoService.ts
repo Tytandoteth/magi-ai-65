@@ -49,7 +49,10 @@ export class TokenInfoService implements ITokenService {
 
       // For TVL queries, prioritize protocol data
       if (isTVLQuery && protocolData?.tvl) {
-        return this.tokenFormatter.formatTVLResponse(protocolData);
+        return this.tokenFormatter.formatResponse({ 
+          ...finalTokenData,
+          defiMetrics: protocolData 
+        });
       }
 
       // Combine and validate data
