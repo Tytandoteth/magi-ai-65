@@ -65,7 +65,8 @@
 
 .textarea-container textarea {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  background-color: #1e1f23;
 }
 
 .textarea-container::before {
@@ -84,7 +85,7 @@
   opacity: 0.8;
   animation: borderFlow 3s linear infinite;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 @keyframes borderFlow {
