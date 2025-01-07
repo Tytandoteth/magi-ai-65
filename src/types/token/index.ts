@@ -12,7 +12,6 @@ export interface TokenMarketData {
   current_price?: { usd?: number };
   market_cap?: { usd?: number };
   total_volume?: { usd?: number };
-  price_change_24h?: number;
   price_change_percentage_24h?: number;
 }
 
@@ -25,7 +24,7 @@ export interface ProtocolData {
   apy?: number;
 }
 
-// Metadata interface
+// Metadata specific interface
 export interface TokenMetadata {
   additional_metrics?: {
     market_cap_rank?: number;
@@ -35,7 +34,7 @@ export interface TokenMetadata {
   };
 }
 
-// Combined token data
+// Main token data interface
 export interface TokenData extends BaseTokenData {
   market_data?: TokenMarketData;
   metadata?: TokenMetadata;
