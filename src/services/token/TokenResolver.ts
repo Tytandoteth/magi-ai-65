@@ -7,6 +7,13 @@ export class TokenResolver {
     // Clean the input first
     const cleanInput = content.replace(/\$/g, '').toLowerCase().trim();
     console.log('Cleaned input:', cleanInput);
+
+    // Direct match for uppercase symbols (e.g., BTC, ETH)
+    const upperSymbol = cleanInput.toUpperCase();
+    if (Array.from(commonTokens.values()).includes(upperSymbol)) {
+      console.log('Found direct match for uppercase symbol:', upperSymbol);
+      return upperSymbol;
+    }
     
     // Special case for PENGU variations
     if (cleanInput.includes('peng') || cleanInput === 'pudgy') {

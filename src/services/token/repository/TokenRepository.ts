@@ -78,7 +78,8 @@ export class TokenRepository {
           additional_metrics: tokenData.metadata && typeof tokenData.metadata === 'object' 
             ? (tokenData.metadata as any).additional_metrics 
             : undefined
-        }
+        },
+        platforms: tokenData.platforms || {}
       };
 
       // Add protocol data if available

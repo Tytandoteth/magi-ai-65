@@ -9,7 +9,9 @@ export const commonTokens = new Map([
   ['polkadot', 'DOT'],
   ['pengu', 'PENGU'],
   ['pudgypenguins', 'PENGU'],
-  ['pudgy', 'PENGU']
+  ['pudgy', 'PENGU'],
+  ['aerodrome', 'AERO'],
+  ['mag', 'MAG']
 ]);
 
 export const tokenAliases = new Map([
@@ -20,5 +22,6 @@ export const tokenAliases = new Map([
   ['xrp', 'ripple'],
   ['dot', 'polkadot'],
   ['pengu', 'pudgypenguins'],
-  ['pudgy', 'pudgypenguins']
+  ['pudgy', 'pudgypenguins'],
+  ['aero', 'aerodrome']
 ]);
