@@ -75,52 +75,48 @@ export class LowLevelPlanner {
       const { data: tokenData, error } = await supabase
         .from('token_metadata')
         .select('*')
-        .in('symbol', tokens)
-        .order('last_updated', { ascending: false });
+        .ilike('symbol', tokens[0])
+        .order('last_updated', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Error checking token metadata:', error);
         throw error;
       }
 
-      const knownTokens = new Set(tokenData?.map(t => t.symbol) || []);
-      const responses = await Promise.all(tokens.map(async (token) => {
-        if (knownTokens.has(token)) {
-          const tokenInfo = tokenData?.find(t => t.symbol === token);
-          return this.formatTokenResponse(tokenInfo);
+      if (tokenData && tokenData.length > 0) {
+        console.log('Found token data in database:', tokenData[0]);
+        return this.formatTokenResponse(tokenData[0]);
+      }
+
+      try {
+        console.log(`Fetching data for token: ${tokens[0]}`);
+        const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
+          body: { symbol: tokens[0] }
+        });
+
+        if (cgError) {
+          console.error(`Error fetching token profile for ${tokens[0]}:`, cgError);
+          throw cgError;
         }
-        
-        try {
-          console.log(`Fetching data for token: ${token}`);
-          const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
-            body: { symbol: token }
-          });
 
-          if (cgError) {
-            console.error(`Error fetching token profile for ${token}:`, cgError);
-            throw cgError;
-          }
-
-          if (!cgResponse?.data) {
-            return `I couldn't find reliable information about ${token}. This token might be:
-            - Not yet listed on major exchanges
-            - A new or emerging project
-            - Using a different symbol
-            
-            Please verify the token symbol and conduct thorough research before considering any investment. Consider checking:
-            - Official project documentation
-            - Major crypto exchanges
-            - Community forums and social media`;
-          }
-
-          return cgResponse.data;
-        } catch (error) {
-          console.error(`Error fetching info for ${token}:`, error);
-          return `I encountered an error while fetching data for ${token}. Please try again later.`;
+        if (!cgResponse?.data) {
+          return `I couldn't find reliable information about ${tokens[0]}. This token might be:
+          - Not yet listed on major exchanges
+          - A new or emerging project
+          - Using a different symbol
+          
+          Please verify the token symbol and conduct thorough research before considering any investment. Consider checking:
+          - Official project documentation
+          - Major crypto exchanges
+          - Community forums and social media`;
         }
-      }));
 
-      return responses.join('\n\n');
+        return cgResponse.data;
+      } catch (error) {
+        console.error(`Error fetching info for ${tokens[0]}:`, error);
+        return `I encountered an error while fetching data for ${tokens[0]}. Please try again later.`;
+      }
     } catch (error) {
       console.error('Error fetching token info:', error);
       return `I apologize, but I encountered an error while fetching token information. Please try again later.`;
@@ -165,7 +161,7 @@ export class LowLevelPlanner {
       // Extract all token symbols and get info
       const symbols = lastMessage.content.match(/\$(\w+)/g);
       if (symbols && symbols.length > 0) {
-        return await this.getTokenInfo(symbols.join(' '));
+        return await this.getTokenInfo(symbols[0]);
       }
     }
     
