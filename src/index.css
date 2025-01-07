@@ -63,6 +63,11 @@
   position: relative;
 }
 
+.textarea-container textarea {
+  position: relative;
+  z-index: 1;
+}
+
 .textarea-container::before {
   content: '';
   position: absolute;
@@ -78,6 +83,8 @@
   mask-composite: exclude;
   opacity: 0.8;
   animation: borderFlow 3s linear infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes borderFlow {
