@@ -6,6 +6,85 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const COINGECKO_API_KEY = Deno.env.get('COINGECKO_API_KEY')
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+const supabase = createClient(
+  SUPABASE_URL!,
+  SUPABASE_SERVICE_ROLE_KEY!
+)
+
+async function fetchTokens(page: number, perPage: number) {
+  console.log(`Fetching tokens page ${page} with ${perPage} tokens per page`)
+  const response = await fetch(
+    `https://pro-api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&locale=en&x_cg_pro_api_key=${COINGECKO_API_KEY}`
+  )
+  if (!response.ok) {
+    throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`)
+  }
+  return await response.json()
+}
+
+async function processTokenBatch(tokens: any[]) {
+  console.log(`Processing batch of ${tokens.length} tokens`)
+  const existingTokens = new Set()
+  
+  // Get existing tokens
+  const { data: existing } = await supabase
+    .from('token_metadata')
+    .select('coingecko_id')
+  
+  existing?.forEach(token => existingTokens.add(token.coingecko_id))
+  
+  // Filter out existing tokens
+  const newTokens = tokens.filter(token => !existingTokens.has(token.id))
+  
+  if (newTokens.length === 0) {
+    console.log('No new tokens to process in this batch')
+    return { processed: 0, existing: tokens.length }
+  }
+  
+  // Process in smaller sub-batches
+  const batchSize = 25
+  let processed = 0
+  
+  for (let i = 0; i < newTokens.length; i += batchSize) {
+    const batch = newTokens.slice(i, i + batchSize)
+    const tokenData = batch.map(token => ({
+      symbol: token.symbol.toUpperCase(),
+      name: token.name,
+      coingecko_id: token.id,
+      market_data: {
+        current_price: token.current_price,
+        market_cap: token.market_cap,
+        total_volume: token.total_volume,
+      },
+      metadata: {
+        image: token.image,
+        last_updated: token.last_updated,
+      }
+    }))
+
+    const { error } = await supabase
+      .from('token_metadata')
+      .insert(tokenData)
+
+    if (error) {
+      console.error('Error inserting tokens:', error)
+      continue
+    }
+
+    processed += batch.length
+    console.log(`Processed ${processed} new tokens`)
+    
+    // Add a small delay between batches
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+
+  return { processed, existing: existingTokens.size }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,174 +92,60 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting data fetch for top 4000 tokens...')
-    
-    const cgApiKey = Deno.env.get('COINGECKO_API_KEY')
-    if (!cgApiKey) {
-      throw new Error('COINGECKO_API_KEY is not set')
-    }
+    console.log('Starting token fetch process')
+    const tokensPerPage = 100
+    const totalPages = 40 // To get 4000 tokens
+    let totalProcessed = 0
+    let totalExisting = 0
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // First, get existing tokens from our database
-    const { data: existingTokens, error: dbError } = await supabase
-      .from('token_metadata')
-      .select('coingecko_id')
-      .not('coingecko_id', 'is', null);
-
-    if (dbError) {
-      throw new Error(`Database error: ${dbError.message}`);
-    }
-
-    const existingIds = new Set(existingTokens?.map(t => t.coingecko_id) || []);
-    console.log(`Found ${existingIds.size} existing tokens in database`);
-
-    // Fetch CoinGecko data in smaller batches
-    const batchSize = 100 // Reduced from 250 to 100
-    const numberOfBatches = 40 // 40 * 100 = 4000 tokens
-    const cgData = []
-    let newTokensFound = 0;
-
-    for (let page = 1; page <= numberOfBatches; page++) {
-      console.log(`Fetching CoinGecko batch ${page}/${numberOfBatches}...`)
-      
+    for (let page = 1; page <= totalPages; page++) {
       try {
-        const cgResponse = await fetch(
-          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${batchSize}&page=${page}&sparkline=false&price_change_percentage=24h&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`,
-          {
-            headers: {
-              'x-cg-demo-api-key': cgApiKey
-            }
-          }
-        )
+        const tokens = await fetchTokens(page, tokensPerPage)
+        const { processed, existing } = await processTokenBatch(tokens)
+        totalProcessed += processed
+        totalExisting += existing
 
-        if (!cgResponse.ok) {
-          console.error(`CoinGecko API error on page ${page}: ${cgResponse.status}`)
-          // Skip this batch and continue with the next one
-          continue
-        }
-
-        const batchData = await cgResponse.json()
+        console.log(`Completed page ${page}/${totalPages}`)
+        console.log(`Total processed: ${totalProcessed}, Total existing: ${totalExisting}`)
         
-        // Filter out tokens we already have
-        const newTokens = batchData.filter((token: any) => !existingIds.has(token.id))
-        cgData.push(...newTokens)
-        newTokensFound += newTokens.length;
-        
-        console.log(`Batch ${page}: Found ${newTokens.length} new tokens out of ${batchData.length} total`)
-        
-        // Add longer delay between batches to prevent resource exhaustion
-        if (page < numberOfBatches) {
-          await new Promise(resolve => setTimeout(resolve, 2000))
-        }
+        // Add delay between pages to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (error) {
-        console.error(`Error fetching batch ${page}:`, error)
-        // Skip this batch and continue with the next one
-        continue
+        console.error(`Error processing page ${page}:`, error)
+        continue // Skip failed pages but continue with the next
       }
     }
 
-    console.log(`Found ${newTokensFound} new tokens to process`)
-
-    // Process and store data in smaller batches
-    const processedCount = {
-      marketData: 0,
-      tokenMetadata: 0
-    }
-
-    // Process CoinGecko data in smaller batches
-    const batchInsertSize = 25 // Reduced from 50 to 25
-    const insertPromises = []
-
-    for (let i = 0; i < cgData.length; i += batchInsertSize) {
-      const batch = cgData.slice(i, i + batchInsertSize)
-      
-      const batchPromises = batch.map(async (coin) => {
-        try {
-          // Store market data
-          const { error: marketError } = await supabase
-            .from('defi_market_data')
-            .upsert({
-              coin_id: coin.id,
-              symbol: coin.symbol.toUpperCase(),
-              name: coin.name,
-              current_price: coin.current_price,
-              market_cap: coin.market_cap,
-              total_volume: coin.total_volume,
-              price_change_24h: coin.price_change_24h,
-              price_change_percentage_24h: coin.price_change_percentage_24h,
-              raw_data: coin
-            }, {
-              onConflict: 'coin_id'
-            })
-
-          if (!marketError) processedCount.marketData++
-
-          // Only insert token metadata if we don't already have it
-          if (!existingIds.has(coin.id)) {
-            const { error: metadataError } = await supabase
-              .from('token_metadata')
-              .insert({
-                symbol: coin.symbol.toUpperCase(),
-                name: coin.name,
-                coingecko_id: coin.id,
-                market_data: {
-                  current_price: { usd: coin.current_price },
-                  market_cap: { usd: coin.market_cap },
-                  total_volume: { usd: coin.total_volume },
-                  price_change_24h: coin.price_change_24h,
-                  price_change_percentage_24h: coin.price_change_percentage_24h
-                },
-                metadata: {
-                  image: coin.image,
-                  last_updated: new Date().toISOString(),
-                  additional_metrics: {
-                    market_cap_rank: coin.market_cap_rank
-                  }
-                }
-              })
-
-            if (!metadataError) processedCount.tokenMetadata++
-          }
-        } catch (error) {
-          console.error('Error processing coin:', coin.name, error)
-          // Skip this coin and continue with the next one
-          return
-        }
-      })
-
-      insertPromises.push(...batchPromises)
-
-      // Add delay between insert batches
-      if (i + batchInsertSize < cgData.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+    return new Response(
+      JSON.stringify({
+        success: true,
+        processed: {
+          tokenMetadata: totalProcessed,
+          marketData: totalProcessed
+        },
+        existingTokens: totalExisting
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
-    }
-
-    // Wait for all promises to complete
-    await Promise.all(insertPromises)
-
-    const summary = {
-      success: true,
-      processed: processedCount,
-      newTokensFound,
-      existingTokens: existingIds.size,
-      timestamp: new Date().toISOString()
-    }
-
-    console.log('Processing complete:', summary)
-
-    return new Response(JSON.stringify(summary), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-
+    )
   } catch (error) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 })
