@@ -52,6 +52,24 @@ export class TokenFormatter {
     return result;
   }
 
+  formatTVLResponse(protocolData: ProtocolData): string {
+    let result = 'Total Value Locked (TVL) Information:\n\n';
+    
+    if (protocolData.tvl) {
+      result += `TVL: $${this.formatNumber(protocolData.tvl)}\n`;
+    }
+    
+    if (protocolData.change_1d) {
+      result += `24h Change: ${this.formatPercentage(protocolData.change_1d)}\n`;
+    }
+
+    if (protocolData.category) {
+      result += `Protocol Category: ${protocolData.category}\n`;
+    }
+
+    return result;
+  }
+
   formatResponse(response: TokenResponse): string {
     if (!response.success) {
       return response.error || "Failed to fetch token information";

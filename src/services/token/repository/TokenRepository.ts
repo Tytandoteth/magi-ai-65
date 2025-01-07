@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TokenData, ProtocolData, RawTokenData } from "@/types/token";
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const MAX_RETRIES = 3;
@@ -67,8 +68,8 @@ export class TokenRepository {
     if (cached) return cached;
 
     try {
-      const { data: tokenData, error } = await this.retryOperation(() => 
-        supabase
+      const response = await this.retryOperation(async () => 
+        await supabase
           .from('token_metadata')
           .select('*')
           .ilike('symbol', symbol)
@@ -77,16 +78,16 @@ export class TokenRepository {
           .maybeSingle()
       );
 
-      if (error) {
-        console.error('Error fetching token metadata:', error);
+      if (response.error) {
+        console.error('Error fetching token metadata:', response.error);
         return null;
       }
 
-      if (!tokenData) {
+      if (!response.data) {
         return null;
       }
 
-      const transformedData = this.transformTokenData(tokenData as RawTokenData);
+      const transformedData = this.transformTokenData(response.data as RawTokenData);
       this.setCache('token', symbol, transformedData);
       
       return transformedData;
@@ -104,8 +105,8 @@ export class TokenRepository {
     if (cached) return cached;
 
     try {
-      const { data: protocolData, error } = await this.retryOperation(() =>
-        supabase
+      const response = await this.retryOperation(async () =>
+        await supabase
           .from('defi_llama_protocols')
           .select('*')
           .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
@@ -114,16 +115,16 @@ export class TokenRepository {
           .maybeSingle()
       );
 
-      if (error) {
-        console.error('Error fetching DeFi Llama data:', error);
+      if (response.error) {
+        console.error('Error fetching DeFi Llama data:', response.error);
         return null;
       }
 
-      if (protocolData) {
-        this.setCache('protocol', symbol, protocolData);
+      if (response.data) {
+        this.setCache('protocol', symbol, response.data);
       }
 
-      return protocolData;
+      return response.data;
     } catch (error) {
       console.error('Error fetching protocol data:', error);
       throw error;
@@ -134,21 +135,21 @@ export class TokenRepository {
     console.log(`Fetching data from API for token: ${symbol}`);
     
     try {
-      const { data: response, error } = await this.retryOperation(() =>
-        supabase.functions.invoke('token-profile', {
+      const response = await this.retryOperation(async () =>
+        await supabase.functions.invoke('token-profile', {
           body: { symbol }
         })
       );
 
-      if (error || !response?.data) {
-        console.error(`Error fetching token profile for ${symbol}:`, error);
+      if (!response.data?.data) {
+        console.error(`Error fetching token profile for ${symbol}`);
         return null;
       }
 
       // Cache the API response
-      this.setCache('token', symbol, response.data);
+      this.setCache('token', symbol, response.data.data);
       
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error in fetchTokenFromAPI:', error);
       return null;
