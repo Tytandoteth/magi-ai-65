@@ -1,9 +1,11 @@
 import { useRef, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ChatState } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ChatContainerProps {
   chatState: ChatState;
