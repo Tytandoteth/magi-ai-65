@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-});
+} as const);
 
 const App: React.FC = () => {
   return (
