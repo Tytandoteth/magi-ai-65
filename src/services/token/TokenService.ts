@@ -28,46 +28,21 @@ export class TokenService {
       const cleanSymbol = this.validateTokenSymbol(symbol);
       console.log('Cleaned symbol:', cleanSymbol);
 
-      // First try to get from token_metadata
-      const { data: tokenData, error } = await supabase
-        .from('token_metadata')
-        .select('*')
-        .eq('symbol', cleanSymbol)
-        .maybeSingle();
-
-      console.log('Token data from DB:', tokenData, 'Error:', error);
-
-      if (error) {
-        throw new TokenError(`Database error: ${error.message}`, 'DATABASE_ERROR');
-      }
-
-      if (!tokenData) {
-        // If not in database, try to fetch from CoinGecko via edge function
-        console.log('Token not found in DB, fetching from API...');
-        const { data: apiData, error: apiError } = await supabase.functions.invoke('token-profile', {
-          body: { symbol: cleanSymbol }
-        });
-
-        console.log('API response:', apiData, 'Error:', apiError);
-
-        if (apiError || !apiData) {
-          throw new TokenError(
-            `Failed to fetch ${cleanSymbol} data: ${apiError?.message || 'No data returned'}`,
-            'API_ERROR'
-          );
-        }
-
-        return apiData.data;
-      }
-
-      // Format response from database
-      return this.formatter.formatTokenResponse({
-        symbol: tokenData.symbol,
-        name: tokenData.name,
-        description: tokenData.description,
-        market_data: tokenData.market_data,
-        metadata: tokenData.metadata
+      // Call the token-profile edge function
+      const { data, error } = await supabase.functions.invoke('token-profile', {
+        body: { symbol: cleanSymbol }
       });
+
+      console.log('Token profile response:', data, 'Error:', error);
+
+      if (error || !data) {
+        throw new TokenError(
+          `Failed to fetch ${cleanSymbol} data: ${error?.message || 'No data returned'}`,
+          'API_ERROR'
+        );
+      }
+
+      return data.data;
 
     } catch (error) {
       console.error('Error in getTokenInfo:', error);
