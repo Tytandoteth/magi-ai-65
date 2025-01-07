@@ -4,6 +4,11 @@ export class TokenResolver {
   static resolveTokenSymbol(content: string): string | null {
     console.log('Resolving token symbol for:', content);
     
+    if (!content) {
+      console.log('Empty content provided');
+      return null;
+    }
+
     // Clean the input first
     const cleanInput = content.replace(/\$/g, '').toLowerCase().trim();
     console.log('Cleaned input:', cleanInput);
@@ -23,17 +28,18 @@ export class TokenResolver {
     
     // Check for direct matches in common tokens
     if (commonTokens.has(cleanInput)) {
-      console.log('Found direct match in common tokens:', cleanInput);
-      return commonTokens.get(cleanInput)!;
+      const resolvedSymbol = commonTokens.get(cleanInput);
+      console.log('Found direct match in common tokens:', resolvedSymbol);
+      return resolvedSymbol || null;
     }
     
     // Check aliases
     if (tokenAliases.has(cleanInput)) {
-      console.log('Found token alias:', cleanInput);
       const mainName = tokenAliases.get(cleanInput);
       if (mainName && commonTokens.has(mainName)) {
-        console.log('Resolved alias to main token:', mainName);
-        return commonTokens.get(mainName)!;
+        const resolvedSymbol = commonTokens.get(mainName);
+        console.log('Resolved alias to symbol:', resolvedSymbol);
+        return resolvedSymbol || null;
       }
     }
     
@@ -55,18 +61,5 @@ export class TokenResolver {
     }
     
     return "I'm here to help with any DeFi-related questions! You can ask me about specific tokens by using the $ symbol (e.g., $ETH), get market updates, or ask about DeFi protocols.";
-  }
-
-  static isSameToken(symbol1: string, symbol2: string): boolean {
-    const clean1 = symbol1.toLowerCase().trim();
-    const clean2 = symbol2.toLowerCase().trim();
-    
-    // Handle PENGU variations
-    const isPengu1 = clean1.includes('peng') || clean1 === 'pudgy';
-    const isPengu2 = clean2.includes('peng') || clean2 === 'pudgy';
-    
-    if (isPengu1 && isPengu2) return true;
-    
-    return clean1 === clean2;
   }
 }

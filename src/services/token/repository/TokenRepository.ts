@@ -1,16 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, TokenMetadata } from "@/types/token";
-
-interface ProtocolRawData {
-  chains?: string[];
-  apy?: number;
-  [key: string]: unknown;
-}
+import { TokenData } from "@/types/token";
 
 export class TokenRepository {
   private static instance: TokenRepository;
-  private cache: Map<string, { data: TokenData; timestamp: number }> = new Map();
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   public static getInstance(): TokenRepository {
     if (!TokenRepository.instance) {
@@ -19,22 +11,11 @@ export class TokenRepository {
     return TokenRepository.instance;
   }
 
-  private isCacheValid(timestamp: number): boolean {
-    return Date.now() - timestamp < this.CACHE_DURATION;
-  }
-
   async fetchTokenData(symbol: string): Promise<TokenData | null> {
-    console.log('Fetching token data for:', symbol);
+    console.log('TokenRepository: Fetching data for symbol:', symbol);
     
-    // Check cache first
-    const cached = this.cache.get(symbol);
-    if (cached && this.isCacheValid(cached.timestamp)) {
-      console.log('Cache hit for token:', symbol);
-      return cached.data;
-    }
-
     try {
-      // Fetch token metadata with exact symbol match
+      // Fetch from token_metadata table with exact symbol match
       const { data: tokenData, error: tokenError } = await supabase
         .from('token_metadata')
         .select('*')
@@ -43,7 +24,7 @@ export class TokenRepository {
 
       if (tokenError) {
         console.error('Error fetching token metadata:', tokenError);
-        throw new Error(`Error fetching token data: ${tokenError.message}`);
+        throw tokenError;
       }
 
       if (!tokenData) {
@@ -53,63 +34,64 @@ export class TokenRepository {
 
       console.log('Found token data:', tokenData);
 
-      // Fetch protocol data with exact symbol match
+      // Ensure platforms is a valid Record<string, string>
+      const platforms = this.validatePlatforms(tokenData.platforms);
+
+      // Transform the data to match TokenData interface
+      const transformedData: TokenData = {
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        description: tokenData.description || undefined,
+        market_data: tokenData.market_data || undefined,
+        metadata: {
+          additional_metrics: tokenData.metadata?.additional_metrics || undefined,
+          platforms: platforms
+        },
+        protocol_data: undefined // Will be populated by protocol data if available
+      };
+
+      // Try to fetch protocol data if available
       const { data: protocolData, error: protocolError } = await supabase
         .from('defi_llama_protocols')
         .select('*')
         .eq('symbol', symbol)
-        .order('created_at', { ascending: false })
-        .limit(1)
         .maybeSingle();
 
       if (protocolError) {
         console.error('Error fetching protocol data:', protocolError);
-      } else {
+      } else if (protocolData) {
         console.log('Found protocol data:', protocolData);
-      }
-
-      // Transform the data
-      const transformedData: TokenData = {
-        name: tokenData.name,
-        symbol: tokenData.symbol,
-        description: tokenData.description,
-        market_data: tokenData.market_data as TokenData['market_data'],
-        metadata: {
-          additional_metrics: tokenData.metadata && typeof tokenData.metadata === 'object' 
-            ? (tokenData.metadata as any).additional_metrics 
-            : undefined
-        },
-        // Ensure platforms is a Record<string, string> or empty object
-        platforms: typeof tokenData.platforms === 'object' && tokenData.platforms !== null
-          ? Object.entries(tokenData.platforms).reduce((acc, [key, value]) => ({
-              ...acc,
-              [key]: String(value) // Convert all values to string
-            }), {} as Record<string, string>)
-          : {}
-      };
-
-      // Add protocol data if available
-      if (protocolData && protocolData.raw_data) {
-        const rawData = protocolData.raw_data as ProtocolRawData;
         transformedData.protocol_data = {
-          tvl: protocolData.tvl,
-          change_24h: protocolData.change_1d,
-          category: protocolData.category,
-          chains: Array.isArray(rawData.chains) ? rawData.chains : [],
-          apy: typeof rawData.apy === 'number' ? rawData.apy : undefined
+          tvl: protocolData.tvl || undefined,
+          change_24h: protocolData.change_1d || undefined,
+          category: protocolData.category || undefined,
+          chains: protocolData.raw_data?.chains || undefined,
+          apy: protocolData.raw_data?.apy || undefined
         };
       }
-
-      // Cache the result
-      this.cache.set(symbol, {
-        data: transformedData,
-        timestamp: Date.now()
-      });
 
       return transformedData;
     } catch (error) {
       console.error('Error in fetchTokenData:', error);
       throw error;
     }
+  }
+
+  private validatePlatforms(platforms: any): Record<string, string> {
+    if (!platforms || typeof platforms !== 'object') {
+      return {};
+    }
+
+    const validatedPlatforms: Record<string, string> = {};
+    
+    Object.entries(platforms).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        validatedPlatforms[key] = value;
+      } else if (value !== null && value !== undefined) {
+        validatedPlatforms[key] = String(value);
+      }
+    });
+
+    return validatedPlatforms;
   }
 }
