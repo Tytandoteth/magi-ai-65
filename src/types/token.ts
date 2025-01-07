@@ -1,3 +1,5 @@
+import { Json } from '@/integrations/supabase/types/base';
+
 export interface TokenData {
   name: string;
   symbol: string;
@@ -13,6 +15,20 @@ export interface TokenData {
     };
   };
   description?: string;
+}
+
+export interface RawTokenData {
+  id: number;
+  created_at: string;
+  symbol: string;
+  name: string;
+  coingecko_id: string | null;
+  description: string | null;
+  categories: string[] | null;
+  platforms: Json | null;
+  market_data: Json | null;
+  last_updated: string | null;
+  metadata: Json | null;
 }
 
 export interface ProtocolData {

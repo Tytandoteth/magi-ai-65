@@ -1,7 +1,19 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, ProtocolData } from "@/types/token";
+import { TokenData, ProtocolData, RawTokenData } from "@/types/token";
 
 export class TokenRepository {
+  private static transformTokenData(rawData: RawTokenData): TokenData {
+    console.log('Transforming raw token data:', rawData);
+    
+    return {
+      name: rawData.name,
+      symbol: rawData.symbol,
+      description: rawData.description || undefined,
+      market_data: rawData.market_data as TokenData['market_data'],
+      metadata: rawData.metadata as TokenData['metadata']
+    };
+  }
+
   static async fetchTokenData(symbol: string): Promise<TokenData | null> {
     console.log('Fetching token data for:', symbol);
     
@@ -18,7 +30,11 @@ export class TokenRepository {
       return null;
     }
 
-    return tokenData;
+    if (!tokenData) {
+      return null;
+    }
+
+    return this.transformTokenData(tokenData as RawTokenData);
   }
 
   static async fetchProtocolData(symbol: string): Promise<ProtocolData | null> {
@@ -53,7 +69,7 @@ export class TokenRepository {
         return null;
       }
 
-      return response.data;
+      return this.transformTokenData(response.data as RawTokenData);
     } catch (error) {
       console.error('API error:', error);
       return null;
