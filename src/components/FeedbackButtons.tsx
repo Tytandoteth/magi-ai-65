@@ -1,76 +1,55 @@
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
+import { submitFeedback } from "@/services/feedback";
+import { FeedbackState } from "@/types/feedback";
 
 interface FeedbackButtonsProps {
   messageId: string;
 }
 
 export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
-  const [feedback, setFeedback] = useState<"positive" | "negative" | null>(null);
+  const [state, setState] = useState<FeedbackState>({
+    isSubmitting: false,
+    error: null,
+    submitted: false
+  });
+  
   const { toast } = useToast();
 
   const handleFeedback = async (type: "positive" | "negative") => {
+    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
+    
     try {
-      console.log(`Submitting ${type} feedback for message ${messageId}`);
+      await submitFeedback({
+        type,
+        messageId,
+        timestamp: new Date()
+      });
       
-      const messageIdNumber = parseInt(messageId);
-      if (isNaN(messageIdNumber)) {
-        throw new Error("Invalid message ID");
-      }
-
-      // First verify the message exists using maybeSingle() instead of single()
-      const { data: message, error: messageError } = await supabase
-        .from("chat_messages")
-        .select("id")
-        .eq("id", messageIdNumber)
-        .maybeSingle();
-
-      if (messageError) {
-        console.error("Error checking message:", messageError);
-        throw messageError;
-      }
-
-      if (!message) {
-        console.error("Message not found for ID:", messageIdNumber);
-        throw new Error("Message not found");
-      }
-
-      console.log("Found message:", message);
-
-      // Now insert the feedback
-      const { error } = await supabase
-        .from("ai_agent_metrics")
-        .insert({
-          message_id: messageIdNumber,
-          feedback: { type },
-          effectiveness_score: type === "positive" ? 1 : 0,
-        });
-
-      if (error) {
-        console.error("Error inserting feedback:", error);
-        throw error;
-      }
-
-      console.log("Feedback submitted successfully");
-      setFeedback(type);
+      setState(prev => ({ ...prev, submitted: true }));
       toast({
         description: "Thank you for your feedback!",
         duration: 3000,
       });
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting feedback:", error);
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || "Failed to submit feedback"
+      }));
+      
       toast({
         variant: "destructive",
         description: error.message || "Failed to submit feedback. Please try again.",
       });
+    } finally {
+      setState(prev => ({ ...prev, isSubmitting: false }));
     }
   };
 
-  if (feedback) {
+  if (state.submitted) {
     return (
       <div className="flex items-center gap-2 mt-2 text-sm text-gray-400">
         Thank you for your feedback!
@@ -85,6 +64,7 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
         size="sm"
         className="text-gray-400 hover:text-gray-100"
         onClick={() => handleFeedback("positive")}
+        disabled={state.isSubmitting}
       >
         <ThumbsUp className="h-4 w-4" />
       </Button>
@@ -93,6 +73,7 @@ export const FeedbackButtons = ({ messageId }: FeedbackButtonsProps) => {
         size="sm"
         className="text-gray-400 hover:text-gray-100"
         onClick={() => handleFeedback("negative")}
+        disabled={state.isSubmitting}
       >
         <ThumbsDown className="h-4 w-4" />
       </Button>
