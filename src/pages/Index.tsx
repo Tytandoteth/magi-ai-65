@@ -17,7 +17,7 @@ const Index = () => {
             alt="Magi Mascot" 
             className="w-24 h-24 animate-bounce-slow"
           />
-          <h1 className="text-2xl font-bold text-primary">Magi Terminal V1</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#FFDEE2] to-[#D3E4FD] text-transparent bg-clip-text">Magi Terminal V1</h1>
           <p className="text-muted-foreground">Your AI-Powered DeFi Assistant</p>
         </div>
 
