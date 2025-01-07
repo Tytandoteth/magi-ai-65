@@ -31,11 +31,11 @@ const Index = () => {
       }
 
       console.log('Tokens fetched successfully:', data);
-      const processedCount = data?.processed || { marketData: 0, tokenMetadata: 0 };
+      const summary = data;
       
       toast({
         title: "Success",
-        description: `Successfully processed ${processedCount.marketData} market data entries and ${processedCount.tokenMetadata} token metadata entries.`,
+        description: `Updated ${summary.processed.marketData} market data entries and added ${summary.processed.tokenMetadata} new tokens. (${summary.existingTokens} tokens already in database)`,
         duration: 5000,
       });
     } catch (error) {

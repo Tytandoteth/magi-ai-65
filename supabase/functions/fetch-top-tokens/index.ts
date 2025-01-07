@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting data fetch for top 1000 tokens...')
+    console.log('Starting data fetch for top 4000 tokens...')
     
     const cgApiKey = Deno.env.get('COINGECKO_API_KEY')
     if (!cgApiKey) {
@@ -24,10 +24,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // First, get existing tokens from our database
+    const { data: existingTokens, error: dbError } = await supabase
+      .from('token_metadata')
+      .select('coingecko_id')
+      .not('coingecko_id', 'is', null);
+
+    if (dbError) {
+      throw new Error(`Database error: ${dbError.message}`);
+    }
+
+    const existingIds = new Set(existingTokens?.map(t => t.coingecko_id) || []);
+    console.log(`Found ${existingIds.size} existing tokens in database`);
+
     // Fetch CoinGecko data in batches
     const batchSize = 250
-    const numberOfBatches = 4
+    const numberOfBatches = 16 // 16 * 250 = 4000 tokens
     const cgData = []
+    let newTokensFound = 0;
 
     for (let page = 1; page <= numberOfBatches; page++) {
       console.log(`Fetching CoinGecko batch ${page}/${numberOfBatches}...`)
@@ -47,8 +61,13 @@ serve(async (req) => {
         }
 
         const batchData = await cgResponse.json()
-        cgData.push(...batchData)
-        console.log(`Successfully fetched batch ${page} with ${batchData.length} tokens`)
+        
+        // Filter out tokens we already have
+        const newTokens = batchData.filter((token: any) => !existingIds.has(token.id))
+        cgData.push(...newTokens)
+        newTokensFound += newTokens.length;
+        
+        console.log(`Batch ${page}: Found ${newTokens.length} new tokens out of ${batchData.length} total`)
         
         // Respect rate limits
         if (page < numberOfBatches) {
@@ -60,7 +79,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Fetched ${cgData.length} tokens from CoinGecko`)
+    console.log(`Found ${newTokensFound} new tokens to process`)
 
     // Process and store data in smaller batches
     const processedCount = {
@@ -96,32 +115,32 @@ serve(async (req) => {
 
           if (!marketError) processedCount.marketData++
 
-          // Store token metadata
-          const { error: metadataError } = await supabase
-            .from('token_metadata')
-            .upsert({
-              symbol: coin.symbol.toUpperCase(),
-              name: coin.name,
-              coingecko_id: coin.id,
-              market_data: {
-                current_price: { usd: coin.current_price },
-                market_cap: { usd: coin.market_cap },
-                total_volume: { usd: coin.total_volume },
-                price_change_24h: coin.price_change_24h,
-                price_change_percentage_24h: coin.price_change_percentage_24h
-              },
-              metadata: {
-                image: coin.image,
-                last_updated: new Date().toISOString(),
-                additional_metrics: {
-                  market_cap_rank: coin.market_cap_rank
+          // Only insert token metadata if we don't already have it
+          if (!existingIds.has(coin.id)) {
+            const { error: metadataError } = await supabase
+              .from('token_metadata')
+              .insert({
+                symbol: coin.symbol.toUpperCase(),
+                name: coin.name,
+                coingecko_id: coin.id,
+                market_data: {
+                  current_price: { usd: coin.current_price },
+                  market_cap: { usd: coin.market_cap },
+                  total_volume: { usd: coin.total_volume },
+                  price_change_24h: coin.price_change_24h,
+                  price_change_percentage_24h: coin.price_change_percentage_24h
+                },
+                metadata: {
+                  image: coin.image,
+                  last_updated: new Date().toISOString(),
+                  additional_metrics: {
+                    market_cap_rank: coin.market_cap_rank
+                  }
                 }
-              }
-            }, {
-              onConflict: 'coingecko_id'
-            })
+              })
 
-          if (!metadataError) processedCount.tokenMetadata++
+            if (!metadataError) processedCount.tokenMetadata++
+          }
         } catch (error) {
           console.error('Error processing coin:', coin.name, error)
           throw error
@@ -142,6 +161,8 @@ serve(async (req) => {
     const summary = {
       success: true,
       processed: processedCount,
+      newTokensFound,
+      existingTokens: existingIds.size,
       timestamp: new Date().toISOString()
     }
 
