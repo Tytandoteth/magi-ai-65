@@ -73,20 +73,6 @@ const Index = () => {
               $MAG
             </a>
           </span>
-          <Button 
-            onClick={handleFetchTokens}
-            disabled={isLoading}
-            className="mt-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating Token Data...
-              </>
-            ) : (
-              'Update Token Data'
-            )}
-          </Button>
         </div>
 
         <ErrorBoundary>
@@ -115,6 +101,23 @@ const Index = () => {
             </TabsContent>
           </Tabs>
         </ErrorBoundary>
+
+        <Button 
+          onClick={handleFetchTokens}
+          disabled={isLoading}
+          variant="outline"
+          size="sm"
+          className="fixed bottom-2 right-2 opacity-30 hover:opacity-100 transition-opacity duration-200 text-xs"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              Updating...
+            </>
+          ) : (
+            'Update Data'
+          )}
+        </Button>
       </div>
     </div>
   );
