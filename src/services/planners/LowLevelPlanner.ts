@@ -66,13 +66,31 @@ export class LowLevelPlanner {
     }
 
     try {
+      // First check if token exists in our database
+      const { data: tokenData, error } = await supabase
+        .from('token_metadata')
+        .select('*')
+        .in('symbol', tokens)
+        .order('last_updated', { ascending: false });
+
+      if (error) {
+        console.error('Error checking token metadata:', error);
+        throw error;
+      }
+
+      const knownTokens = new Set(tokenData?.map(t => t.symbol) || []);
       const responses = await Promise.all(tokens.map(async (token) => {
+        if (knownTokens.has(token)) {
+          const tokenInfo = tokenData?.find(t => t.symbol === token);
+          return this.formatTokenResponse(tokenInfo);
+        }
+        
         try {
           const tokenProfile = await createTokenProfile(token);
           return tokenProfile;
         } catch (error) {
           console.error(`Error fetching info for ${token}:`, error);
-          return `I couldn't find detailed information about ${token}. Please verify the token symbol and try again.`;
+          return `I couldn't find detailed information about ${token}. This token might be new, unverified, or not listed on major exchanges. Please conduct thorough research and exercise caution before considering any investment.`;
         }
       }));
 
@@ -81,6 +99,36 @@ export class LowLevelPlanner {
       console.error('Error fetching token info:', error);
       return `I apologize, but I encountered an error while fetching token information. Please try again later.`;
     }
+  }
+
+  private formatTokenResponse(tokenData: any): string {
+    if (!tokenData) return "Token data not found";
+
+    let response = `Here are the current metrics for ${tokenData.name} (${tokenData.symbol}):\n\n`;
+
+    if (tokenData.market_data) {
+      const marketData = tokenData.market_data;
+      
+      if (marketData.current_price) {
+        response += `Current Price: $${marketData.current_price.toLocaleString()}\n`;
+      }
+      
+      if (marketData.market_cap) {
+        response += `Market Cap: $${marketData.market_cap.toLocaleString()}\n`;
+      }
+      
+      if (marketData.total_volume) {
+        response += `24h Trading Volume: $${marketData.total_volume.toLocaleString()}\n`;
+      }
+    }
+
+    if (tokenData.description) {
+      response += `\nDescription: ${tokenData.description}\n`;
+    }
+
+    response += `\nPlease note that cryptocurrency investments carry risks. Always conduct thorough research before making investment decisions.`;
+
+    return response;
   }
 
   private async generateGeneralResponse(params: any): Promise<string> {
