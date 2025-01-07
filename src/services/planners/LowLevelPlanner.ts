@@ -19,6 +19,7 @@ export class LowLevelPlanner {
 
     if (action.type === 'BLOCKCHAIN_ACTION' && action.params) {
       try {
+        console.log('Executing blockchain action:', action.params);
         const result = await onChainTools.executeAction({
           type: action.params.actionType,
           params: {
@@ -40,7 +41,17 @@ export class LowLevelPlanner {
     }
 
     if (action.type === 'GET_TOKEN_INFO' && action.params?.symbol) {
-      return this.tokenService.getTokenInfo(action.params.symbol);
+      try {
+        return await this.tokenService.getTokenInfo(action.params.symbol);
+      } catch (error) {
+        console.error('Error getting token info:', error);
+        return `I couldn't find reliable data for ${action.params.symbol}. This might be because:
+1. The token is not listed on major exchanges
+2. The token is too new
+3. There might be a temporary issue with our data provider
+
+Try checking the token symbol and asking again, or ask about another token like $ETH, $BTC, or $MAG.`;
+      }
     }
 
     if (action.type === 'CALCULATE_PERCENTAGE' && params.percentage) {
@@ -52,7 +63,26 @@ export class LowLevelPlanner {
     }
 
     if (action.type === 'UNKNOWN') {
-      return `I'm not sure how to help with that request. You can ask me about specific tokens using the $ symbol (e.g., $ETH), or ask about market updates and DeFi protocols. I can also help you send ETH transactions - just provide an amount and address!`;
+      const lastMessage = params.messages[params.messages.length - 1];
+      
+      if (lastMessage.content.toLowerCase().includes('what can you do')) {
+        return `I'm your AI-powered DeFi assistant! Here's what I can help you with:
+
+1. Token Information: Ask about any token using $ (e.g., $ETH, $BTC, $MAG)
+2. Market Updates: Get real-time market data and trends
+3. DeFi Protocols: Learn about different protocols and their metrics
+4. Transactions: Help you send ETH transactions (just provide amount and address)
+5. Price Calculations: Help with token calculations and conversions
+
+Just ask me about any of these topics and I'll be happy to help!`;
+      }
+
+      return `I'm not sure how to help with that specific request. Here are some things you can try:
+
+1. Get token information by using $ (e.g., $ETH, $BTC, $MAG)
+2. Ask about market updates or DeFi protocols
+3. Send ETH transactions by providing an amount and address
+4. Ask "what can you do" to see all my capabilities`;
     }
 
     return `I don't know how to handle that type of request yet. Please try asking about specific tokens or market information.`;

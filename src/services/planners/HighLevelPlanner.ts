@@ -12,26 +12,22 @@ export class HighLevelPlanner {
       return { type: 'UNKNOWN', description: 'No message provided' };
     }
 
-    // Extract token symbol from message
     const content = lastMessage.content.toLowerCase();
     console.log('Analyzing content:', content);
 
     // Check for blockchain actions
-    if (content.includes('send eth') || content.includes('transfer eth')) {
-      const amountMatch = content.match(/(\d+\.?\d*)\s*eth/i);
-      const addressMatch = content.match(/(0x[a-fA-F0-9]{40})/);
-      
-      if (amountMatch && addressMatch) {
-        return {
-          type: 'BLOCKCHAIN_ACTION',
-          description: 'Send ETH transaction',
-          params: {
-            actionType: 'SEND_ETH',
-            to: addressMatch[1],
-            value: amountMatch[1]
-          }
-        };
-      }
+    const ethTransactionMatch = content.match(/send\s+([\d.]+)\s*eth\s+to\s+(0x[a-fA-F0-9]{40})/i);
+    if (ethTransactionMatch) {
+      console.log('Detected ETH transaction request:', ethTransactionMatch);
+      return {
+        type: 'BLOCKCHAIN_ACTION',
+        description: 'Send ETH transaction',
+        params: {
+          actionType: 'SEND_ETH',
+          to: ethTransactionMatch[2],
+          value: ethTransactionMatch[1]
+        }
+      };
     }
 
     // Look for token symbols with $ prefix
@@ -40,18 +36,13 @@ export class HighLevelPlanner {
       const tokenSymbol = tokenMatch[1].toUpperCase();
       console.log('Found token symbol in message:', tokenSymbol);
       
-      const resolvedSymbol = TokenResolver.resolveTokenSymbol(tokenSymbol);
-      console.log('Resolved token symbol:', resolvedSymbol);
-
-      if (resolvedSymbol) {
-        return {
-          type: 'GET_TOKEN_INFO',
-          description: 'Get token information',
-          params: {
-            symbol: resolvedSymbol
-          }
-        };
-      }
+      return {
+        type: 'GET_TOKEN_INFO',
+        description: 'Get token information',
+        params: {
+          symbol: tokenSymbol
+        }
+      };
     }
 
     // Look for percentage calculations
@@ -63,6 +54,14 @@ export class HighLevelPlanner {
         params: {
           value: percentageMatch[1]
         }
+      };
+    }
+
+    // Handle general queries
+    if (content.includes('what can you do') || content.includes('help')) {
+      return {
+        type: 'UNKNOWN',
+        description: 'User asking for capabilities'
       };
     }
 
