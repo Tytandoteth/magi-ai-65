@@ -4,7 +4,7 @@ import { TokenResolver } from './TokenResolver';
 import { supabase } from '@/integrations/supabase/client';
 
 export class TokenAggregator {
-  private static async fetchTokenPrice(symbol: string): Promise<number> {
+  private async fetchTokenPrice(symbol: string): Promise<number> {
     console.log('Fetching token price for:', symbol);
     
     try {
@@ -46,7 +46,7 @@ export class TokenAggregator {
     }
   }
 
-  static async aggregateTokenData(
+  async aggregateTokenData(
     input: string,
     chainId?: number,
     options: {
