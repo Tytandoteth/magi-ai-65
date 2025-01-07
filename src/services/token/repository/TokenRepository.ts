@@ -79,7 +79,13 @@ export class TokenRepository {
             ? (tokenData.metadata as any).additional_metrics 
             : undefined
         },
-        platforms: tokenData.platforms || {}
+        // Ensure platforms is a Record<string, string> or empty object
+        platforms: typeof tokenData.platforms === 'object' && tokenData.platforms !== null
+          ? Object.entries(tokenData.platforms).reduce((acc, [key, value]) => ({
+              ...acc,
+              [key]: String(value) // Convert all values to string
+            }), {} as Record<string, string>)
+          : {}
       };
 
       // Add protocol data if available
