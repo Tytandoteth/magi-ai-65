@@ -4,8 +4,9 @@ import { ApiCalls } from "./ApiCalls";
 import { MagiResponse } from "./MagiResponse";
 import { ErrorMessage } from "./ErrorMessage";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface ApiLog {
   timestamp: Date;
@@ -31,6 +32,7 @@ interface LogEntryProps {
 
 export const LogEntry = ({ log, index }: LogEntryProps) => {
   const { toast } = useToast();
+  const [showRawData, setShowRawData] = useState(false);
   
   const getLastMessage = (messages: Message[]) => {
     return messages[messages.length - 1];
@@ -56,14 +58,32 @@ export const LogEntry = ({ log, index }: LogEntryProps) => {
     }
   };
 
+  const getRequestSummary = () => {
+    const apiCount = log.request.apis?.length || 0;
+    const hasError = log.error || log.request.apis?.some(api => api.status === 'error');
+    
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <span className={hasError ? "text-red-400" : "text-green-400"}>
+          {hasError ? "⚠️" : "✓"}
+        </span>
+        <span className="text-gray-400">
+          {apiCount} API {apiCount === 1 ? 'call' : 'calls'}
+        </span>
+        {hasError && <span className="text-red-400">with errors</span>}
+      </div>
+    );
+  };
+
   return (
     <div key={index} className="bg-[#1E1F21] rounded-xl p-6 border border-gray-700/50 shadow-lg transition-all hover:border-gray-600">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="h-3 w-3 rounded-full bg-blue-400 animate-pulse"></div>
           <time className="text-sm text-gray-400 font-medium">
-            {log.timestamp.toLocaleString()}
+            {new Date(log.timestamp).toLocaleString()}
           </time>
+          {getRequestSummary()}
         </div>
         <Button
           variant="ghost"
@@ -78,18 +98,29 @@ export const LogEntry = ({ log, index }: LogEntryProps) => {
       
       <div className="space-y-6">
         <UserMessage message={lastMessage} />
-        {log.request.apis && <ApiCalls apis={log.request.apis} />}
+        {log.request.apis && log.request.apis.length > 0 && (
+          <ApiCalls apis={log.request.apis} />
+        )}
         {log.response && <MagiResponse response={log.response} />}
         {log.error && <ErrorMessage error={log.error} />}
         
         <div className="pt-4 border-t border-gray-800">
           <button 
-            onClick={() => console.log('Raw data:', log)}
+            onClick={() => setShowRawData(!showRawData)}
             className="text-xs text-gray-500 hover:text-gray-400 transition-colors flex items-center gap-1"
           >
-            <span>View raw data</span>
-            <span className="text-gray-600">▼</span>
+            <span>Raw data</span>
+            {showRawData ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
+          {showRawData && (
+            <pre className="mt-2 p-4 bg-[#2A2B2D] rounded-lg text-xs text-gray-400 overflow-x-auto">
+              {JSON.stringify(log, null, 2)}
+            </pre>
+          )}
         </div>
       </div>
     </div>
