@@ -7,11 +7,14 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    console.log('Starting data fetch for top 1000 tokens...')
+    
     const cgApiKey = Deno.env.get('COINGECKO_API_KEY')
     if (!cgApiKey) {
       throw new Error('COINGECKO_API_KEY is not set')
@@ -21,8 +24,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log('Starting data fetch for top 1000 tokens...')
-    
     // Fetch CoinGecko data in batches
     const batchSize = 250
     const numberOfBatches = 4
@@ -31,76 +32,45 @@ serve(async (req) => {
     for (let page = 1; page <= numberOfBatches; page++) {
       console.log(`Fetching CoinGecko batch ${page}/${numberOfBatches}...`)
       
-      const cgResponse = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${batchSize}&page=${page}&sparkline=false&price_change_percentage=24h&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`,
-        {
-          headers: {
-            'x-cg-demo-api-key': cgApiKey
+      try {
+        const cgResponse = await fetch(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${batchSize}&page=${page}&sparkline=false&price_change_percentage=24h&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`,
+          {
+            headers: {
+              'x-cg-demo-api-key': cgApiKey
+            }
           }
+        )
+
+        if (!cgResponse.ok) {
+          throw new Error(`CoinGecko API error: ${cgResponse.status} on page ${page}`)
         }
-      )
 
-      if (!cgResponse.ok) {
-        throw new Error(`CoinGecko API error: ${cgResponse.status} on page ${page}`)
-      }
-
-      const batchData = await cgResponse.json()
-      cgData.push(...batchData)
-      
-      // Respect rate limits
-      if (page < numberOfBatches) {
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        const batchData = await cgResponse.json()
+        cgData.push(...batchData)
+        console.log(`Successfully fetched batch ${page} with ${batchData.length} tokens`)
+        
+        // Respect rate limits
+        if (page < numberOfBatches) {
+          await new Promise(resolve => setTimeout(resolve, 1500))
+        }
+      } catch (error) {
+        console.error(`Error fetching batch ${page}:`, error)
+        throw error
       }
     }
 
     console.log(`Fetched ${cgData.length} tokens from CoinGecko`)
 
-    // Fetch DeFi Llama protocols
-    const dlResponse = await fetch('https://api.llama.fi/protocols')
-    if (!dlResponse.ok) {
-      throw new Error(`DeFi Llama API error: ${dlResponse.status}`)
-    }
-
-    const dlData = await dlResponse.json()
-    console.log(`Fetched ${dlData.length} protocols from DeFi Llama`)
-
-    // Process and store data
+    // Process and store data in smaller batches
     const processedCount = {
-      defiLlama: 0,
       marketData: 0,
       tokenMetadata: 0
     }
 
-    // Store DeFi Llama protocols (top 1000 by TVL)
-    const defiLlamaPromises = dlData.slice(0, 1000).map(async (protocol) => {
-      try {
-        const { error } = await supabase
-          .from('defi_llama_protocols')
-          .upsert({
-            protocol_id: protocol.slug,
-            name: protocol.name,
-            symbol: protocol.symbol,
-            category: protocol.category,
-            tvl: protocol.tvl,
-            change_1h: protocol.change_1h,
-            change_1d: protocol.change_1d,
-            change_7d: protocol.change_7d,
-            staking: protocol.staking,
-            derivatives: protocol.derivatives,
-            raw_data: protocol
-          }, {
-            onConflict: 'protocol_id'
-          })
-
-        if (!error) processedCount.defiLlama++
-      } catch (error) {
-        console.error('Error processing protocol:', protocol.name, error)
-      }
-    })
-
     // Process CoinGecko data in smaller batches
     const batchInsertSize = 50
-    const coinGeckoPromises = []
+    const insertPromises = []
 
     for (let i = 0; i < cgData.length; i += batchInsertSize) {
       const batch = cgData.slice(i, i + batchInsertSize)
@@ -154,10 +124,11 @@ serve(async (req) => {
           if (!metadataError) processedCount.tokenMetadata++
         } catch (error) {
           console.error('Error processing coin:', coin.name, error)
+          throw error
         }
       })
 
-      coinGeckoPromises.push(...batchPromises)
+      insertPromises.push(...batchPromises)
 
       // Add small delay between batches
       if (i + batchInsertSize < cgData.length) {
@@ -166,7 +137,7 @@ serve(async (req) => {
     }
 
     // Wait for all promises to complete
-    await Promise.all([...defiLlamaPromises, ...coinGeckoPromises])
+    await Promise.all(insertPromises)
 
     const summary = {
       success: true,
