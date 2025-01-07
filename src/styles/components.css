@@ -1,0 +1,49 @@
+.chat-container {
+  @apply bg-[#1a1b1e] rounded-xl shadow-lg;
+}
+
+.chat-input-container {
+  @apply bg-[#1a1b1e] border-t border-gray-700 rounded-b-xl;
+}
+
+.textarea-container {
+  position: relative;
+}
+
+.textarea-container textarea {
+  background-color: #1e1f23;
+  width: 100%;
+  position: relative;
+  border-radius: 0.5rem;
+}
+
+.textarea-container::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 0.5rem;
+  padding: 2.5px;
+  background: linear-gradient(90deg, #FFDEE2, #D3E4FD, #FFDEE2);
+  background-size: 200% 100%;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.8;
+  animation: borderFlow 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Custom tab styling */
+[role="tablist"] {
+  @apply bg-[#1a1b1e] p-1 rounded-lg;
+}
+
+[role="tab"] {
+  @apply text-gray-400 hover:text-gray-200 data-[state=active]:bg-[#1e1f23] data-[state=active]:text-gray-100;
+}
+
+[role="tab"][data-state="active"] {
+  @apply shadow-sm;
+}
