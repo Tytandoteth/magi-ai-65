@@ -3,11 +3,13 @@ import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useApiLogs, ApiLog } from "./use-api-logs";
 import { useChatMessages } from "./use-chat-messages";
+import { useMagi } from "./use-magi";
 
 export const useChat = () => {
   const { toast } = useToast();
   const { apiLogs, addApiLog } = useApiLogs();
   const { chatState, addMessage, setLoading, setError } = useChatMessages();
+  const { processMessage } = useMagi();
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -35,41 +37,24 @@ export const useChat = () => {
     try {
       console.log('Starting chat request with messages:', currentMessages);
       
-      const startTime = Date.now();
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
-          messages: currentMessages.map(({ role, content, id, timestamp }) => ({
-            role,
-            content,
-            id,
-            timestamp,
-          })),
-        },
-      });
-
-      if (error) throw error;
-
-      // Update API statuses from the edge function
-      if (data.apiStatuses) {
-        apiLog.request.apis = data.apiStatuses;
-      }
-
+      // Process message through Magi
+      const response = await processMessage(currentMessages);
+      
       const assistantMessage: Message = {
         id: Date.now().toString(),
-        content: data.response.content,
+        content: response,
         role: "assistant",
         timestamp: new Date(),
       };
 
-      apiLog.response = data.response;
+      apiLog.response = { content: response };
       addApiLog(apiLog);
       addMessage(assistantMessage);
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in handleSendMessage:", error);
       apiLog.error = error.message;
       
-      // Add failed API status
       if (apiLog.request.apis) {
         apiLog.request.apis.push({
           name: 'chat',
