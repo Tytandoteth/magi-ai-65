@@ -42,21 +42,17 @@ export class TokenInfoService implements ITokenService {
       // If no data found in database, try API
       const finalTokenData = tokenData || await this.tokenRepository.fetchTokenFromAPI(cleanSymbol);
 
-      if (!finalTokenData) {
+      if (!finalTokenData && !protocolData) {
         console.error('No token data found for:', cleanSymbol);
         return `I couldn't find reliable data for ${cleanSymbol}. Please verify the token symbol and try again.`;
       }
 
-      // For TVL queries, prioritize protocol data
-      if (isTVLQuery && protocolData?.tvl) {
-        return this.tokenFormatter.formatResponse({ 
-          ...finalTokenData,
-          defiMetrics: protocolData 
-        });
-      }
+      // Combine token and protocol data
+      const combinedData = {
+        ...finalTokenData,
+        defiMetrics: protocolData
+      };
 
-      // Combine and validate data
-      const combinedData = this.tokenOperations.combineTokenData(finalTokenData, protocolData);
       console.log('Combined data:', combinedData);
 
       // Format the response
