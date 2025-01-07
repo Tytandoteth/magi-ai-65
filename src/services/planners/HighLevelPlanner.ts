@@ -1,5 +1,6 @@
 import { MemoryManager } from "../memory/MemoryManager";
 import { Message } from "@/types/chat";
+import { HighLevelAction } from "@/types/actions";
 
 export class HighLevelPlanner {
   private memoryManager: MemoryManager;
@@ -8,7 +9,7 @@ export class HighLevelPlanner {
     this.memoryManager = MemoryManager.getInstance();
   }
 
-  async planAction(messages: Message[]): Promise<string> {
+  async planAction(messages: Message[]): Promise<HighLevelAction> {
     console.log('Planning high-level action based on messages:', messages);
     
     const lastMessage = messages[messages.length - 1];
@@ -16,20 +17,24 @@ export class HighLevelPlanner {
     
     // Check for token queries
     if (lastMessage.content.toLowerCase().match(/\$[a-zA-Z]+/)) {
-      return "TOKEN_INFO";
+      return {
+        type: "GET_TOKEN_INFO",
+        description: "Get token information"
+      };
     }
     
-    // Check for market-related queries
-    if (lastMessage.content.toLowerCase().includes('market') && engagement?.average > 10) {
-      return "MARKET_UPDATE";
-    } 
-    
-    // Check for price-related queries
-    if (lastMessage.content.toLowerCase().includes('price')) {
-      return "PRICE_CHECK";
+    // Check for percentage calculations
+    if (lastMessage.content.toLowerCase().includes('%')) {
+      return {
+        type: "CALCULATE_PERCENTAGE",
+        description: "Calculate percentage value"
+      };
     }
     
-    return "GENERAL_RESPONSE";
+    return {
+      type: "UNKNOWN",
+      description: "Unknown action requested"
+    };
   }
 
   async processFeedback(feedback: any): Promise<void> {
