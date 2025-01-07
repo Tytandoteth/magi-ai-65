@@ -10,9 +10,23 @@ export class LowLevelPlanner {
   }
 
   async executeTask(taskName: string, params: any): Promise<string> {
-    console.log(`Executing task: ${taskName}`, params);
+    console.log(`Executing task: ${taskName} with params:`, params);
     
     try {
+      // If the message contains a token symbol, handle it as a TOKEN_INFO task
+      if (params.messages) {
+        const lastMessage = params.messages[params.messages.length - 1];
+        if (lastMessage?.content?.includes('$')) {
+          console.log('Detected token query in message:', lastMessage.content);
+          const match = lastMessage.content.match(/\$(\w+)/i);
+          if (match) {
+            console.log('Extracted token symbol:', match[1]);
+            return await this.getTokenInfo(match[1]);
+          }
+        }
+      }
+
+      // Otherwise proceed with regular task handling
       switch (taskName) {
         case "PRICE_CHECK":
           return await this.checkPrice(params);
@@ -141,17 +155,6 @@ export class LowLevelPlanner {
   }
 
   private async generateGeneralResponse(params: any): Promise<string> {
-    const messages = params.messages || [];
-    const lastMessage = messages[messages.length - 1];
-    
-    if (lastMessage?.content?.toLowerCase().includes('$')) {
-      // Extract token symbol and get info
-      const match = lastMessage.content.match(/\$(\w+)/i);
-      if (match) {
-        return await this.getTokenInfo(match[1]);
-      }
-    }
-    
     return "I'm here to help with any DeFi-related questions! You can ask me about specific tokens by using the $ symbol (e.g., $ETH), get market updates, or ask about DeFi protocols.";
   }
 }
