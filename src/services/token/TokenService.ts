@@ -27,7 +27,39 @@ export class TokenService {
     console.log('Getting token info for:', symbol);
     
     try {
-      // Call the token-profile edge function
+      // Special handling for MAG token
+      if (symbol.toUpperCase() === 'MAG') {
+        console.log('Fetching MAG token data from mag_token_analytics');
+        const { data: magData, error } = await supabase
+          .from('mag_token_analytics')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching MAG data:', error);
+          throw new Error(`Failed to fetch MAG data: ${error.message}`);
+        }
+
+        if (magData) {
+          return `Here are the current metrics for Magnify (MAG):
+
+Current Price: $${magData.price.toLocaleString()}
+Market Cap: $${magData.market_cap.toLocaleString()}
+Total Supply: ${magData.total_supply.toLocaleString()} MAG
+Circulating Supply: ${magData.circulating_supply.toLocaleString()} MAG
+Holders: ${magData.holders_count.toLocaleString()}
+24h Transactions: ${magData.transactions_24h.toLocaleString()}
+24h Volume: $${magData.volume_24h.toLocaleString()}
+
+Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.
+
+IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+        }
+      }
+
+      // Call the token-profile edge function for other tokens
       const { data, error } = await supabase.functions.invoke('token-profile', {
         body: { symbol }
       });

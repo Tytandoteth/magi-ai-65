@@ -31,34 +31,10 @@ export class TokenResolver {
       return 'MAG';
     }
 
-    // Special handling for PENGU/Pudgy Penguins
-    if (normalizedContent === 'pengu' || normalizedContent === 'pudgy') {
-      console.log('Special case: PENGU token identified');
-      return 'PENGU';
-    }
-
     const symbol = symbolLookup.get(normalizedContent);
     console.log('Symbol lookup result:', symbol);
 
-    if (!symbol) {
-      console.log('No symbol found in lookup map');
-      return null;
-    }
-
-    // If chainId is provided, verify the token exists on that chain
-    if (chainId !== undefined) {
-      const metadata = tokenMetadata.get(symbol);
-      if (!metadata?.chainData[chainId]) {
-        console.error(`Token ${symbol} not supported on chain ${chainId}`);
-        throw new TokenError(
-          `Token ${symbol} not supported on chain ${chainId}`,
-          'INVALID_CHAIN'
-        );
-      }
-      console.log(`Token ${symbol} verified for chain ${chainId}`);
-    }
-
-    return symbol;
+    return symbol || null;
   }
 
   static getTokenMetadata(symbol: string, chainId?: number): TokenMetadata | null {
@@ -94,11 +70,6 @@ export class TokenResolver {
     // Special handling for MAG-related queries
     if (cleanContent.includes('mag') || cleanContent === 'magnify') {
       return `To get information about MAG (Magnify), use $MAG.`;
-    }
-    
-    // Special handling for PENGU-related queries
-    if (cleanContent.includes('peng') || cleanContent === 'pudgy') {
-      return `To get information about PENGU (Pudgy Penguins), use $PENGU.`;
     }
 
     const resolvedSymbol = this.resolveTokenSymbol(cleanContent);

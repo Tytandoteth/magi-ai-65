@@ -1,13 +1,12 @@
 import { TokenMetadata } from '@/types/token/metadata';
 
 export const tokenMetadata = new Map<string, TokenMetadata>([
-  ['BTC', {
-    symbol: 'BTC',
-    commonNames: ['bitcoin', 'btc', 'xbt'],
-    decimals: 8,
+  ['MAG', {
+    symbol: 'MAG',
+    commonNames: ['mag', 'magnify', 'magnifycash'],
+    decimals: 18,
     chainData: {
-      1: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', verified: true },
-      56: { address: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', verified: true }
+      1: { address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', verified: true }
     }
   }],
   ['ETH', {
@@ -19,12 +18,13 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
       56: { address: '0x2170ed0880ac9a755fd29b2688956bd959f933f8', verified: true }
     }
   }],
-  ['MAG', {
-    symbol: 'MAG',
-    commonNames: ['mag', 'magnify', 'magnifycash'],
-    decimals: 18,
+  ['BTC', {
+    symbol: 'BTC',
+    commonNames: ['bitcoin', 'btc', 'xbt'],
+    decimals: 8,
     chainData: {
-      1: { address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', verified: true }
+      1: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', verified: true },
+      56: { address: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', verified: true }
     }
   }],
   ['PENGU', {
