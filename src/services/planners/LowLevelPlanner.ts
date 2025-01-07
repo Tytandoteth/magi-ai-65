@@ -16,8 +16,8 @@ export class LowLevelPlanner {
   }): Promise<string> {
     console.log('Executing task:', { action, params });
 
-    if (action.type === 'GET_TOKEN_INFO' && params.token) {
-      return this.tokenService.getTokenInfo(params.token);
+    if (action.type === 'GET_TOKEN_INFO' && action.params?.symbol) {
+      return this.tokenService.getTokenInfo(action.params.symbol);
     }
 
     if (action.type === 'CALCULATE_PERCENTAGE' && params.percentage) {
