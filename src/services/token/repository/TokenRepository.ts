@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TokenData, ProtocolData, RawTokenData } from "@/types/token";
 
 export class TokenRepository {
-  private static transformTokenData(rawData: RawTokenData): TokenData {
+  private transformTokenData(rawData: RawTokenData): TokenData {
     console.log('Transforming raw token data:', rawData);
     
     return {
@@ -14,7 +14,7 @@ export class TokenRepository {
     };
   }
 
-  static async fetchTokenData(symbol: string): Promise<TokenData | null> {
+  async fetchTokenData(symbol: string): Promise<TokenData | null> {
     console.log('Fetching token data for:', symbol);
     
     const { data: tokenData, error } = await supabase
@@ -37,7 +37,7 @@ export class TokenRepository {
     return this.transformTokenData(tokenData as RawTokenData);
   }
 
-  static async fetchProtocolData(symbol: string): Promise<ProtocolData | null> {
+  async fetchProtocolData(symbol: string): Promise<ProtocolData | null> {
     console.log('Fetching protocol data for:', symbol);
     
     const { data: protocolData, error } = await supabase
@@ -56,7 +56,7 @@ export class TokenRepository {
     return protocolData;
   }
 
-  static async fetchTokenFromAPI(symbol: string): Promise<TokenData | null> {
+  async fetchTokenFromAPI(symbol: string): Promise<TokenData | null> {
     console.log('Fetching from API for token:', symbol);
     
     try {

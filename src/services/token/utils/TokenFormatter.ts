@@ -1,18 +1,18 @@
 import { TokenData, ProtocolData, TokenResponse } from "@/types/token";
 
 export class TokenFormatter {
-  private static formatNumber(value: number): string {
+  private formatNumber(value: number): string {
     return value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   }
 
-  private static formatPercentage(value: number): string {
+  private formatPercentage(value: number): string {
     return `${value.toFixed(2)}%`;
   }
 
-  private static formatMarketData(marketData: TokenData['market_data']): string {
+  private formatMarketData(marketData: TokenData['market_data']): string {
     let result = '';
     
     if (marketData?.current_price?.usd) {
@@ -34,7 +34,7 @@ export class TokenFormatter {
     return result;
   }
 
-  private static formatProtocolData(protocolData: ProtocolData): string {
+  private formatProtocolData(protocolData: ProtocolData): string {
     let result = '\nProtocol Metrics:\n';
     
     if (protocolData.tvl) {
@@ -52,7 +52,7 @@ export class TokenFormatter {
     return result;
   }
 
-  static formatResponse(response: TokenResponse): string {
+  formatResponse(response: TokenResponse): string {
     if (!response.success) {
       return response.error || "Failed to fetch token information";
     }
