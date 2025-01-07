@@ -56,16 +56,30 @@ export class LowLevelPlanner {
       return "Please provide a token symbol to get information about.";
     }
 
-    // Remove $ if present and convert to uppercase
-    const cleanSymbol = symbol.replace('$', '').toUpperCase();
-    
+    // Handle multiple token queries
+    const tokens = symbol.split(/\s+/)
+      .filter(t => t.startsWith('$'))
+      .map(t => t.substring(1).toUpperCase());
+
+    if (tokens.length === 0) {
+      return "Please provide token symbols starting with $ to get information about them.";
+    }
+
     try {
-      const tokenProfile = await createTokenProfile(cleanSymbol);
-      console.log('Token profile:', tokenProfile);
-      return tokenProfile;
+      const responses = await Promise.all(tokens.map(async (token) => {
+        try {
+          const tokenProfile = await createTokenProfile(token);
+          return tokenProfile;
+        } catch (error) {
+          console.error(`Error fetching info for ${token}:`, error);
+          return `I couldn't find detailed information about ${token}. Please verify the token symbol and try again.`;
+        }
+      }));
+
+      return responses.join('\n\n');
     } catch (error) {
       console.error('Error fetching token info:', error);
-      return `I apologize, but I couldn't find detailed information about ${cleanSymbol}. Please verify the token symbol and try again.`;
+      return `I apologize, but I encountered an error while fetching token information. Please try again later.`;
     }
   }
 
@@ -74,10 +88,10 @@ export class LowLevelPlanner {
     const lastMessage = messages[messages.length - 1];
     
     if (lastMessage?.content?.toLowerCase().includes('$')) {
-      // Extract token symbol and get info
-      const symbol = lastMessage.content.match(/\$(\w+)/)?.[1];
-      if (symbol) {
-        return await this.getTokenInfo(symbol);
+      // Extract all token symbols and get info
+      const symbols = lastMessage.content.match(/\$(\w+)/g);
+      if (symbols && symbols.length > 0) {
+        return await this.getTokenInfo(symbols.join(' '));
       }
     }
     
