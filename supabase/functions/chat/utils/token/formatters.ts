@@ -1,6 +1,6 @@
 export const formatTokenProfile = (profile: any) => {
-  if (!profile || !profile.price) {
-    return `I apologize, but I cannot provide complete information about this token at the moment due to data availability issues.`;
+  if (!profile) {
+    return `I apologize, but I couldn't find reliable data for this token. This might mean it's a new or unlisted token. Please conduct thorough research before considering any investment.`;
   }
 
   const formatNumber = (num: number) => {
@@ -18,18 +18,35 @@ export const formatTokenProfile = (profile: any) => {
 
   let response = `Here are the current metrics for ${profile.name} (${profile.symbol}):\n\n`;
 
-  if (profile.price) {
-    response += `Current Price: ${formatNumber(profile.price)}\n`;
+  // Market Data
+  const marketData = profile.market_data || {};
+  if (marketData.current_price?.usd) {
+    response += `Current Price: ${formatNumber(marketData.current_price.usd)}\n`;
   }
 
-  if (profile.marketCap) {
-    response += `Market Cap: ${formatNumber(profile.marketCap)}\n`;
+  if (marketData.market_cap?.usd) {
+    response += `Market Cap: ${formatNumber(marketData.market_cap.usd)}\n`;
   }
 
-  if (profile.volume24h) {
-    response += `24h Trading Volume: ${formatNumber(profile.volume24h)}\n`;
+  if (marketData.total_volume?.usd) {
+    response += `24h Trading Volume: ${formatNumber(marketData.total_volume.usd)}\n`;
   }
 
+  if (marketData.price_change_percentage_24h) {
+    response += `24h Price Change: ${formatPercentage(marketData.price_change_percentage_24h)}\n`;
+  }
+
+  // Additional Metrics
+  const metadata = profile.metadata?.additional_metrics || {};
+  if (metadata.market_cap_rank) {
+    response += `Market Cap Rank: #${metadata.market_cap_rank}\n`;
+  }
+
+  if (metadata.coingecko_score) {
+    response += `CoinGecko Score: ${metadata.coingecko_score.toFixed(2)}/100\n`;
+  }
+
+  // DeFi Metrics
   if (profile.defiMetrics?.tvl) {
     response += `\nProtocol Metrics:\n`;
     response += `Total Value Locked (TVL): ${formatNumber(profile.defiMetrics.tvl)}\n`;
@@ -37,17 +54,19 @@ export const formatTokenProfile = (profile: any) => {
     if (profile.defiMetrics.change24h) {
       response += `24h TVL Change: ${formatPercentage(profile.defiMetrics.change24h)}\n`;
     }
-  }
 
-  if (profile.socialMetrics) {
-    response += `\nSocial Metrics:\n`;
-    response += `Twitter Mentions (24h): ${profile.socialMetrics.twitterMentions}\n`;
-    if (profile.socialMetrics.sentiment) {
-      response += `Social Sentiment Score: ${profile.socialMetrics.sentiment.toFixed(2)}\n`;
+    if (profile.defiMetrics.category) {
+      response += `Category: ${profile.defiMetrics.category}\n`;
     }
   }
 
-  response += `\nPlease note that cryptocurrency investments carry risks. Always conduct thorough research before making investment decisions.`;
+  // Description
+  if (profile.description) {
+    response += `\nDescription:\n${profile.description}\n`;
+  }
+
+  // Risk Warning
+  response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
 
   return response;
 };
