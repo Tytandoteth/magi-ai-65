@@ -4,6 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export class LowLevelPlanner {
   private inventoryManager: InventoryManager;
+  private commonTokens = new Map([
+    ['bitcoin', 'BTC'],
+    ['ethereum', 'ETH'],
+    ['solana', 'SOL'],
+    ['cardano', 'ADA'],
+    ['dogecoin', 'DOGE'],
+    ['ripple', 'XRP'],
+    ['polkadot', 'DOT']
+  ]);
 
   constructor() {
     this.inventoryManager = InventoryManager.getInstance();
@@ -13,15 +22,33 @@ export class LowLevelPlanner {
     console.log(`Executing task: ${taskName} with params:`, params);
     
     try {
-      // If the message contains a token symbol, handle it as a TOKEN_INFO task
+      // Check for token queries in different formats
       if (params.messages) {
         const lastMessage = params.messages[params.messages.length - 1];
-        if (lastMessage?.content?.includes('$')) {
-          console.log('Detected token query in message:', lastMessage.content);
-          const match = lastMessage.content.match(/\$(\w+)/i);
-          if (match) {
-            console.log('Extracted token symbol:', match[1]);
-            return await this.getTokenInfo(match[1]);
+        if (lastMessage?.content) {
+          console.log('Processing message content:', lastMessage.content);
+          
+          // Check for $ symbol queries first
+          if (lastMessage.content.includes('$')) {
+            console.log('Detected $ symbol token query');
+            const match = lastMessage.content.match(/\$(\w+)/i);
+            if (match) {
+              console.log('Extracted token symbol:', match[1]);
+              return await this.getTokenInfo(match[1]);
+            }
+          }
+          
+          // Check for common token names without $ symbol
+          const lowercaseContent = lastMessage.content.toLowerCase().trim();
+          if (this.commonTokens.has(lowercaseContent)) {
+            console.log('Detected common token name:', lowercaseContent);
+            const symbol = this.commonTokens.get(lowercaseContent);
+            return await this.getTokenInfo(symbol!);
+          }
+          
+          // If it looks like a token query but missing $ symbol
+          if (lowercaseContent.match(/^[a-z0-9]+$/i) && lowercaseContent.length <= 10) {
+            return `To get information about ${lowercaseContent.toUpperCase()}, please use the $ symbol (e.g., $${lowercaseContent.toUpperCase()}). You can also ask about market updates or specific DeFi protocols.`;
           }
         }
       }
