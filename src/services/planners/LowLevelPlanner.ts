@@ -1,77 +1,37 @@
-import { createTokenProfile } from "@/utils/token/tokenProfile";
-import { InventoryManager } from "../inventory/InventoryManager";
-import { TokenResolver } from "../token/TokenResolver";
-import { TokenInfoService } from "../token/TokenInfoService";
-import { supabase } from "@/integrations/supabase/client";
+import { TokenService } from "../token/TokenService";
+import { HighLevelAction } from "@/types/actions";
+import { Message } from "@/types/chat";
 
 export class LowLevelPlanner {
-  private inventoryManager: InventoryManager;
-  private tokenInfoService: TokenInfoService;
+  private tokenService: TokenService;
 
   constructor() {
-    this.inventoryManager = InventoryManager.getInstance();
-    this.tokenInfoService = TokenInfoService.getInstance();
+    this.tokenService = TokenService.getInstance();
   }
 
-  async executeTask(taskName: string, params: any): Promise<string> {
-    console.log(`Executing task: ${taskName} with params:`, params);
-    
-    try {
-      // Check for token queries in different formats
-      if (params.messages) {
-        const lastMessage = params.messages[params.messages.length - 1];
-        if (lastMessage?.content) {
-          console.log('Processing message content:', lastMessage.content);
-          
-          const symbol = TokenResolver.resolveTokenSymbol(lastMessage.content);
-          if (symbol) {
-            return await this.tokenInfoService.getTokenInfo(symbol);
-          }
-          
-          return TokenResolver.getSuggestionMessage(lastMessage.content);
-        }
-      }
+  async executeTask(action: HighLevelAction, params: {
+    messages: Message[];
+    token?: string;
+    percentage?: string;
+  }): Promise<string> {
+    console.log('Executing task:', { action, params });
 
-      // Otherwise proceed with regular task handling
-      switch (taskName) {
-        case "PRICE_CHECK":
-          return await this.checkPrice(params);
-        case "MARKET_UPDATE":
-          return await this.generateMarketUpdate(params);
-        case "TOKEN_INFO":
-          return await this.tokenInfoService.getTokenInfo(params.token);
-        default:
-          return await this.generateGeneralResponse(params);
-      }
-    } catch (error) {
-      console.error(`Error executing task ${taskName}:`, error);
-      throw error;
+    if (action.type === 'GET_TOKEN_INFO' && params.token) {
+      return this.tokenService.getTokenInfo(params.token);
     }
-  }
 
-  private async checkPrice(params: any): Promise<string> {
-    const template = this.inventoryManager.getItem("tweetTemplates")?.priceAlert;
-    if (!template) throw new Error("Price alert template not found");
+    if (action.type === 'CALCULATE_PERCENTAGE' && params.percentage) {
+      const percentage = parseFloat(params.percentage);
+      if (isNaN(percentage)) {
+        return `I couldn't understand the percentage value. Please provide a valid number.`;
+      }
+      return `${percentage}% is equal to ${percentage / 100} in decimal form.`;
+    }
 
-    return template
-      .replace("${token}", params.token || "Unknown")
-      .replace("${percentage}", params.percentage || "0");
-  }
+    if (action.type === 'UNKNOWN') {
+      return `I'm not sure how to help with that request. You can ask me about specific tokens using the $ symbol (e.g., $ETH), or ask about market updates and DeFi protocols.`;
+    }
 
-  private async generateMarketUpdate(params: any): Promise<string> {
-    const { data: marketData, error } = await supabase
-      .from('defi_market_data')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) throw error;
-
-    return `Current Market Update:\nTotal Value Locked: $${marketData.total_value_locked.toLocaleString()}`;
-  }
-
-  private async generateGeneralResponse(params: any): Promise<string> {
-    return "I'm here to help with any DeFi-related questions! You can ask me about specific tokens by using the $ symbol (e.g., $ETH), get market updates, or ask about DeFi protocols.";
+    return `I don't know how to handle that type of request yet. Please try asking about specific tokens or market information.`;
   }
 }

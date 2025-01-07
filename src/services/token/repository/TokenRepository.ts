@@ -1,158 +1,90 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, ProtocolData, RawTokenData } from "@/types/token";
-
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000;
+import { TokenData, TokenNotFoundError, TokenFetchError } from "@/types/token";
 
 export class TokenRepository {
-  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private static instance: TokenRepository;
+  private cache: Map<string, { data: TokenData; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  private async retryOperation<T>(
-    operation: () => Promise<T>,
-    retries = MAX_RETRIES,
-    delay = INITIAL_RETRY_DELAY
-  ): Promise<T> {
-    try {
-      return await operation();
-    } catch (error) {
-      if (retries === 0) throw error;
-      
-      console.log(`Retrying operation, ${retries} attempts remaining`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      return this.retryOperation(operation, retries - 1, delay * 2);
+  public static getInstance(): TokenRepository {
+    if (!TokenRepository.instance) {
+      TokenRepository.instance = new TokenRepository();
     }
+    return TokenRepository.instance;
   }
 
-  private getCacheKey(type: string, symbol: string): string {
-    return `${type}:${symbol.toLowerCase()}`;
+  private isCacheValid(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_DURATION;
   }
 
-  private getFromCache<T>(type: string, symbol: string): T | null {
-    const key = this.getCacheKey(type, symbol);
-    const cached = this.cache.get(key);
-    
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Cache hit for ${key}`);
-      return cached.data as T;
-    }
-    
-    return null;
-  }
-
-  private setCache(type: string, symbol: string, data: any): void {
-    const key = this.getCacheKey(type, symbol);
-    this.cache.set(key, { data, timestamp: Date.now() });
-    console.log(`Cached data for ${key}`);
-  }
-
-  private transformTokenData(rawData: RawTokenData): TokenData {
-    console.log('Transforming raw token data:', rawData);
-    
-    return {
-      name: rawData.name,
-      symbol: rawData.symbol,
-      description: rawData.description || undefined,
-      market_data: rawData.market_data as TokenData['market_data'],
-      metadata: rawData.metadata as TokenData['metadata']
-    };
-  }
-
-  async fetchTokenData(symbol: string): Promise<TokenData | null> {
+  async fetchTokenData(symbol: string): Promise<TokenData> {
     console.log('Fetching token data for:', symbol);
     
     // Check cache first
-    const cached = this.getFromCache<TokenData>('token', symbol);
-    if (cached) return cached;
+    const cached = this.cache.get(symbol);
+    if (cached && this.isCacheValid(cached.timestamp)) {
+      console.log('Cache hit for token:', symbol);
+      return cached.data;
+    }
 
     try {
-      const { data, error } = await this.retryOperation(async () => 
-        await supabase
-          .from('token_metadata')
-          .select('*')
-          .ilike('symbol', symbol)
-          .order('last_updated', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      );
+      // Fetch token metadata
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('token_metadata')
+        .select('*')
+        .ilike('symbol', symbol)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching token metadata:', error);
-        return null;
+      if (tokenError) {
+        console.error('Error fetching token metadata:', tokenError);
+        throw new TokenFetchError(symbol, tokenError.message);
       }
 
-      if (!data) {
-        console.log('No token data found in database for:', symbol);
-        return null;
+      if (!tokenData) {
+        throw new TokenNotFoundError(symbol);
       }
 
-      const transformedData = this.transformTokenData(data as RawTokenData);
-      this.setCache('token', symbol, transformedData);
-      
+      // Fetch protocol data
+      const { data: protocolData, error: protocolError } = await supabase
+        .from('defi_llama_protocols')
+        .select('*')
+        .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (protocolError) {
+        console.error('Error fetching protocol data:', protocolError);
+      }
+
+      // Transform the data
+      const transformedData: TokenData = {
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        description: tokenData.description,
+        marketData: tokenData.market_data,
+        metadata: tokenData.metadata?.additional_metrics,
+        protocolData: protocolData ? {
+          tvl: protocolData.tvl,
+          change24h: protocolData.change_1d,
+          category: protocolData.category,
+          chains: protocolData.chains,
+          apy: protocolData.apy
+        } : undefined
+      };
+
+      // Cache the result
+      this.cache.set(symbol, {
+        data: transformedData,
+        timestamp: Date.now()
+      });
+
       return transformedData;
     } catch (error) {
-      console.error('Error in fetchTokenData:', error);
-      throw error;
-    }
-  }
-
-  async fetchProtocolData(symbol: string): Promise<ProtocolData | null> {
-    console.log('Fetching protocol data for:', symbol);
-    
-    // Check cache first
-    const cached = this.getFromCache<ProtocolData>('protocol', symbol);
-    if (cached) return cached;
-
-    try {
-      const { data, error } = await this.retryOperation(async () =>
-        await supabase
-          .from('defi_llama_protocols')
-          .select('*')
-          .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      );
-
-      if (error) {
-        console.error('Error fetching DeFi Llama data:', error);
-        return null;
+      if (error instanceof TokenError) {
+        throw error;
       }
-
-      if (data) {
-        this.setCache('protocol', symbol, data);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching protocol data:', error);
-      throw error;
-    }
-  }
-
-  async fetchTokenFromAPI(symbol: string): Promise<TokenData | null> {
-    console.log(`Fetching data from API for token: ${symbol}`);
-    
-    try {
-      const { data: response, error } = await this.retryOperation(async () =>
-        await supabase.functions.invoke('token-profile', {
-          body: { symbol }
-        })
-      );
-
-      if (error || !response?.data) {
-        console.error(`Error fetching token profile for ${symbol}:`, error || 'No data returned');
-        return null;
-      }
-
-      // Cache the API response
-      this.setCache('token', symbol, response.data);
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error in fetchTokenFromAPI:', error);
-      return null;
+      throw new TokenFetchError(symbol, error instanceof Error ? error.message : 'Unknown error');
     }
   }
 }

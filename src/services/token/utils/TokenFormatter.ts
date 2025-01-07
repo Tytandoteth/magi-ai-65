@@ -1,83 +1,83 @@
-import { TokenData, ProtocolData } from "@/types/token";
+import { TokenData } from "@/types/token";
 
 export class TokenFormatter {
-  formatResponse(data: TokenData & { defiMetrics?: ProtocolData }): string {
+  private static instance: TokenFormatter;
+
+  public static getInstance(): TokenFormatter {
+    if (!TokenFormatter.instance) {
+      TokenFormatter.instance = new TokenFormatter();
+    }
+    return TokenFormatter.instance;
+  }
+
+  formatTokenResponse(data: TokenData): string {
     console.log('Formatting response for data:', data);
     
-    if (!data) {
-      return "Token data not found";
-    }
-
     let response = `Here are the current metrics for ${data.name} (${data.symbol}):\n\n`;
 
-    // Format market data
-    if (data.market_data) {
-      if (data.market_data.current_price?.usd) {
-        response += `Current Price: ${this.formatCurrency(data.market_data.current_price.usd)}\n`;
+    // Market Data
+    if (data.marketData) {
+      if (data.marketData.currentPrice !== undefined) {
+        response += `Current Price: ${this.formatCurrency(data.marketData.currentPrice)}\n`;
       }
       
-      if (data.market_data.market_cap?.usd) {
-        response += `Market Cap: ${this.formatCurrency(data.market_data.market_cap.usd)}\n`;
+      if (data.marketData.marketCap !== undefined) {
+        response += `Market Cap: ${this.formatCurrency(data.marketData.marketCap)}\n`;
       }
       
-      if (data.market_data.total_volume?.usd) {
-        response += `24h Trading Volume: ${this.formatCurrency(data.market_data.total_volume.usd)}\n`;
+      if (data.marketData.totalVolume !== undefined) {
+        response += `24h Trading Volume: ${this.formatCurrency(data.marketData.totalVolume)}\n`;
       }
 
-      if (data.market_data.price_change_percentage_24h) {
-        response += `24h Price Change: ${this.formatPercentage(data.market_data.price_change_percentage_24h)}%\n`;
+      if (data.marketData.priceChangePercentage24h !== undefined) {
+        response += `24h Price Change: ${this.formatPercentage(data.marketData.priceChangePercentage24h)}%\n`;
       }
     }
 
-    // Add protocol metrics if available
-    if (data.defiMetrics) {
+    // Protocol Data
+    if (data.protocolData) {
       response += `\nProtocol Metrics:\n`;
-      if (data.defiMetrics.tvl) {
-        response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
+      
+      if (data.protocolData.tvl !== undefined) {
+        response += `Total Value Locked (TVL): ${this.formatCurrency(data.protocolData.tvl)}\n`;
       }
       
-      if (data.defiMetrics.change_1d) {
-        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change_1d)}%\n`;
+      if (data.protocolData.change24h !== undefined) {
+        response += `24h TVL Change: ${this.formatPercentage(data.protocolData.change24h)}%\n`;
       }
 
-      if (data.defiMetrics.category) {
-        response += `Category: ${data.defiMetrics.category}\n`;
+      if (data.protocolData.category) {
+        response += `Category: ${data.protocolData.category}\n`;
       }
     }
 
-    // Add market cap rank if available
-    if (data.metadata?.additional_metrics?.market_cap_rank) {
-      response += `\nMarket Cap Rank: #${data.metadata.additional_metrics.market_cap_rank}\n`;
+    // Metadata
+    if (data.metadata?.marketCapRank) {
+      response += `\nMarket Cap Rank: #${data.metadata.marketCapRank}\n`;
     }
 
-    // Add description if available
+    // Description
     if (data.description) {
       response += `\nDescription:\n${data.description}\n`;
     }
 
-    // Add disclaimer
+    // Risk Warning
     response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
 
     return response;
   }
 
   private formatCurrency(value: number): string {
-    if (value >= 1) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value);
-    } else {
-      // For values less than 1, use more decimal places
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 8
-      }).format(value);
-    }
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: value >= 1 ? 2 : 8,
+      notation: value >= 1_000_000 ? 'compact' : 'standard',
+      compactDisplay: 'short'
+    });
+    
+    return formatter.format(value);
   }
 
   private formatPercentage(value: number): string {
