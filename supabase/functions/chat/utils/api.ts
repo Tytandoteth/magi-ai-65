@@ -2,7 +2,7 @@ import { fetchLatestTweets } from './twitter.ts';
 
 export async function fetchMarketData() {
   try {
-    // Remove trailing colon from URL
+    // Remove trailing colon and ensure proper URL format
     const response = await fetch('https://api.example.com/market-data');
     const data = await response.json();
     console.log('Market API data:', data);
@@ -41,14 +41,14 @@ export async function fetchTokenData(address: string) {
     // Ensure proper URL construction
     const baseUrl = 'https://api.etherscan.io/api';
     
-    // Fetch token info
+    // Fetch token info with properly formatted URL
     const response = await fetch(
       `${baseUrl}?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`
     );
     const data = await response.json();
     console.log('Etherscan token data:', data);
     
-    // Fetch holder count
+    // Fetch holder count with properly formatted URL
     const holdersResponse = await fetch(
       `${baseUrl}?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`
     );
