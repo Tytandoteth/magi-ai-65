@@ -1,4 +1,3 @@
-import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,14 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 
-const queryClient = new QueryClient({
+// Define proper types for the QueryClient configuration
+const queryClientConfig = {
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
     },
   },
-});
+} as const;
+
+const queryClient = new QueryClient(queryClientConfig);
 
 const App = () => {
   return (
