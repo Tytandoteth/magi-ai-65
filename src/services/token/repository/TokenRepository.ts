@@ -1,6 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TokenData, TokenMetadata } from "@/types/token";
 
+interface ProtocolRawData {
+  chains?: string[];
+  apy?: number;
+  [key: string]: unknown;
+}
+
 export class TokenRepository {
   private static instance: TokenRepository;
   private cache: Map<string, { data: TokenData; timestamp: number }> = new Map();
@@ -76,13 +82,14 @@ export class TokenRepository {
       };
 
       // Add protocol data if available
-      if (protocolData) {
+      if (protocolData && protocolData.raw_data) {
+        const rawData = protocolData.raw_data as ProtocolRawData;
         transformedData.protocol_data = {
           tvl: protocolData.tvl,
           change_24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: Array.isArray(protocolData.raw_data?.chains) ? protocolData.raw_data.chains : [],
-          apy: typeof protocolData.raw_data?.apy === 'number' ? protocolData.raw_data.apy : undefined
+          chains: Array.isArray(rawData.chains) ? rawData.chains : [],
+          apy: typeof rawData.apy === 'number' ? rawData.apy : undefined
         };
       }
 
