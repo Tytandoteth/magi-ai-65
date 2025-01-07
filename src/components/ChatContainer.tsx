@@ -23,6 +23,8 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
     scrollToBottom();
   }, [chatState.messages]);
 
+  console.log("ChatContainer rendered with state:", chatState);
+
   return (
     <div className="chat-container flex-1 flex flex-col">
       <div className="flex-1 overflow-y-auto py-4">
@@ -43,7 +45,7 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
             <TypingIndicator />
             <div className="flex justify-start px-4 opacity-50">
               <div className="text-xs text-gray-400 animate-pulse">
-                Fetching latest data...
+                Processing your request...
               </div>
             </div>
           </>

@@ -8,6 +8,8 @@ export const ChatMessage = ({ message }: { message: Message }) => {
   const isUser = message.role === "user";
   
   const formatContent = (content: string) => {
+    if (!content) return ""; // Handle empty content
+    
     // Enhanced number formatting with locale and proper grouping
     content = content.replace(
       /\$\d+(?:\.\d{1,2})?(?:k|m|b)?/gi,
@@ -53,8 +55,10 @@ export const ChatMessage = ({ message }: { message: Message }) => {
     return content;
   };
 
+  console.log("Rendering message:", message);
+
   // Check if the message contains an error
-  const isError = message.content.toLowerCase().includes('error:');
+  const isError = message.content?.toLowerCase().includes('error:');
   
   return (
     <div
@@ -87,7 +91,7 @@ export const ChatMessage = ({ message }: { message: Message }) => {
           </Alert>
         ) : (
           <p className="text-sm sm:text-base whitespace-pre-wrap break-words leading-relaxed">
-            {formatContent(message.content)}
+            {formatContent(message.content || '')}
           </p>
         )}
         
