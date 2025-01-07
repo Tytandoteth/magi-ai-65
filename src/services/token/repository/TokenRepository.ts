@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TokenData, ProtocolData, RawTokenData } from "@/types/token";
-import { PostgrestResponse } from '@supabase/supabase-js';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const MAX_RETRIES = 3;
@@ -68,7 +67,7 @@ export class TokenRepository {
     if (cached) return cached;
 
     try {
-      const response = await this.retryOperation(async () => 
+      const { data, error } = await this.retryOperation(async () => 
         await supabase
           .from('token_metadata')
           .select('*')
@@ -78,16 +77,17 @@ export class TokenRepository {
           .maybeSingle()
       );
 
-      if (response.error) {
-        console.error('Error fetching token metadata:', response.error);
+      if (error) {
+        console.error('Error fetching token metadata:', error);
         return null;
       }
 
-      if (!response.data) {
+      if (!data) {
+        console.log('No token data found in database for:', symbol);
         return null;
       }
 
-      const transformedData = this.transformTokenData(response.data as RawTokenData);
+      const transformedData = this.transformTokenData(data as RawTokenData);
       this.setCache('token', symbol, transformedData);
       
       return transformedData;
@@ -105,7 +105,7 @@ export class TokenRepository {
     if (cached) return cached;
 
     try {
-      const response = await this.retryOperation(async () =>
+      const { data, error } = await this.retryOperation(async () =>
         await supabase
           .from('defi_llama_protocols')
           .select('*')
@@ -115,16 +115,16 @@ export class TokenRepository {
           .maybeSingle()
       );
 
-      if (response.error) {
-        console.error('Error fetching DeFi Llama data:', response.error);
+      if (error) {
+        console.error('Error fetching DeFi Llama data:', error);
         return null;
       }
 
-      if (response.data) {
-        this.setCache('protocol', symbol, response.data);
+      if (data) {
+        this.setCache('protocol', symbol, data);
       }
 
-      return response.data;
+      return data;
     } catch (error) {
       console.error('Error fetching protocol data:', error);
       throw error;
@@ -135,21 +135,21 @@ export class TokenRepository {
     console.log(`Fetching data from API for token: ${symbol}`);
     
     try {
-      const response = await this.retryOperation(async () =>
+      const { data: response, error } = await this.retryOperation(async () =>
         await supabase.functions.invoke('token-profile', {
           body: { symbol }
         })
       );
 
-      if (!response.data?.data) {
-        console.error(`Error fetching token profile for ${symbol}`);
+      if (error || !response?.data) {
+        console.error(`Error fetching token profile for ${symbol}:`, error || 'No data returned');
         return null;
       }
 
       // Cache the API response
-      this.setCache('token', symbol, response.data.data);
+      this.setCache('token', symbol, response.data);
       
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('Error in fetchTokenFromAPI:', error);
       return null;

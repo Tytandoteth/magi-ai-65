@@ -39,8 +39,13 @@ export class TokenInfoService implements ITokenService {
       console.log('Token data:', tokenData);
       console.log('Protocol data:', protocolData);
 
-      // If no data in database, try API
+      // If no data found in database, try API
       const finalTokenData = tokenData || await this.tokenRepository.fetchTokenFromAPI(cleanSymbol);
+
+      if (!finalTokenData) {
+        console.error('No token data found for:', cleanSymbol);
+        return `I couldn't find reliable data for ${cleanSymbol}. Please verify the token symbol and try again.`;
+      }
 
       // For TVL queries, prioritize protocol data
       if (isTVLQuery && protocolData?.tvl) {
@@ -48,13 +53,14 @@ export class TokenInfoService implements ITokenService {
       }
 
       // Combine and validate data
-      const response = this.tokenOperations.combineTokenData(finalTokenData, protocolData);
+      const combinedData = this.tokenOperations.combineTokenData(finalTokenData, protocolData);
+      console.log('Combined data:', combinedData);
 
       // Format the response
-      return this.tokenFormatter.formatResponse(response);
+      return this.tokenFormatter.formatResponse(combinedData);
     } catch (error) {
       console.error('Error in getTokenInfo:', error);
-      return `I apologize, but I encountered an error while fetching data for ${symbol}. Please try again later.`;
+      return `I encountered an error while fetching data for ${symbol}. Please try again later.`;
     }
   }
 
