@@ -3,6 +3,9 @@ import { UserMessage } from "./UserMessage";
 import { ApiCalls } from "./ApiCalls";
 import { MagiResponse } from "./MagiResponse";
 import { ErrorMessage } from "./ErrorMessage";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ApiLog {
   timestamp: Date;
@@ -27,19 +30,50 @@ interface LogEntryProps {
 }
 
 export const LogEntry = ({ log, index }: LogEntryProps) => {
+  const { toast } = useToast();
+  
   const getLastMessage = (messages: Message[]) => {
     return messages[messages.length - 1];
   };
 
   const lastMessage = getLastMessage(log.request.messages);
 
+  const handleCopyLog = async () => {
+    try {
+      const logContent = JSON.stringify(log, null, 2);
+      await navigator.clipboard.writeText(logContent);
+      toast({
+        title: "Copied!",
+        description: "Log content has been copied to clipboard",
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy log content",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div key={index} className="bg-[#1E1F21] rounded-xl p-6 border border-gray-700/50 shadow-lg transition-all hover:border-gray-600">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-3 w-3 rounded-full bg-blue-400 animate-pulse"></div>
-        <time className="text-sm text-gray-400 font-medium">
-          {log.timestamp.toLocaleString()}
-        </time>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-3 rounded-full bg-blue-400 animate-pulse"></div>
+          <time className="text-sm text-gray-400 font-medium">
+            {log.timestamp.toLocaleString()}
+          </time>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-gray-400 hover:text-gray-300"
+          onClick={handleCopyLog}
+        >
+          <Copy className="h-4 w-4 mr-2" />
+          Copy Log
+        </Button>
       </div>
       
       <div className="space-y-6">
