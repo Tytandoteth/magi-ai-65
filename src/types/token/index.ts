@@ -41,7 +41,7 @@ export interface TokenData extends BaseTokenData {
   protocol_data?: ProtocolData;
 }
 
-// Custom error types
+// Custom error classes
 export class TokenError extends Error {
   constructor(message: string, public code: string) {
     super(message);
