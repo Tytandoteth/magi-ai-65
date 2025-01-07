@@ -1,6 +1,7 @@
 import { Message } from "@/types/chat";
 import { HighLevelAction } from "@/types/actions";
 import { TokenResolver } from "../token/TokenResolver";
+import { onChainTools } from "@/integrations/goat/tools";
 
 export class HighLevelPlanner {
   async planAction(messages: Message[]): Promise<HighLevelAction> {
@@ -12,8 +13,26 @@ export class HighLevelPlanner {
     }
 
     // Extract token symbol from message
-    const content = lastMessage.content;
+    const content = lastMessage.content.toLowerCase();
     console.log('Analyzing content:', content);
+
+    // Check for blockchain actions
+    if (content.includes('send eth') || content.includes('transfer eth')) {
+      const amountMatch = content.match(/(\d+\.?\d*)\s*eth/i);
+      const addressMatch = content.match(/(0x[a-fA-F0-9]{40})/);
+      
+      if (amountMatch && addressMatch) {
+        return {
+          type: 'BLOCKCHAIN_ACTION',
+          description: 'Send ETH transaction',
+          params: {
+            actionType: 'SEND_ETH',
+            to: addressMatch[1],
+            value: amountMatch[1]
+          }
+        };
+      }
+    }
 
     // Look for token symbols with $ prefix
     const tokenMatch = content.match(/\$([A-Za-z]+)/);
@@ -21,7 +40,6 @@ export class HighLevelPlanner {
       const tokenSymbol = tokenMatch[1].toUpperCase();
       console.log('Found token symbol in message:', tokenSymbol);
       
-      // Validate token using TokenResolver
       const resolvedSymbol = TokenResolver.resolveTokenSymbol(tokenSymbol);
       console.log('Resolved token symbol:', resolvedSymbol);
 
