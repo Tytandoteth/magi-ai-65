@@ -65,3 +65,13 @@ export class TokenFetchError extends TokenError {
     this.name = 'TokenFetchError';
   }
 }
+
+// Actions interface
+export interface TokenAction {
+  type: string;
+  payload: {
+    symbol: string;
+    data?: TokenData;
+    error?: string;
+  };
+}
