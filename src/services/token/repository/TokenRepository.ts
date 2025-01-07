@@ -17,7 +17,7 @@ export class TokenRepository {
     return Date.now() - timestamp < this.CACHE_DURATION;
   }
 
-  async fetchTokenData(symbol: string): Promise<TokenData> {
+  async fetchTokenData(symbol: string): Promise<TokenData | null> {
     console.log('Fetching token data for:', symbol);
     
     // Check cache first
@@ -62,11 +62,13 @@ export class TokenRepository {
         name: tokenData.name,
         symbol: tokenData.symbol,
         description: tokenData.description,
-        marketData: tokenData.market_data,
-        metadata: tokenData.metadata?.additional_metrics,
-        protocolData: protocolData ? {
+        market_data: tokenData.market_data,
+        metadata: {
+          additional_metrics: tokenData.metadata?.additional_metrics
+        },
+        protocol_data: protocolData ? {
           tvl: protocolData.tvl,
-          change24h: protocolData.change_1d,
+          change_24h: protocolData.change_1d,
           category: protocolData.category,
           chains: protocolData.chains,
           apy: protocolData.apy
@@ -86,5 +88,19 @@ export class TokenRepository {
       }
       throw new TokenFetchError(symbol, error instanceof Error ? error.message : 'Unknown error');
     }
+  }
+
+  async fetchTokenFromAPI(symbol: string): Promise<TokenData | null> {
+    console.log(`Fetching data from API for token: ${symbol}`);
+    const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
+      body: { symbol }
+    });
+
+    if (cgError) {
+      console.error(`Error fetching token profile for ${symbol}:`, cgError);
+      throw new TokenFetchError(symbol, cgError.message);
+    }
+
+    return cgResponse?.data || null;
   }
 }

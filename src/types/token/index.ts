@@ -7,31 +7,34 @@ export interface BaseTokenData {
 
 // Market specific data
 export interface MarketData {
-  currentPrice?: number;
-  marketCap?: number;
-  totalVolume?: number;
-  priceChange24h?: number;
-  priceChangePercentage24h?: number;
+  current_price?: { usd?: number };
+  market_cap?: { usd?: number };
+  total_volume?: { usd?: number };
+  price_change_24h?: number;
+  price_change_percentage_24h?: number;
 }
 
 // Protocol specific data
 export interface ProtocolData {
   tvl?: number;
-  change24h?: number;
+  change_24h?: number;
   category?: string;
-  name?: string;
   chains?: string[];
   apy?: number;
 }
 
+// Metadata interface
+export interface TokenMetadata {
+  additional_metrics?: {
+    market_cap_rank?: number;
+  };
+}
+
 // Combined token data
 export interface TokenData extends BaseTokenData {
-  marketData?: MarketData;
-  protocolData?: ProtocolData;
-  metadata?: {
-    marketCapRank?: number;
-    score?: number;
-  };
+  market_data?: MarketData;
+  metadata?: TokenMetadata;
+  protocol_data?: ProtocolData;
 }
 
 // Custom error types

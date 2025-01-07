@@ -16,44 +16,44 @@ export class TokenFormatter {
     let response = `Here are the current metrics for ${data.name} (${data.symbol}):\n\n`;
 
     // Market Data
-    if (data.marketData) {
-      if (data.marketData.currentPrice !== undefined) {
-        response += `Current Price: ${this.formatCurrency(data.marketData.currentPrice)}\n`;
+    if (data.market_data) {
+      if (data.market_data.current_price?.usd !== undefined) {
+        response += `Current Price: ${this.formatCurrency(data.market_data.current_price.usd)}\n`;
       }
       
-      if (data.marketData.marketCap !== undefined) {
-        response += `Market Cap: ${this.formatCurrency(data.marketData.marketCap)}\n`;
+      if (data.market_data.market_cap?.usd !== undefined) {
+        response += `Market Cap: ${this.formatCurrency(data.market_data.market_cap.usd)}\n`;
       }
       
-      if (data.marketData.totalVolume !== undefined) {
-        response += `24h Trading Volume: ${this.formatCurrency(data.marketData.totalVolume)}\n`;
+      if (data.market_data.total_volume?.usd !== undefined) {
+        response += `24h Trading Volume: ${this.formatCurrency(data.market_data.total_volume.usd)}\n`;
       }
 
-      if (data.marketData.priceChangePercentage24h !== undefined) {
-        response += `24h Price Change: ${this.formatPercentage(data.marketData.priceChangePercentage24h)}%\n`;
+      if (data.market_data.price_change_percentage_24h !== undefined) {
+        response += `24h Price Change: ${this.formatPercentage(data.market_data.price_change_percentage_24h)}%\n`;
       }
     }
 
     // Protocol Data
-    if (data.protocolData) {
+    if (data.protocol_data) {
       response += `\nProtocol Metrics:\n`;
       
-      if (data.protocolData.tvl !== undefined) {
-        response += `Total Value Locked (TVL): ${this.formatCurrency(data.protocolData.tvl)}\n`;
+      if (data.protocol_data.tvl !== undefined) {
+        response += `Total Value Locked (TVL): ${this.formatCurrency(data.protocol_data.tvl)}\n`;
       }
       
-      if (data.protocolData.change24h !== undefined) {
-        response += `24h TVL Change: ${this.formatPercentage(data.protocolData.change24h)}%\n`;
+      if (data.protocol_data.change_24h !== undefined) {
+        response += `24h TVL Change: ${this.formatPercentage(data.protocol_data.change_24h)}%\n`;
       }
 
-      if (data.protocolData.category) {
-        response += `Category: ${data.protocolData.category}\n`;
+      if (data.protocol_data.category) {
+        response += `Category: ${data.protocol_data.category}\n`;
       }
     }
 
     // Metadata
-    if (data.metadata?.marketCapRank) {
-      response += `\nMarket Cap Rank: #${data.metadata.marketCapRank}\n`;
+    if (data.metadata?.additional_metrics?.market_cap_rank) {
+      response += `\nMarket Cap Rank: #${data.metadata.additional_metrics.market_cap_rank}\n`;
     }
 
     // Description

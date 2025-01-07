@@ -31,39 +31,19 @@ export class TokenInfoService implements ITokenService {
       console.log('Cleaned symbol:', cleanSymbol);
 
       // Fetch data from different sources
-      const [tokenData, protocolData] = await Promise.all([
-        this.fetchTokenData(cleanSymbol),
-        this.fetchProtocolData(cleanSymbol)
-      ]);
-
+      const tokenData = await this.tokenRepository.fetchTokenData(cleanSymbol);
       console.log('Token data:', tokenData);
-      console.log('Protocol data:', protocolData);
 
-      // If no data found in database, try API
-      const finalTokenData = tokenData || await this.tokenRepository.fetchTokenFromAPI(cleanSymbol);
-
-      if (!finalTokenData && !protocolData) {
+      if (!tokenData) {
         console.error('No token data found for:', cleanSymbol);
         return `I couldn't find reliable data for ${cleanSymbol}. Please verify the token symbol and try again.`;
       }
 
-      // Combine token and protocol data
-      const combinedData = this.tokenOperations.combineTokenData(finalTokenData, protocolData);
-      console.log('Combined data:', combinedData);
-
       // Format the response
-      return this.tokenFormatter.formatResponse(combinedData);
+      return this.tokenFormatter.formatTokenResponse(tokenData);
     } catch (error) {
       console.error('Error in getTokenInfo:', error);
       return `I encountered an error while fetching data for ${symbol}. Please try again later.`;
     }
-  }
-
-  async fetchTokenData(symbol: string): Promise<TokenData | null> {
-    return this.tokenRepository.fetchTokenData(symbol);
-  }
-
-  async fetchProtocolData(symbol: string): Promise<ProtocolData | null> {
-    return this.tokenRepository.fetchProtocolData(symbol);
   }
 }
