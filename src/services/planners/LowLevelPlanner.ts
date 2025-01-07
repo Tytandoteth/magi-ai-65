@@ -1,30 +1,10 @@
 import { createTokenProfile } from "@/utils/token/tokenProfile";
 import { InventoryManager } from "../inventory/InventoryManager";
-import { supabase } from "@/integrations/supabase/client";
+import { TokenResolver } from "../token/TokenResolver";
+import { TokenInfoService } from "../token/TokenInfoService";
 
 export class LowLevelPlanner {
   private inventoryManager: InventoryManager;
-  private commonTokens = new Map([
-    ['bitcoin', 'BTC'],
-    ['ethereum', 'ETH'],
-    ['solana', 'SOL'],
-    ['cardano', 'ADA'],
-    ['dogecoin', 'DOGE'],
-    ['ripple', 'XRP'],
-    ['polkadot', 'DOT'],
-    ['pudgy penguins', 'PENGU'],
-    ['pudgypenguins', 'PENGU']
-  ]);
-
-  private tokenAliases = new Map([
-    ['eth', 'ethereum'],
-    ['btc', 'bitcoin'],
-    ['sol', 'solana'],
-    ['doge', 'dogecoin'],
-    ['xrp', 'ripple'],
-    ['dot', 'polkadot'],
-    ['pengu', 'pudgy penguins']
-  ]);
 
   constructor() {
     this.inventoryManager = InventoryManager.getInstance();
@@ -40,42 +20,12 @@ export class LowLevelPlanner {
         if (lastMessage?.content) {
           console.log('Processing message content:', lastMessage.content);
           
-          // Check for $ symbol queries first
-          if (lastMessage.content.includes('$')) {
-            console.log('Detected $ symbol token query');
-            const match = lastMessage.content.match(/\$(\w+)/i);
-            if (match) {
-              console.log('Extracted token symbol:', match[1]);
-              return await this.getTokenInfo(match[1]);
-            }
+          const symbol = TokenResolver.resolveTokenSymbol(lastMessage.content);
+          if (symbol) {
+            return await TokenInfoService.getTokenInfo(symbol);
           }
           
-          // Clean and normalize the input
-          const lowercaseContent = lastMessage.content.toLowerCase().trim();
-          
-          // Check for token aliases first
-          if (this.tokenAliases.has(lowercaseContent)) {
-            console.log('Found token alias:', lowercaseContent);
-            const mainName = this.tokenAliases.get(lowercaseContent);
-            if (mainName && this.commonTokens.has(mainName)) {
-              console.log('Resolved alias to main token:', mainName);
-              const symbol = this.commonTokens.get(mainName);
-              return await this.getTokenInfo(symbol!);
-            }
-          }
-          
-          // Check for common token names (including multi-word tokens)
-          if (this.commonTokens.has(lowercaseContent)) {
-            console.log('Detected common token name:', lowercaseContent);
-            const symbol = this.commonTokens.get(lowercaseContent);
-            return await this.getTokenInfo(symbol!);
-          }
-          
-          // If it looks like a token query but missing $ symbol
-          if (lowercaseContent.match(/^[a-z0-9\s]+$/i) && lowercaseContent.length <= 20) {
-            const suggestedSymbol = lowercaseContent.replace(/\s+/g, '').toUpperCase();
-            return `To get information about ${suggestedSymbol}, please use the $ symbol (e.g., $${suggestedSymbol}). You can also ask about market updates or specific DeFi protocols.`;
-          }
+          return TokenResolver.getSuggestionMessage(lastMessage.content);
         }
       }
 
@@ -86,7 +36,7 @@ export class LowLevelPlanner {
         case "MARKET_UPDATE":
           return await this.generateMarketUpdate(params);
         case "TOKEN_INFO":
-          return await this.getTokenInfo(params.token);
+          return await TokenInfoService.getTokenInfo(params.token);
         default:
           return await this.generateGeneralResponse(params);
       }
@@ -116,95 +66,6 @@ export class LowLevelPlanner {
     if (error) throw error;
 
     return `Current Market Update:\nTotal Value Locked: $${marketData.total_value_locked.toLocaleString()}`;
-  }
-
-  private async getTokenInfo(symbol: string): Promise<string> {
-    console.log('Getting token info for:', symbol);
-    
-    if (!symbol) {
-      return "Please provide a token symbol to get information about.";
-    }
-
-    // Clean up the symbol (remove $ and convert to uppercase)
-    const cleanSymbol = symbol.replace(/^\$/, '').toUpperCase();
-    console.log('Cleaned symbol:', cleanSymbol);
-
-    try {
-      // First check if token exists in our database
-      const { data: tokenData, error } = await supabase
-        .from('token_metadata')
-        .select('*')
-        .ilike('symbol', cleanSymbol)
-        .order('last_updated', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Error checking token metadata:', error);
-        throw error;
-      }
-
-      if (tokenData && tokenData.length > 0) {
-        console.log('Found token data in database:', tokenData[0]);
-        const formattedResponse = this.formatTokenResponse(tokenData[0]);
-        console.log('Formatted response:', formattedResponse);
-        return formattedResponse;
-      }
-
-      // If not in database, fetch from API
-      console.log(`Fetching data for token: ${cleanSymbol}`);
-      const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
-        body: { symbol: cleanSymbol }
-      });
-
-      if (cgError) {
-        console.error(`Error fetching token profile for ${cleanSymbol}:`, cgError);
-        throw cgError;
-      }
-
-      if (!cgResponse?.data) {
-        return `I couldn't find reliable information about ${cleanSymbol}. This token might be:
-        - Not yet listed on major exchanges
-        - A new or emerging project
-        - Using a different symbol
-        
-        Please verify the token symbol and conduct thorough research before considering any investment.`;
-      }
-
-      return cgResponse.data;
-    } catch (error) {
-      console.error('Error fetching token info:', error);
-      return `I apologize, but I encountered an error while fetching token information. Please try again later.`;
-    }
-  }
-
-  private formatTokenResponse(tokenData: any): string {
-    if (!tokenData) return "Token data not found";
-
-    let response = `Here are the current metrics for ${tokenData.name} (${tokenData.symbol}):\n\n`;
-
-    if (tokenData.market_data) {
-      const marketData = tokenData.market_data;
-      
-      if (marketData.current_price?.usd) {
-        response += `Current Price: $${marketData.current_price.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.market_cap?.usd) {
-        response += `Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.total_volume?.usd) {
-        response += `24h Trading Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
-      }
-    }
-
-    if (tokenData.description) {
-      response += `\nDescription: ${tokenData.description}\n`;
-    }
-
-    response += `\nPlease note that cryptocurrency investments carry risks. Always conduct thorough research before making investment decisions.`;
-
-    return response;
   }
 
   private async generateGeneralResponse(params: any): Promise<string> {
