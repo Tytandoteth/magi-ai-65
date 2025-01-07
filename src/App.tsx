@@ -13,9 +13,9 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-} as const);
+});
 
-const App: React.FC = () => {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
