@@ -1,6 +1,7 @@
 import { TokenRepository } from "./repository/TokenRepository";
 import { TokenFormatter } from "./utils/TokenFormatter";
 import { TokenOperations } from "./utils/TokenOperations";
+import { TokenData, ProtocolData } from "@/types/token";
 
 export class TokenInfoService {
   static async getTokenInfo(symbol: string): Promise<string> {
@@ -14,7 +15,7 @@ export class TokenInfoService {
       const [tokenData, protocolData] = await Promise.all([
         TokenRepository.fetchTokenData(cleanSymbol),
         TokenRepository.fetchProtocolData(cleanSymbol)
-      ]);
+      ] as [Promise<TokenData | null>, Promise<ProtocolData | null>]);
 
       console.log('Token data:', tokenData);
       console.log('Protocol data:', protocolData);
