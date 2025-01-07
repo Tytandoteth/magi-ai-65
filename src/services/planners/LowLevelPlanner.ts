@@ -1,4 +1,4 @@
-import { createTokenProfile } from "../../../supabase/functions/chat/utils/token/tokenProfile";
+import { createTokenProfile } from "@/utils/token/tokenProfile";
 import { InventoryManager } from "../inventory/InventoryManager";
 import { supabase } from "@/integrations/supabase/client";
 
