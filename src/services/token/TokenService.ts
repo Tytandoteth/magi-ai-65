@@ -35,28 +35,38 @@ export class TokenService {
           .select('*')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching MAG data:', error);
           throw new Error(`Failed to fetch MAG data: ${error.message}`);
         }
 
-        if (magData) {
-          return `Here are the current metrics for Magnify (MAG):
+        if (!magData) {
+          console.log('No MAG token data found in database');
+          return `I couldn't find any current data for the MAG token. This could be because:
+1. The data hasn't been updated recently
+2. There might be an issue with our data provider
+3. The token information is temporarily unavailable
 
-Current Price: $${magData.price.toLocaleString()}
-Market Cap: $${magData.market_cap.toLocaleString()}
-Total Supply: ${magData.total_supply.toLocaleString()} MAG
-Circulating Supply: ${magData.circulating_supply.toLocaleString()} MAG
-Holders: ${magData.holders_count.toLocaleString()}
-24h Transactions: ${magData.transactions_24h.toLocaleString()}
-24h Volume: $${magData.volume_24h.toLocaleString()}
+Please try again later or check other reliable sources for the most up-to-date information.
+
+IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+        }
+
+        return `Here are the current metrics for Magnify (MAG):
+
+Current Price: $${magData.price?.toLocaleString() ?? 'N/A'}
+Market Cap: $${magData.market_cap?.toLocaleString() ?? 'N/A'}
+Total Supply: ${magData.total_supply?.toLocaleString() ?? 'N/A'} MAG
+Circulating Supply: ${magData.circulating_supply?.toLocaleString() ?? 'N/A'} MAG
+Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
+24h Transactions: ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
+24h Volume: $${magData.volume_24h?.toLocaleString() ?? 'N/A'}
 
 Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.
 
 IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
-        }
       }
 
       // Call the token-profile edge function for other tokens
