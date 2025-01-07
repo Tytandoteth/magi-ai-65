@@ -89,10 +89,6 @@
   }
 }
 
-.textarea-container:hover::before {
-  opacity: 0.7;
-}
-
 /* Custom tab styling */
 [role="tablist"] {
   @apply bg-[#1a1b1e] p-1 rounded-lg;
