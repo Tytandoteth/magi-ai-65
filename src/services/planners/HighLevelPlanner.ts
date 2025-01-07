@@ -14,10 +14,18 @@ export class HighLevelPlanner {
     const lastMessage = messages[messages.length - 1];
     const engagement = this.memoryManager.retrieveData("engagementMetrics");
     
-    // Simple decision logic based on message content and engagement
+    // Check for token queries
+    if (lastMessage.content.toLowerCase().match(/\$[a-zA-Z]+/)) {
+      return "TOKEN_INFO";
+    }
+    
+    // Check for market-related queries
     if (lastMessage.content.toLowerCase().includes('market') && engagement?.average > 10) {
       return "MARKET_UPDATE";
-    } else if (lastMessage.content.toLowerCase().includes('price')) {
+    } 
+    
+    // Check for price-related queries
+    if (lastMessage.content.toLowerCase().includes('price')) {
       return "PRICE_CHECK";
     }
     
@@ -28,7 +36,6 @@ export class HighLevelPlanner {
     console.log('Processing feedback:', feedback);
     const currentMetrics = this.memoryManager.retrieveData("engagementMetrics") || { average: 0, count: 0 };
     
-    // Update engagement metrics
     const newAverage = (currentMetrics.average * currentMetrics.count + feedback.score) / (currentMetrics.count + 1);
     await this.memoryManager.storeData("engagementMetrics", {
       average: newAverage,
