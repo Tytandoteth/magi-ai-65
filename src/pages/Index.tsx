@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { useChat } from "@/hooks/use-chat";
 import { ChatContainer } from "@/components/ChatContainer";
 import { ApiLogs } from "@/components/ApiLogs";
@@ -8,9 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 
-const Index = () => {
+const Index: React.FC = () => {
   const { chatState, apiLogs, handleSendMessage } = useChat();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
