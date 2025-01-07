@@ -18,11 +18,17 @@ serve(async (req) => {
     const cleanSymbol = symbol.replace('$', '').toUpperCase();
     console.log('Cleaned symbol:', cleanSymbol);
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase client with proper error handling
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required environment variables for Supabase client');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized');
+
     // First check our database
     const { data: tokenData, error: dbError } = await supabase
       .from('token_metadata')
@@ -32,7 +38,7 @@ serve(async (req) => {
 
     if (dbError) {
       console.error('Database error:', dbError);
-      throw new Error('Database error');
+      throw new Error(`Database error: ${dbError.message}`);
     }
 
     // If we have recent data (less than 5 minutes old), use it
