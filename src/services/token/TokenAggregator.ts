@@ -1,103 +1,104 @@
-import { TokenRepository } from "./repository/TokenRepository";
-import { TokenResolver } from "./TokenResolver";
-import { TokenData, TokenError } from "@/types/token";
-import { supabase } from "@/integrations/supabase/client";
-
-interface AggregatedTokenData {
-  basicInfo: {
-    name: string;
-    symbol: string;
-    description?: string;
-  };
-  marketData?: {
-    currentPrice?: number;
-    marketCap?: number;
-    volume24h?: number;
-    priceChange24h?: number;
-  };
-  defiMetrics?: {
-    tvl?: number;
-    change24h?: number;
-    category?: string;
-    chains?: string[];
-    apy?: number;
-  };
-  metadata?: {
-    marketCapRank?: number;
-    socialScore?: number;
-    platforms?: Record<string, string>;
-  };
-}
+import { TokenError } from '@/types/token/errors';
+import { TokenData } from '@/types/token/metadata';
+import { TokenResolver } from './TokenResolver';
+import { supabase } from '@/integrations/supabase/client';
 
 export class TokenAggregator {
-  private tokenRepo: TokenRepository;
+  private static async fetchTokenPrice(symbol: string): Promise<number> {
+    console.log('Fetching token price for:', symbol);
+    
+    try {
+      const { data: marketData, error } = await supabase
+        .from('defi_market_data')
+        .select('current_price')
+        .eq('symbol', symbol)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-  constructor() {
-    this.tokenRepo = TokenRepository.getInstance();
+      if (error) {
+        console.error('Error fetching price from Supabase:', error);
+        throw new TokenError(
+          `Failed to fetch price for ${symbol}`,
+          'NETWORK_ERROR',
+          error
+        );
+      }
+
+      if (!marketData?.current_price) {
+        throw new TokenError(
+          `No price data available for ${symbol}`,
+          'NO_DATA_FOUND'
+        );
+      }
+
+      console.log('Fetched price:', marketData.current_price);
+      return marketData.current_price;
+    } catch (error) {
+      if (error instanceof TokenError) {
+        throw error;
+      }
+      throw new TokenError(
+        `Failed to fetch price data: ${error.message}`,
+        'NETWORK_ERROR',
+        error
+      );
+    }
   }
 
-  async aggregateTokenData(inputSymbol: string): Promise<AggregatedTokenData> {
-    console.log('Starting token data aggregation for:', inputSymbol);
+  static async aggregateTokenData(
+    input: string,
+    chainId?: number,
+    options: {
+      includePrices?: boolean;
+      validateAddresses?: boolean;
+    } = {}
+  ): Promise<TokenData> {
+    console.log('Aggregating token data for:', input, 'options:', options);
     
-    // Resolve the token symbol using the static method
-    const resolvedSymbol = TokenResolver.resolveTokenSymbol(inputSymbol);
+    const resolvedSymbol = TokenResolver.resolveTokenSymbol(input, chainId);
+    
     if (!resolvedSymbol) {
-      throw new TokenError(`Could not resolve symbol: ${inputSymbol}`, 'INVALID_SYMBOL');
+      throw new TokenError(`Could not resolve symbol: ${input}`, 'INVALID_SYMBOL');
     }
-    console.log('Resolved symbol:', resolvedSymbol);
 
-    try {
-      // Fetch token metadata
-      const tokenData = await this.tokenRepo.fetchTokenData(resolvedSymbol);
-      console.log('Token metadata fetched:', tokenData);
+    const metadata = TokenResolver.getTokenMetadata(resolvedSymbol, chainId);
+    if (!metadata) {
+      throw new TokenError(
+        `No metadata found for symbol: ${resolvedSymbol}`,
+        'NO_DATA_FOUND'
+      );
+    }
 
-      // Fetch DeFi protocol data
-      const { data: protocolData, error: protocolError } = await supabase
-        .from('defi_llama_protocols')
-        .select('*')
-        .eq('symbol', resolvedSymbol)
-        .maybeSingle();
+    const result: TokenData = {
+      symbol: metadata.symbol,
+      name: metadata.commonNames[0], // Use first common name as canonical name
+      decimals: metadata.decimals
+    };
 
-      if (protocolError) {
-        console.error('Error fetching protocol data:', protocolError);
+    if (chainId !== undefined) {
+      const chainData = metadata.chainData[chainId];
+      result.address = chainData.address;
+      result.chainId = chainId;
+    }
+
+    if (options.includePrices) {
+      try {
+        const price = await this.fetchTokenPrice(resolvedSymbol);
+        Object.assign(result, { price });
+      } catch (error) {
+        if (error instanceof TokenError) {
+          throw error;
+        }
+        throw new TokenError(
+          `Failed to fetch price data: ${error.message}`,
+          'NETWORK_ERROR',
+          error
+        );
       }
-      console.log('Protocol data fetched:', protocolData);
-
-      // Type assertion for raw_data
-      const rawData = protocolData?.raw_data as { chains?: string[]; apy?: number } | null;
-
-      // Combine the data
-      const aggregatedData: AggregatedTokenData = {
-        basicInfo: {
-          name: tokenData?.name || protocolData?.name || resolvedSymbol,
-          symbol: resolvedSymbol,
-          description: tokenData?.description
-        },
-        marketData: tokenData?.market_data ? {
-          currentPrice: tokenData.market_data.current_price?.usd,
-          marketCap: tokenData.market_data.market_cap?.usd,
-          volume24h: tokenData.market_data.total_volume?.usd,
-          priceChange24h: tokenData.market_data.price_change_percentage_24h
-        } : undefined,
-        defiMetrics: protocolData ? {
-          tvl: protocolData.tvl,
-          change24h: protocolData.change_1d,
-          category: protocolData.category,
-          chains: rawData?.chains || [],
-          apy: rawData?.apy
-        } : undefined,
-        metadata: tokenData?.metadata?.additional_metrics ? {
-          marketCapRank: tokenData.metadata.additional_metrics.market_cap_rank,
-          socialScore: tokenData.metadata.additional_metrics.coingecko_score,
-          platforms: {} // Initialize with empty object as platforms might not be available
-        } : undefined
-      };
-
-      console.log('Aggregated data:', aggregatedData);
-      return aggregatedData;
-    } catch (error) {
-      console.error('Error in token data aggregation:', error);
-      throw error;
     }
+
+    console.log('Aggregated token data:', result);
+    return result;
   }
 }

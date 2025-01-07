@@ -1,50 +1,57 @@
-import { commonTokens, tokenAliases } from './TokenMaps';
+import { TokenError } from '@/types/token/errors';
+import { TokenMetadata } from '@/types/token/metadata';
+import { tokenMetadata, symbolLookup } from './TokenMaps';
 
 export class TokenResolver {
-  static resolveTokenSymbol(content: string): string | null {
-    console.log('Resolving token symbol for:', content);
+  static resolveTokenSymbol(content: string, chainId?: number): string | null {
+    console.log('Resolving token symbol for:', content, 'chainId:', chainId);
     
     if (!content) {
-      console.log('Empty content provided');
+      throw new TokenError('Input content cannot be empty', 'INVALID_SYMBOL');
+    }
+
+    const normalizedContent = content.trim().toLowerCase();
+    const symbol = symbolLookup.get(normalizedContent);
+    
+    console.log('Resolved symbol:', symbol);
+
+    if (!symbol) {
       return null;
     }
 
-    // Clean the input first
-    const cleanInput = content.replace(/\$/g, '').toLowerCase().trim();
-    console.log('Cleaned input:', cleanInput);
-
-    // Direct match for uppercase symbols (e.g., BTC, ETH)
-    const upperSymbol = cleanInput.toUpperCase();
-    if (Array.from(commonTokens.values()).includes(upperSymbol)) {
-      console.log('Found direct match for uppercase symbol:', upperSymbol);
-      return upperSymbol;
-    }
-    
-    // Special case for PENGU variations
-    if (cleanInput.includes('peng') || cleanInput === 'pudgy') {
-      console.log('Detected PENGU variation:', cleanInput);
-      return 'PENGU';
-    }
-    
-    // Check for direct matches in common tokens
-    if (commonTokens.has(cleanInput)) {
-      const resolvedSymbol = commonTokens.get(cleanInput);
-      console.log('Found direct match in common tokens:', resolvedSymbol);
-      return resolvedSymbol || null;
-    }
-    
-    // Check aliases
-    if (tokenAliases.has(cleanInput)) {
-      const mainName = tokenAliases.get(cleanInput);
-      if (mainName && commonTokens.has(mainName)) {
-        const resolvedSymbol = commonTokens.get(mainName);
-        console.log('Resolved alias to symbol:', resolvedSymbol);
-        return resolvedSymbol || null;
+    // If chainId is provided, verify the token exists on that chain
+    if (chainId !== undefined) {
+      const metadata = tokenMetadata.get(symbol);
+      if (!metadata?.chainData[chainId]) {
+        throw new TokenError(
+          `Token ${symbol} not supported on chain ${chainId}`,
+          'INVALID_CHAIN'
+        );
       }
     }
+
+    return symbol;
+  }
+
+  static getTokenMetadata(symbol: string, chainId?: number): TokenMetadata | null {
+    console.log('Getting token metadata for:', symbol, 'chainId:', chainId);
     
-    console.log('No token match found for:', cleanInput);
-    return null;
+    const metadata = tokenMetadata.get(symbol);
+    
+    if (!metadata) {
+      console.log('No metadata found for symbol:', symbol);
+      return null;
+    }
+
+    if (chainId !== undefined && !metadata.chainData[chainId]) {
+      throw new TokenError(
+        `Token ${symbol} not supported on chain ${chainId}`,
+        'INVALID_CHAIN'
+      );
+    }
+
+    console.log('Found metadata:', metadata);
+    return metadata;
   }
 
   static getSuggestionMessage(content: string): string {
