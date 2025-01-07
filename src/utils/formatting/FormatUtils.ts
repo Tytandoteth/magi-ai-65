@@ -1,3 +1,5 @@
+import { BaseMetric } from '@/types/formatting';
+
 export class FormatUtils {
   static number(value: number, options: {
     style?: 'decimal' | 'currency' | 'percent';
