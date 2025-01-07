@@ -38,7 +38,8 @@ serve(async (req) => {
     if (!tokenData && !defiLlamaData) {
       return new Response(
         JSON.stringify({
-          error: `I couldn't find reliable data for ${cleanSymbol}. This token might be new, unlisted, or not tracked by major platforms. Please verify the token symbol and conduct thorough research before considering any investment.`
+          error: `No data found for token ${cleanSymbol}`,
+          data: `I couldn't find reliable information about ${cleanSymbol}. This token might be new, unlisted, or not tracked by major platforms. Please verify the token symbol and conduct thorough research before considering any investment.`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

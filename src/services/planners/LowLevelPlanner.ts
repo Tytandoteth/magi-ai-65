@@ -58,16 +58,19 @@ export class LowLevelPlanner {
       return "Please provide a token symbol to get information about.";
     }
 
-    // Handle multiple token queries
+    // Extract token symbols from the message
     const tokens = symbol.split(/\s+/)
       .filter(t => t.startsWith('$'))
       .map(t => t.substring(1).toUpperCase());
 
     if (tokens.length === 0) {
-      return "Please provide token symbols starting with $ to get information about them.";
+      // If no $ symbols found, treat the input as a direct token symbol
+      tokens.push(symbol.toUpperCase());
     }
 
     try {
+      console.log('Processing tokens:', tokens);
+      
       // First check if token exists in our database
       const { data: tokenData, error } = await supabase
         .from('token_metadata')
@@ -88,13 +91,17 @@ export class LowLevelPlanner {
         }
         
         try {
-          // If token not in database, try to get info from CoinGecko
+          console.log(`Fetching data for token: ${token}`);
           const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
             body: { symbol: token }
           });
 
-          if (cgError || !cgResponse) {
-            console.log(`No data found for token ${token}`);
+          if (cgError) {
+            console.error(`Error fetching token profile for ${token}:`, cgError);
+            throw cgError;
+          }
+
+          if (!cgResponse?.data) {
             return `I couldn't find reliable information about ${token}. This token might be:
             - Not yet listed on major exchanges
             - A new or emerging project
