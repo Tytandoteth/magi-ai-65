@@ -31,16 +31,19 @@ const Index = () => {
       }
 
       console.log('Tokens fetched successfully:', data);
+      const processedCount = data?.processed || { marketData: 0, tokenMetadata: 0 };
+      
       toast({
         title: "Success",
-        description: "Token data has been updated successfully.",
+        description: `Successfully processed ${processedCount.marketData} market data entries and ${processedCount.tokenMetadata} token metadata entries.`,
+        duration: 5000,
       });
     } catch (error) {
       console.error('Error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred while fetching token data.",
       });
     } finally {
       setIsLoading(false);
