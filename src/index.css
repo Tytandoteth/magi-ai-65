@@ -57,17 +57,20 @@
 
 .chat-input-container {
   @apply bg-[#1a1b1e] border-t border-gray-700 rounded-b-xl;
+}
+
+.textarea-container {
   position: relative;
 }
 
-.chat-input-container::before {
+.textarea-container::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 0 0 0.75rem 0.75rem;
+  border-radius: 0.5rem;
   padding: 1px;
   background: linear-gradient(45deg, #4B9FFF, #2B6CB0);
   -webkit-mask: 
@@ -77,9 +80,10 @@
   mask-composite: exclude;
   opacity: 0.3;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
-.chat-input-container:hover::before {
+.textarea-container:hover::before {
   opacity: 0.5;
 }
 
