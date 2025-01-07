@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenResolver } from '@/services/token/TokenResolver';
 import { fetchFromCoinGecko } from '@/services/token/utils/coingecko';
 
@@ -8,10 +8,10 @@ vi.mock('@/services/token/utils/coingecko', () => ({
 }));
 
 describe('Token Integration Tests', () => {
-  const mockFetchFromCoinGecko = fetchFromCoinGecko as jest.Mock;
+  const mockFetchFromCoinGecko = fetchFromCoinGecko as unknown as ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockFetchFromCoinGecko.mockClear();
+    vi.clearAllMocks();
   });
 
   async function getTokenData(content: string, apiKey: string) {
@@ -28,7 +28,7 @@ describe('Token Integration Tests', () => {
   }
 
   it('should handle the complete flow for PENGU', async () => {
-    mockFetchFromCoinGecko.mockResolvedValueOnce({
+    (mockFetchFromCoinGecko as any).mockResolvedValueOnce({
       id: 'pudgy-penguins',
       symbol: 'pengu',
       name: 'Pudgy Penguins'
@@ -45,7 +45,7 @@ describe('Token Integration Tests', () => {
   });
 
   it('should handle API errors in the complete flow', async () => {
-    mockFetchFromCoinGecko.mockRejectedValueOnce(new Error('API Error'));
+    (mockFetchFromCoinGecko as any).mockRejectedValueOnce(new Error('API Error'));
 
     await expect(getTokenData('$ETH', 'test-api-key')).rejects.toThrow('API Error');
   });
