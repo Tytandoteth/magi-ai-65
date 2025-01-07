@@ -10,63 +10,67 @@ export class TokenFormatter {
     return TokenFormatter.instance;
   }
 
-  formatTokenResponse(data: TokenData): string {
+  formatTokenResponse(data: any): string {
     console.log('Formatting response for data:', data);
     
-    let response = `Here are the current metrics for ${data.name} (${data.symbol}):\n\n`;
+    if (!data) {
+      return "I couldn't find reliable data for this token.";
+    }
+
+    let response = `Here are the current metrics for ${data.basicInfo.name} (${data.basicInfo.symbol}):\n\n`;
 
     // Market Data
-    if (data.market_data) {
-      if (data.market_data.current_price?.usd !== undefined) {
-        response += `Current Price: ${this.formatCurrency(data.market_data.current_price.usd)}\n`;
+    if (data.marketData) {
+      if (data.marketData.currentPrice !== undefined) {
+        response += `Current Price: ${this.formatCurrency(data.marketData.currentPrice)}\n`;
       }
       
-      if (data.market_data.market_cap?.usd !== undefined) {
-        response += `Market Cap: ${this.formatCurrency(data.market_data.market_cap.usd)}\n`;
+      if (data.marketData.marketCap !== undefined) {
+        response += `Market Cap: ${this.formatCurrency(data.marketData.marketCap)}\n`;
       }
       
-      if (data.market_data.total_volume?.usd !== undefined) {
-        response += `24h Trading Volume: ${this.formatCurrency(data.market_data.total_volume.usd)}\n`;
+      if (data.marketData.volume24h !== undefined) {
+        response += `24h Trading Volume: ${this.formatCurrency(data.marketData.volume24h)}\n`;
       }
 
-      if (data.market_data.price_change_percentage_24h !== undefined) {
-        response += `24h Price Change: ${this.formatPercentage(data.market_data.price_change_percentage_24h)}%\n`;
+      if (data.marketData.priceChange24h !== undefined) {
+        response += `24h Price Change: ${this.formatPercentage(data.marketData.priceChange24h)}%\n`;
       }
     }
 
-    // Protocol Data
-    if (data.protocol_data) {
+    // DeFi Metrics
+    if (data.defiMetrics) {
       response += `\nProtocol Metrics:\n`;
       
-      if (data.protocol_data.tvl !== undefined) {
-        response += `Total Value Locked (TVL): ${this.formatCurrency(data.protocol_data.tvl)}\n`;
+      if (data.defiMetrics.tvl !== undefined) {
+        response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
       }
       
-      if (data.protocol_data.change_24h !== undefined) {
-        response += `24h TVL Change: ${this.formatPercentage(data.protocol_data.change_24h)}%\n`;
+      if (data.defiMetrics.change24h !== undefined) {
+        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
       }
 
-      if (data.protocol_data.category) {
-        response += `Category: ${data.protocol_data.category}\n`;
+      if (data.defiMetrics.category) {
+        response += `Category: ${data.defiMetrics.category}\n`;
       }
 
-      if (data.protocol_data.chains && data.protocol_data.chains.length > 0) {
-        response += `Chains: ${data.protocol_data.chains.join(', ')}\n`;
+      if (data.defiMetrics.chains && data.defiMetrics.chains.length > 0) {
+        response += `Chains: ${data.defiMetrics.chains.join(', ')}\n`;
       }
 
-      if (data.protocol_data.apy !== undefined) {
-        response += `APY: ${this.formatPercentage(data.protocol_data.apy)}%\n`;
+      if (data.defiMetrics.apy !== undefined) {
+        response += `APY: ${this.formatPercentage(data.defiMetrics.apy)}%\n`;
       }
     }
 
     // Metadata
-    if (data.metadata?.additional_metrics?.market_cap_rank) {
-      response += `\nMarket Cap Rank: #${data.metadata.additional_metrics.market_cap_rank}\n`;
+    if (data.metadata?.marketCapRank) {
+      response += `\nMarket Cap Rank: #${data.metadata.marketCapRank}\n`;
     }
 
     // Description
-    if (data.description) {
-      response += `\nDescription:\n${data.description}\n`;
+    if (data.basicInfo.description) {
+      response += `\nDescription:\n${data.basicInfo.description}\n`;
     }
 
     // Risk Warning

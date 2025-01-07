@@ -1,14 +1,14 @@
-import { TokenRepository } from "./repository/TokenRepository";
+import { TokenAggregator } from "./TokenAggregator";
 import { TokenFormatter } from "./utils/TokenFormatter";
-import { TokenData, TokenError } from "@/types/token";
+import { TokenError } from "@/types/token";
 
 export class TokenService {
   private static instance: TokenService;
-  private repository: TokenRepository;
+  private aggregator: TokenAggregator;
   private formatter: TokenFormatter;
 
   private constructor() {
-    this.repository = TokenRepository.getInstance();
+    this.aggregator = new TokenAggregator();
     this.formatter = TokenFormatter.getInstance();
   }
 
@@ -27,12 +27,12 @@ export class TokenService {
       const cleanSymbol = this.validateTokenSymbol(symbol);
       console.log('Cleaned symbol:', cleanSymbol);
 
-      // Fetch data
-      const tokenData = await this.repository.fetchTokenData(cleanSymbol);
-      console.log('Token data fetched:', tokenData);
+      // Fetch and aggregate data
+      const aggregatedData = await this.aggregator.aggregateTokenData(cleanSymbol);
+      console.log('Aggregated data:', aggregatedData);
 
       // Format response
-      return this.formatter.formatTokenResponse(tokenData);
+      return this.formatter.formatTokenResponse(aggregatedData);
     } catch (error) {
       console.error('Error in getTokenInfo:', error);
       
