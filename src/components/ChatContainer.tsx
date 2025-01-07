@@ -46,7 +46,7 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
         {(!chatState.messages || chatState.messages.length === 0) && !chatState.isLoading ? (
           <div className="flex flex-col space-y-4 p-4">
             <div className="text-center text-gray-500">
-              Start a conversation by typing a message below
+              Ask me about any token
             </div>
           </div>
         ) : (
