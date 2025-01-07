@@ -1,5 +1,3 @@
-import { TokenData } from "@/types/token";
-
 export class TokenFormatter {
   private static instance: TokenFormatter;
 
