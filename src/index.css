@@ -66,10 +66,7 @@
 .textarea-container::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: -1px;
   border-radius: 0.5rem;
   padding: 1px;
   background: linear-gradient(45deg, #4B9FFF, #2B6CB0);

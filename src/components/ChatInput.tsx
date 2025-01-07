@@ -34,7 +34,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="How can I help you today?"
-          className="resize-none bg-[#1e1f23] border-gray-800 focus-visible:ring-0 text-gray-100 placeholder:text-gray-400"
+          className="resize-none bg-[#1e1f23] border-none focus-visible:ring-0 text-gray-100 placeholder:text-gray-400"
           rows={1}
           disabled={disabled}
         />
