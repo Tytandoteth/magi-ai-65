@@ -23,4 +23,4 @@ export const createSystemMessage = async (externalData: any, userMessage: string
     
     User message: ${userMessage}`
   };
-};`
+};
