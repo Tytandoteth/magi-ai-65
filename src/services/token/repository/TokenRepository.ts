@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, TokenNotFoundError, TokenFetchError } from "@/types/token";
+import { TokenData, TokenNotFoundError, TokenFetchError, TokenError } from "@/types/token";
 
 export class TokenRepository {
   private static instance: TokenRepository;
@@ -62,7 +62,7 @@ export class TokenRepository {
         name: tokenData.name,
         symbol: tokenData.symbol,
         description: tokenData.description,
-        market_data: tokenData.market_data,
+        market_data: tokenData.market_data as TokenData['market_data'],
         metadata: {
           additional_metrics: tokenData.metadata?.additional_metrics
         },
@@ -70,8 +70,8 @@ export class TokenRepository {
           tvl: protocolData.tvl,
           change_24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: protocolData.chains,
-          apy: protocolData.apy
+          chains: protocolData.raw_data?.chains as string[],
+          apy: protocolData.raw_data?.apy as number
         } : undefined
       };
 
@@ -88,19 +88,5 @@ export class TokenRepository {
       }
       throw new TokenFetchError(symbol, error instanceof Error ? error.message : 'Unknown error');
     }
-  }
-
-  async fetchTokenFromAPI(symbol: string): Promise<TokenData | null> {
-    console.log(`Fetching data from API for token: ${symbol}`);
-    const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
-      body: { symbol }
-    });
-
-    if (cgError) {
-      console.error(`Error fetching token profile for ${symbol}:`, cgError);
-      throw new TokenFetchError(symbol, cgError.message);
-    }
-
-    return cgResponse?.data || null;
   }
 }

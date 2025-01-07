@@ -1,12 +1,14 @@
-// Base interfaces
+import { Json } from '@/integrations/supabase/types/base';
+
+// Base token data interface
 export interface BaseTokenData {
   name: string;
   symbol: string;
   description?: string;
 }
 
-// Market specific data
-export interface MarketData {
+// Market data specific interface
+export interface TokenMarketData {
   current_price?: { usd?: number };
   market_cap?: { usd?: number };
   total_volume?: { usd?: number };
@@ -27,12 +29,15 @@ export interface ProtocolData {
 export interface TokenMetadata {
   additional_metrics?: {
     market_cap_rank?: number;
+    coingecko_score?: number;
+    developer_score?: number;
+    community_score?: number;
   };
 }
 
 // Combined token data
 export interface TokenData extends BaseTokenData {
-  market_data?: MarketData;
+  market_data?: TokenMarketData;
   metadata?: TokenMetadata;
   protocol_data?: ProtocolData;
 }

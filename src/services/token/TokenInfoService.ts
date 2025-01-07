@@ -1,7 +1,7 @@
 import { TokenRepository } from "./repository/TokenRepository";
 import { TokenFormatter } from "./utils/TokenFormatter";
 import { TokenOperations } from "./utils/TokenOperations";
-import { TokenData, ProtocolData } from "@/types/token";
+import { TokenData } from "@/types/token";
 import { ITokenService } from "./interfaces/TokenService";
 
 export class TokenInfoService implements ITokenService {
