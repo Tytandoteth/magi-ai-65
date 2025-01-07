@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData } from "@/types/token";
+import { TokenData, TokenMarketData, TokenMetadata } from "@/types/token";
+import { Json } from "@/integrations/supabase/types/base";
 
 export class TokenRepository {
   private static instance: TokenRepository;
@@ -34,20 +35,19 @@ export class TokenRepository {
 
       console.log('Found token data:', tokenData);
 
-      // Ensure platforms is a valid Record<string, string>
-      const platforms = this.validatePlatforms(tokenData.platforms);
+      // Ensure market_data is properly typed
+      const marketData: TokenMarketData | undefined = this.parseMarketData(tokenData.market_data);
 
       // Transform the data to match TokenData interface
       const transformedData: TokenData = {
         name: tokenData.name,
         symbol: tokenData.symbol,
         description: tokenData.description || undefined,
-        market_data: tokenData.market_data || undefined,
+        market_data: marketData,
         metadata: {
-          additional_metrics: tokenData.metadata?.additional_metrics || undefined,
-          platforms: platforms
-        },
-        protocol_data: undefined // Will be populated by protocol data if available
+          additional_metrics: this.parseAdditionalMetrics(tokenData.metadata),
+          platforms: this.validatePlatforms(tokenData.platforms)
+        }
       };
 
       // Try to fetch protocol data if available
@@ -65,8 +65,8 @@ export class TokenRepository {
           tvl: protocolData.tvl || undefined,
           change_24h: protocolData.change_1d || undefined,
           category: protocolData.category || undefined,
-          chains: protocolData.raw_data?.chains || undefined,
-          apy: protocolData.raw_data?.apy || undefined
+          chains: this.parseChains(protocolData.raw_data),
+          apy: this.parseApy(protocolData.raw_data)
         };
       }
 
@@ -77,21 +77,66 @@ export class TokenRepository {
     }
   }
 
-  private validatePlatforms(platforms: any): Record<string, string> {
+  private parseMarketData(marketData: Json | null): TokenMarketData | undefined {
+    if (!marketData || typeof marketData !== 'object') {
+      return undefined;
+    }
+
+    const md = marketData as Record<string, any>;
+    return {
+      current_price: md.current_price?.usd,
+      market_cap: md.market_cap?.usd,
+      total_volume: md.total_volume?.usd,
+      price_change_percentage_24h: md.price_change_percentage_24h
+    };
+  }
+
+  private parseAdditionalMetrics(metadata: Json | null): TokenMetadata['additional_metrics'] | undefined {
+    if (!metadata || typeof metadata !== 'object') {
+      return undefined;
+    }
+
+    const md = metadata as Record<string, any>;
+    return md.additional_metrics ? {
+      market_cap_rank: md.additional_metrics.market_cap_rank,
+      coingecko_score: md.additional_metrics.coingecko_score,
+      developer_score: md.additional_metrics.developer_score,
+      community_score: md.additional_metrics.community_score
+    } : undefined;
+  }
+
+  private validatePlatforms(platforms: Json | null): Record<string, string> {
     if (!platforms || typeof platforms !== 'object') {
       return {};
     }
 
     const validatedPlatforms: Record<string, string> = {};
+    const platformsObj = platforms as Record<string, any>;
     
-    Object.entries(platforms).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        validatedPlatforms[key] = value;
-      } else if (value !== null && value !== undefined) {
+    Object.entries(platformsObj).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
         validatedPlatforms[key] = String(value);
       }
     });
 
     return validatedPlatforms;
+  }
+
+  private parseChains(rawData: Json | null): string[] | undefined {
+    if (!rawData || typeof rawData !== 'object') {
+      return undefined;
+    }
+
+    const rd = rawData as Record<string, any>;
+    return Array.isArray(rd.chains) ? rd.chains : undefined;
+  }
+
+  private parseApy(rawData: Json | null): number | undefined {
+    if (!rawData || typeof rawData !== 'object') {
+      return undefined;
+    }
+
+    const rd = rawData as Record<string, any>;
+    return typeof rd.apy === 'number' ? rd.apy : undefined;
   }
 }
