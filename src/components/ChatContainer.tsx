@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
@@ -12,8 +12,24 @@ interface ChatContainerProps {
   onSendMessage: (message: string) => void;
 }
 
+const ANIMATED_PHRASES = [
+  {
+    display: "Ask me about any token",
+    command: "Tell me about $MAG"
+  },
+  {
+    display: "Ask me where to find the yields in DeFi",
+    command: "Show me the best DeFi strategies for high yield"
+  },
+  {
+    display: "Ask me what I think about the market",
+    command: "What's your analysis of the current market conditions?"
+  }
+];
+
 export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,6 +38,19 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
   useEffect(() => {
     scrollToBottom();
   }, [chatState.messages]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentPhraseIndex((prev) => (prev + 1) % ANIMATED_PHRASES.length);
+    }, 3000); // Change phrase every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handlePhraseClick = () => {
+    const command = ANIMATED_PHRASES[currentPhraseIndex].command;
+    onSendMessage(command);
+  };
 
   console.log("ChatContainer rendered with state:", chatState);
 
@@ -45,8 +74,12 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
       <div className="flex-1 overflow-y-auto py-4">
         {(!chatState.messages || chatState.messages.length === 0) && !chatState.isLoading ? (
           <div className="flex flex-col space-y-4 p-4">
-            <div className="text-center text-gray-500">
-              Ask me about any token
+            <div 
+              onClick={handlePhraseClick}
+              className="text-center text-gray-500 cursor-pointer hover:text-primary transition-colors duration-300 animate-fade-in"
+              key={currentPhraseIndex}
+            >
+              {ANIMATED_PHRASES[currentPhraseIndex].display}
             </div>
           </div>
         ) : (

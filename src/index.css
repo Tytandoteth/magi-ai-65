@@ -97,6 +97,25 @@
   }
 }
 
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  20%, 80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInOut 3s ease-in-out;
+}
+
 /* Custom tab styling */
 [role="tablist"] {
   @apply bg-[#1a1b1e] p-1 rounded-lg;
