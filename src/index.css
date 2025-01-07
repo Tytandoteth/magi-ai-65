@@ -53,12 +53,16 @@
 
 .chat-container {
   @apply bg-[#1a1b1e] rounded-xl shadow-lg;
+}
+
+.chat-input-container {
+  @apply bg-[#1a1b1e] border-t border-gray-700;
   position: relative;
   isolation: isolate;
   overflow: hidden;
 }
 
-.chat-container::before {
+.chat-input-container::before {
   content: '';
   position: absolute;
   inset: -2px;
@@ -87,13 +91,9 @@
   }
 }
 
-.chat-container:hover::before {
+.chat-input-container:hover::before {
   opacity: 0.6;
   filter: blur(8px);
-}
-
-.chat-input-container {
-  @apply bg-[#1a1b1e] border-t border-gray-700;
 }
 
 /* Custom tab styling */
