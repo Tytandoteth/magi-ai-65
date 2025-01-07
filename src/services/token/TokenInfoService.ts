@@ -34,9 +34,12 @@ export class TokenInfoService {
         console.error('Error fetching DeFi Llama data:', protocolError);
       }
 
+      // Check if this is a TVL-specific query
+      const isTVLQuery = symbol.toLowerCase().includes('tvl');
+
       if (tokenData && tokenData.length > 0) {
         console.log('Found token data in database:', tokenData[0]);
-        return TokenInfoService.formatTokenResponse(tokenData[0], protocolData?.[0]);
+        return TokenInfoService.formatTokenResponse(tokenData[0], protocolData?.[0], isTVLQuery);
       }
 
       // If not in database, fetch from API
@@ -66,33 +69,14 @@ export class TokenInfoService {
     }
   }
 
-  private static formatTokenResponse(tokenData: any, protocolData?: any): string {
+  private static formatTokenResponse(tokenData: any, protocolData?: any, isTVLQuery: boolean = false): string {
     if (!tokenData) return "Token data not found";
 
     let response = `Here are the current metrics for ${tokenData.name} (${tokenData.symbol}):\n\n`;
 
-    if (tokenData.market_data) {
-      const marketData = tokenData.market_data;
-      
-      if (marketData.current_price?.usd) {
-        response += `Current Price: $${marketData.current_price.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.market_cap?.usd) {
-        response += `Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
-      }
-      
-      if (marketData.total_volume?.usd) {
-        response += `24h Trading Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
-      }
-
-      if (marketData.price_change_percentage_24h) {
-        response += `24h Price Change: ${marketData.price_change_percentage_24h.toFixed(2)}%\n`;
-      }
-    }
-
-    // Add TVL data if available from DeFi Llama
-    if (protocolData?.tvl) {
+    // If it's a TVL query and we have protocol data, prioritize that information
+    if (isTVLQuery && protocolData?.tvl) {
+      response = `${tokenData.name} (${tokenData.symbol}) TVL Metrics:\n\n`;
       response += `Total Value Locked (TVL): $${protocolData.tvl.toLocaleString()}\n`;
       
       if (protocolData.change_1d) {
@@ -102,14 +86,53 @@ export class TokenInfoService {
       if (protocolData.category) {
         response += `Protocol Category: ${protocolData.category}\n`;
       }
-    }
 
-    if (tokenData.metadata?.additional_metrics?.market_cap_rank) {
-      response += `Market Cap Rank: #${tokenData.metadata.additional_metrics.market_cap_rank}\n`;
-    }
+      // Add a brief market context
+      if (tokenData.market_data?.current_price?.usd) {
+        response += `\nCurrent Token Price: $${tokenData.market_data.current_price.usd.toLocaleString()}\n`;
+      }
+    } else {
+      // Regular token information format
+      if (tokenData.market_data) {
+        const marketData = tokenData.market_data;
+        
+        if (marketData.current_price?.usd) {
+          response += `Current Price: $${marketData.current_price.usd.toLocaleString()}\n`;
+        }
+        
+        if (marketData.market_cap?.usd) {
+          response += `Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
+        }
+        
+        if (marketData.total_volume?.usd) {
+          response += `24h Trading Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
+        }
 
-    if (tokenData.description) {
-      response += `\nDescription: ${tokenData.description}\n`;
+        if (marketData.price_change_percentage_24h) {
+          response += `24h Price Change: ${marketData.price_change_percentage_24h.toFixed(2)}%\n`;
+        }
+      }
+
+      // Add TVL data if available
+      if (protocolData?.tvl) {
+        response += `Total Value Locked (TVL): $${protocolData.tvl.toLocaleString()}\n`;
+        
+        if (protocolData.change_1d) {
+          response += `24h TVL Change: ${protocolData.change_1d.toFixed(2)}%\n`;
+        }
+
+        if (protocolData.category) {
+          response += `Protocol Category: ${protocolData.category}\n`;
+        }
+      }
+
+      if (tokenData.metadata?.additional_metrics?.market_cap_rank) {
+        response += `Market Cap Rank: #${tokenData.metadata.additional_metrics.market_cap_rank}\n`;
+      }
+
+      if (tokenData.description) {
+        response += `\nDescription: ${tokenData.description}\n`;
+      }
     }
 
     response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
