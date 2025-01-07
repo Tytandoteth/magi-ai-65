@@ -11,7 +11,19 @@ export class LowLevelPlanner {
     ['cardano', 'ADA'],
     ['dogecoin', 'DOGE'],
     ['ripple', 'XRP'],
-    ['polkadot', 'DOT']
+    ['polkadot', 'DOT'],
+    ['pudgy penguins', 'PENGU'],
+    ['pudgypenguins', 'PENGU']
+  ]);
+
+  private tokenAliases = new Map([
+    ['eth', 'ethereum'],
+    ['btc', 'bitcoin'],
+    ['sol', 'solana'],
+    ['doge', 'dogecoin'],
+    ['xrp', 'ripple'],
+    ['dot', 'polkadot'],
+    ['pengu', 'pudgy penguins']
   ]);
 
   constructor() {
@@ -38,8 +50,21 @@ export class LowLevelPlanner {
             }
           }
           
-          // Check for common token names without $ symbol
+          // Clean and normalize the input
           const lowercaseContent = lastMessage.content.toLowerCase().trim();
+          
+          // Check for token aliases first
+          if (this.tokenAliases.has(lowercaseContent)) {
+            console.log('Found token alias:', lowercaseContent);
+            const mainName = this.tokenAliases.get(lowercaseContent);
+            if (mainName && this.commonTokens.has(mainName)) {
+              console.log('Resolved alias to main token:', mainName);
+              const symbol = this.commonTokens.get(mainName);
+              return await this.getTokenInfo(symbol!);
+            }
+          }
+          
+          // Check for common token names (including multi-word tokens)
           if (this.commonTokens.has(lowercaseContent)) {
             console.log('Detected common token name:', lowercaseContent);
             const symbol = this.commonTokens.get(lowercaseContent);
@@ -47,8 +72,9 @@ export class LowLevelPlanner {
           }
           
           // If it looks like a token query but missing $ symbol
-          if (lowercaseContent.match(/^[a-z0-9]+$/i) && lowercaseContent.length <= 10) {
-            return `To get information about ${lowercaseContent.toUpperCase()}, please use the $ symbol (e.g., $${lowercaseContent.toUpperCase()}). You can also ask about market updates or specific DeFi protocols.`;
+          if (lowercaseContent.match(/^[a-z0-9\s]+$/i) && lowercaseContent.length <= 20) {
+            const suggestedSymbol = lowercaseContent.replace(/\s+/g, '').toUpperCase();
+            return `To get information about ${suggestedSymbol}, please use the $ symbol (e.g., $${suggestedSymbol}). You can also ask about market updates or specific DeFi protocols.`;
           }
         }
       }
