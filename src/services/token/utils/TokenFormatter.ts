@@ -49,6 +49,14 @@ export class TokenFormatter {
       if (data.protocol_data.category) {
         response += `Category: ${data.protocol_data.category}\n`;
       }
+
+      if (data.protocol_data.chains && data.protocol_data.chains.length > 0) {
+        response += `Chains: ${data.protocol_data.chains.join(', ')}\n`;
+      }
+
+      if (data.protocol_data.apy !== undefined) {
+        response += `APY: ${this.formatPercentage(data.protocol_data.apy)}%\n`;
+      }
     }
 
     // Metadata
