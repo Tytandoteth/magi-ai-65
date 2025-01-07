@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal } from "lucide-react";
-import { useState, KeyboardEvent } from "react";
+import { useState, KeyboardEvent, useEffect, useRef } from "react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -10,12 +10,22 @@ interface ChatInputProps {
 
 export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    // Focus the textarea when the component mounts
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSend = () => {
     const trimmedMessage = message.trim();
     if (trimmedMessage) {
       onSend(trimmedMessage);
       setMessage("");
+      // Refocus the textarea after sending a message
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
     }
   };
 
@@ -30,6 +40,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     <div className="flex gap-3 items-end p-4 chat-input-container">
       <div className="flex-1 relative textarea-container">
         <Textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
