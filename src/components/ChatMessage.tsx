@@ -86,7 +86,7 @@ export const ChatMessage = ({ message }: { message: Message }) => {
           <Alert variant="destructive" className="mb-2">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {formatContent(message.content)}
+              {formatContent(message.content || '')}
             </AlertDescription>
           </Alert>
         ) : (

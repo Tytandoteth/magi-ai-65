@@ -28,7 +28,7 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
   return (
     <div className="chat-container flex-1 flex flex-col">
       <div className="flex-1 overflow-y-auto py-4">
-        {chatState.messages.length === 0 ? (
+        {!chatState.messages || chatState.messages.length === 0 ? (
           <div className="flex flex-col space-y-4 p-4">
             <Skeleton className="h-12 w-3/4" />
             <Skeleton className="h-12 w-1/2" />
