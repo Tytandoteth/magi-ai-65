@@ -68,7 +68,7 @@
   position: absolute;
   inset: -2px;
   border-radius: 0.5rem;
-  padding: 2px;
+  padding: 3px;
   background: linear-gradient(90deg, #FFDEE2, #D3E4FD, #FFDEE2);
   background-size: 200% 100%;
   -webkit-mask: 
@@ -76,7 +76,7 @@
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  opacity: 0.5;
+  opacity: 0.8;
   animation: borderFlow 3s linear infinite;
 }
 
