@@ -58,24 +58,16 @@ export class LowLevelPlanner {
       return "Please provide a token symbol to get information about.";
     }
 
-    // Extract token symbols from the message
-    const tokens = symbol.split(/\s+/)
-      .filter(t => t.startsWith('$'))
-      .map(t => t.substring(1).toUpperCase());
-
-    if (tokens.length === 0) {
-      // If no $ symbols found, treat the input as a direct token symbol
-      tokens.push(symbol.toUpperCase());
-    }
+    // Clean up the symbol (remove $ and convert to uppercase)
+    const cleanSymbol = symbol.replace(/^\$/, '').toUpperCase();
+    console.log('Cleaned symbol:', cleanSymbol);
 
     try {
-      console.log('Processing tokens:', tokens);
-      
       // First check if token exists in our database
       const { data: tokenData, error } = await supabase
         .from('token_metadata')
         .select('*')
-        .ilike('symbol', tokens[0])
+        .ilike('symbol', cleanSymbol)
         .order('last_updated', { ascending: false })
         .limit(1);
 
@@ -86,37 +78,32 @@ export class LowLevelPlanner {
 
       if (tokenData && tokenData.length > 0) {
         console.log('Found token data in database:', tokenData[0]);
-        return this.formatTokenResponse(tokenData[0]);
+        const formattedResponse = this.formatTokenResponse(tokenData[0]);
+        console.log('Formatted response:', formattedResponse);
+        return formattedResponse;
       }
 
-      try {
-        console.log(`Fetching data for token: ${tokens[0]}`);
-        const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
-          body: { symbol: tokens[0] }
-        });
+      // If not in database, fetch from API
+      console.log(`Fetching data for token: ${cleanSymbol}`);
+      const { data: cgResponse, error: cgError } = await supabase.functions.invoke('token-profile', {
+        body: { symbol: cleanSymbol }
+      });
 
-        if (cgError) {
-          console.error(`Error fetching token profile for ${tokens[0]}:`, cgError);
-          throw cgError;
-        }
-
-        if (!cgResponse?.data) {
-          return `I couldn't find reliable information about ${tokens[0]}. This token might be:
-          - Not yet listed on major exchanges
-          - A new or emerging project
-          - Using a different symbol
-          
-          Please verify the token symbol and conduct thorough research before considering any investment. Consider checking:
-          - Official project documentation
-          - Major crypto exchanges
-          - Community forums and social media`;
-        }
-
-        return cgResponse.data;
-      } catch (error) {
-        console.error(`Error fetching info for ${tokens[0]}:`, error);
-        return `I encountered an error while fetching data for ${tokens[0]}. Please try again later.`;
+      if (cgError) {
+        console.error(`Error fetching token profile for ${cleanSymbol}:`, cgError);
+        throw cgError;
       }
+
+      if (!cgResponse?.data) {
+        return `I couldn't find reliable information about ${cleanSymbol}. This token might be:
+        - Not yet listed on major exchanges
+        - A new or emerging project
+        - Using a different symbol
+        
+        Please verify the token symbol and conduct thorough research before considering any investment.`;
+      }
+
+      return cgResponse.data;
     } catch (error) {
       console.error('Error fetching token info:', error);
       return `I apologize, but I encountered an error while fetching token information. Please try again later.`;
@@ -158,10 +145,10 @@ export class LowLevelPlanner {
     const lastMessage = messages[messages.length - 1];
     
     if (lastMessage?.content?.toLowerCase().includes('$')) {
-      // Extract all token symbols and get info
-      const symbols = lastMessage.content.match(/\$(\w+)/g);
-      if (symbols && symbols.length > 0) {
-        return await this.getTokenInfo(symbols[0]);
+      // Extract token symbol and get info
+      const match = lastMessage.content.match(/\$(\w+)/i);
+      if (match) {
+        return await this.getTokenInfo(match[1]);
       }
     }
     
