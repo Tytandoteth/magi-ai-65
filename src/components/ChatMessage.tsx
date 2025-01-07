@@ -2,10 +2,36 @@ import { Message } from "@/types/chat";
 import { cn } from "@/lib/utils";
 import { FeedbackButtons } from "./FeedbackButtons";
 
+/**
+ * ChatMessage Component
+ * 
+ * Renders an individual message in the chat interface with proper formatting
+ * and feedback buttons for AI responses.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Message} props.message - The message object to display
+ * 
+ * @example
+ * ```tsx
+ * <ChatMessage 
+ *   message={{
+ *     id: "123",
+ *     content: "Hello!",
+ *     role: "user",
+ *     timestamp: new Date()
+ *   }} 
+ * />
+ * ```
+ */
 export const ChatMessage = ({ message }: { message: Message }) => {
   const isUser = message.role === "user";
   
-  // Format numbers in the message content
+  /**
+   * Formats numerical values in the message content to proper currency format
+   * @param {string} content - The message content to format
+   * @returns {string} Formatted message content
+   */
   const formatContent = (content: string) => {
     return content.replace(
       /\$\d+(?:\.\d{2})?/g,

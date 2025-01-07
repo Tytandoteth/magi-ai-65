@@ -5,12 +5,32 @@ import { useApiLogs, ApiLog } from "./use-api-logs";
 import { useChatMessages } from "./use-chat-messages";
 import { useMagi } from "./use-magi";
 
+/**
+ * useChat Hook
+ * 
+ * A custom hook that manages the chat functionality including message handling,
+ * API interactions, and state management.
+ * 
+ * @returns {Object} Chat state and control functions
+ * @property {ChatState} chatState - Current state of the chat
+ * @property {ApiLog[]} apiLogs - Logs of API interactions
+ * @property {Function} handleSendMessage - Function to send new messages
+ * 
+ * @example
+ * ```tsx
+ * const { chatState, apiLogs, handleSendMessage } = useChat();
+ * ```
+ */
 export const useChat = () => {
   const { toast } = useToast();
   const { apiLogs, addApiLog } = useApiLogs();
   const { chatState, addMessage, setLoading, setError } = useChatMessages();
   const { processMessage } = useMagi();
 
+  /**
+   * Handles sending a new message in the chat
+   * @param {string} content - The message content to send
+   */
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
@@ -37,7 +57,6 @@ export const useChat = () => {
     try {
       console.log('Starting chat request with messages:', currentMessages);
       
-      // Process message through Magi
       const response = await processMessage(currentMessages);
       
       const assistantMessage: Message = {
