@@ -2,6 +2,95 @@
 
 Magi AI is the official AI agent for Magnify.cash, pioneering the concept of DeFAI (Decentralized Finance Augmented by Artificial Intelligence). Our mission is to simplify decentralized finance, empower users with real-time insights, and provide seamless interactions with the MAG token ecosystem and Smart Banks.
 
+## 🎯 Core Features
+
+- Real-time DeFi insights and analytics
+- MAG token ecosystem integration
+- Smart Bank management
+- AI-powered financial guidance
+- Market trend analysis
+
+## 🏗 Architecture Overview
+
+### Components Structure
+
+#### Core Components
+
+1. **ChatContainer (`src/components/ChatContainer.tsx`)**
+   - Main container for the chat interface
+   - Manages message display and scrolling
+   - Integrates chat input and typing indicators
+   - Props: `chatState`, `onSendMessage`
+
+2. **ChatMessage (`src/components/ChatMessage.tsx`)**
+   - Renders individual chat messages
+   - Handles message formatting
+   - Displays user/AI attribution
+   - Includes feedback buttons for AI responses
+   - Props: `message`
+
+3. **ChatInput (`src/components/ChatInput.tsx`)**
+   - Handles user message input
+   - Manages message submission
+   - Supports keyboard shortcuts
+   - Props: `onSend`, `disabled`
+
+4. **TypingIndicator (`src/components/TypingIndicator.tsx`)**
+   - Shows AI typing animation
+   - Provides visual feedback during AI response generation
+
+#### Service Layer
+
+1. **HighLevelPlanner (`src/services/planners/HighLevelPlanner.ts`)**
+   - Determines appropriate actions based on user input
+   - Manages conversation context
+   - Handles feedback processing
+
+2. **LowLevelPlanner (`src/services/planners/LowLevelPlanner.ts`)**
+   - Executes specific tasks based on HLP decisions
+   - Manages token information retrieval
+   - Handles market data processing
+
+3. **MemoryManager (`src/services/memory/MemoryManager.ts`)**
+   - Manages conversation state
+   - Handles data persistence
+   - Provides context retrieval
+
+### Custom Hooks
+
+1. **useChat (`src/hooks/use-chat.tsx`)**
+   - Manages chat state and interactions
+   - Handles message processing
+   - Integrates with API services
+
+2. **useChatMessages (`src/hooks/use-chat-messages.tsx`)**
+   - Manages message state
+   - Handles message updates
+   - Controls loading states
+
+3. **useMagi (`src/hooks/use-magi.tsx`)**
+   - Coordinates AI processing
+   - Manages HLP and LLP interactions
+   - Handles response generation
+
+## 🔄 Data Flow
+
+1. User inputs message via ChatInput
+2. useChat hook processes the input
+3. Message is sent to HighLevelPlanner
+4. HLP determines appropriate action
+5. LowLevelPlanner executes specific tasks
+6. Response is generated and displayed
+7. Feedback is collected and processed
+
+## 🗄️ Database Structure
+
+The application uses Supabase for data persistence with the following key tables:
+- `chat_conversations`: Stores conversation contexts
+- `chat_messages`: Individual message storage
+- `ai_agent_metrics`: Performance tracking
+- `market_data`: Financial metrics storage
+
 ## 🔗 Quick Links
 
 - **Live Project**: [Magi AI on Lovable](https://lovable.dev/projects/32bcb589-0e15-42c0-b72a-cfbb05f87477)
@@ -32,20 +121,6 @@ npm install
 npm run dev
 ```
 
-### 3. GitHub Integration
-
-#### Direct Editing
-1. Navigate to the desired file
-2. Click the "Edit" button (pencil icon)
-3. Make your changes
-4. Commit directly to the repository
-
-#### Using Codespaces
-1. Go to the repository's main page
-2. Click "Code" (green button)
-3. Select "Codespaces"
-4. Click "New codespace"
-
 ## 🛠 Technology Stack
 
 Our platform leverages modern technologies for optimal performance:
@@ -65,14 +140,6 @@ Our platform leverages modern technologies for optimal performance:
 
 ### Custom Domain
 While Lovable doesn't currently support custom domains, you can deploy to platforms like Netlify for custom domain support. See our [Custom Domains Documentation](https://docs.lovable.dev/tips-tricks/custom-domain/) for details.
-
-## 🎯 Core Features
-
-- Real-time DeFi insights and analytics
-- MAG token ecosystem integration
-- Smart Bank management
-- AI-powered financial guidance
-- Market trend analysis
 
 ## 🤝 Contributing
 
