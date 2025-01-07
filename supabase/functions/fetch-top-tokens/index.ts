@@ -37,9 +37,9 @@ serve(async (req) => {
     const existingIds = new Set(existingTokens?.map(t => t.coingecko_id) || []);
     console.log(`Found ${existingIds.size} existing tokens in database`);
 
-    // Fetch CoinGecko data in batches
-    const batchSize = 250
-    const numberOfBatches = 16 // 16 * 250 = 4000 tokens
+    // Fetch CoinGecko data in smaller batches
+    const batchSize = 100 // Reduced from 250 to 100
+    const numberOfBatches = 40 // 40 * 100 = 4000 tokens
     const cgData = []
     let newTokensFound = 0;
 
@@ -57,7 +57,9 @@ serve(async (req) => {
         )
 
         if (!cgResponse.ok) {
-          throw new Error(`CoinGecko API error: ${cgResponse.status} on page ${page}`)
+          console.error(`CoinGecko API error on page ${page}: ${cgResponse.status}`)
+          // Skip this batch and continue with the next one
+          continue
         }
 
         const batchData = await cgResponse.json()
@@ -69,13 +71,14 @@ serve(async (req) => {
         
         console.log(`Batch ${page}: Found ${newTokens.length} new tokens out of ${batchData.length} total`)
         
-        // Respect rate limits
+        // Add longer delay between batches to prevent resource exhaustion
         if (page < numberOfBatches) {
-          await new Promise(resolve => setTimeout(resolve, 1500))
+          await new Promise(resolve => setTimeout(resolve, 2000))
         }
       } catch (error) {
         console.error(`Error fetching batch ${page}:`, error)
-        throw error
+        // Skip this batch and continue with the next one
+        continue
       }
     }
 
@@ -88,7 +91,7 @@ serve(async (req) => {
     }
 
     // Process CoinGecko data in smaller batches
-    const batchInsertSize = 50
+    const batchInsertSize = 25 // Reduced from 50 to 25
     const insertPromises = []
 
     for (let i = 0; i < cgData.length; i += batchInsertSize) {
@@ -143,15 +146,16 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('Error processing coin:', coin.name, error)
-          throw error
+          // Skip this coin and continue with the next one
+          return
         }
       })
 
       insertPromises.push(...batchPromises)
 
-      // Add small delay between batches
+      // Add delay between insert batches
       if (i + batchInsertSize < cgData.length) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
 
