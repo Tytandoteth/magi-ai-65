@@ -2,6 +2,7 @@ import { createTokenProfile } from "@/utils/token/tokenProfile";
 import { InventoryManager } from "../inventory/InventoryManager";
 import { TokenResolver } from "../token/TokenResolver";
 import { TokenInfoService } from "../token/TokenInfoService";
+import { supabase } from "@/integrations/supabase/client";
 
 export class LowLevelPlanner {
   private inventoryManager: InventoryManager;
