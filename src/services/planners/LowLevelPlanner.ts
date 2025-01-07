@@ -135,16 +135,16 @@ export class LowLevelPlanner {
     if (tokenData.market_data) {
       const marketData = tokenData.market_data;
       
-      if (marketData.current_price) {
-        response += `Current Price: $${marketData.current_price.toLocaleString()}\n`;
+      if (marketData.current_price?.usd) {
+        response += `Current Price: $${marketData.current_price.usd.toLocaleString()}\n`;
       }
       
-      if (marketData.market_cap) {
-        response += `Market Cap: $${marketData.market_cap.toLocaleString()}\n`;
+      if (marketData.market_cap?.usd) {
+        response += `Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
       }
       
-      if (marketData.total_volume) {
-        response += `24h Trading Volume: $${marketData.total_volume.toLocaleString()}\n`;
+      if (marketData.total_volume?.usd) {
+        response += `24h Trading Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
       }
     }
 
