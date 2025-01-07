@@ -4,9 +4,48 @@ import { ApiLogs } from "@/components/ApiLogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ApiStatusDashboard from "@/components/ApiStatusDashboard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 const Index = () => {
   const { chatState, apiLogs, handleSendMessage } = useChat();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFetchTokens = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('fetch-top-tokens');
+      
+      if (error) {
+        console.error('Error fetching tokens:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch token data. Please try again.",
+        });
+        return;
+      }
+
+      console.log('Tokens fetched successfully:', data);
+      toast({
+        title: "Success",
+        description: "Token data has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4">
@@ -31,6 +70,20 @@ const Index = () => {
               $MAG
             </a>
           </span>
+          <Button 
+            onClick={handleFetchTokens}
+            disabled={isLoading}
+            className="mt-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating Token Data...
+              </>
+            ) : (
+              'Update Token Data'
+            )}
+          </Button>
         </div>
 
         <ErrorBoundary>
