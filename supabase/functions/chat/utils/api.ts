@@ -2,6 +2,7 @@ import { fetchLatestTweets } from './twitter.ts';
 
 export async function fetchMarketData() {
   try {
+    // Remove trailing colon from URL
     const response = await fetch('https://api.example.com/market-data');
     const data = await response.json();
     console.log('Market API data:', data);
@@ -37,16 +38,19 @@ export async function fetchTokenData(address: string) {
     const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
     console.log('Fetching token data for address:', address);
     
+    // Ensure proper URL construction
+    const baseUrl = 'https://api.etherscan.io/api';
+    
     // Fetch token info
     const response = await fetch(
-      `https://api.etherscan.io/api?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`
+      `${baseUrl}?module=token&action=tokeninfo&contractaddress=${address}&apikey=${etherscanApiKey}`
     );
     const data = await response.json();
     console.log('Etherscan token data:', data);
     
     // Fetch holder count
     const holdersResponse = await fetch(
-      `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`
+      `${baseUrl}?module=token&action=tokenholderlist&contractaddress=${address}&apikey=${etherscanApiKey}`
     );
     const holdersData = await holdersResponse.json();
     console.log('Etherscan holders data:', holdersData);
@@ -86,6 +90,7 @@ export async function fetchTokenData(address: string) {
 
 async function fetchDefiData() {
   try {
+    // Ensure proper URL construction for function invocation
     const { data, error } = await supabase.functions.invoke('fetch-defi-data');
     if (error) throw error;
     console.log('DeFi data:', data);
