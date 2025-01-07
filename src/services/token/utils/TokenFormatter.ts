@@ -1,100 +1,80 @@
-import { TokenData, ProtocolData, TokenResponse } from "@/types/token";
+import { TokenData, ProtocolData } from "@/types/token";
 
 export class TokenFormatter {
-  private formatNumber(value: number): string {
-    return value.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+  formatResponse(data: TokenData & { defiMetrics?: ProtocolData }): string {
+    console.log('Formatting response for data:', data);
+    
+    if (!data) {
+      return "Token data not found";
+    }
+
+    let response = `Here are the current metrics for ${data.name} (${data.symbol}):\n\n`;
+
+    // Format market data
+    if (data.market_data) {
+      if (data.market_data.current_price?.usd) {
+        response += `Current Price: ${this.formatCurrency(data.market_data.current_price.usd)}\n`;
+      }
+      
+      if (data.market_data.market_cap?.usd) {
+        response += `Market Cap: ${this.formatCurrency(data.market_data.market_cap.usd)}\n`;
+      }
+      
+      if (data.market_data.total_volume?.usd) {
+        response += `24h Trading Volume: ${this.formatCurrency(data.market_data.total_volume.usd)}\n`;
+      }
+
+      if (data.market_data.price_change_percentage_24h) {
+        response += `24h Price Change: ${this.formatPercentage(data.market_data.price_change_percentage_24h)}%\n`;
+      }
+    }
+
+    // Add protocol metrics if available
+    if (data.defiMetrics) {
+      response += `\nProtocol Metrics:\n`;
+      
+      if (data.defiMetrics.tvl) {
+        response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
+      }
+      
+      if (data.defiMetrics.change24h) {
+        response += `24h TVL Change: ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
+      }
+
+      if (data.defiMetrics.category) {
+        response += `Category: ${data.defiMetrics.category}\n`;
+      }
+    }
+
+    // Add description if available
+    if (data.description) {
+      response += `\nDescription:\n${data.description}\n`;
+    }
+
+    // Add market cap rank if available
+    if (data.metadata?.additional_metrics?.market_cap_rank) {
+      response += `\nMarket Cap Rank: #${data.metadata.additional_metrics.market_cap_rank}\n`;
+    }
+
+    // Add disclaimer
+    response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
+
+    return response;
+  }
+
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: value < 1 ? 8 : 2,
+      maximumFractionDigits: value < 1 ? 8 : 2
+    }).format(value);
   }
 
   private formatPercentage(value: number): string {
-    return `${value.toFixed(2)}%`;
-  }
-
-  private formatMarketData(marketData: TokenData['market_data']): string {
-    let result = '';
-    
-    if (marketData?.current_price?.usd) {
-      result += `Current Price: $${this.formatNumber(marketData.current_price.usd)}\n`;
-    }
-    
-    if (marketData?.market_cap?.usd) {
-      result += `Market Cap: $${this.formatNumber(marketData.market_cap.usd)}\n`;
-    }
-    
-    if (marketData?.total_volume?.usd) {
-      result += `24h Trading Volume: $${this.formatNumber(marketData.total_volume.usd)}\n`;
-    }
-
-    if (marketData?.price_change_percentage_24h) {
-      result += `24h Price Change: ${this.formatPercentage(marketData.price_change_percentage_24h)}\n`;
-    }
-
-    return result;
-  }
-
-  private formatProtocolData(protocolData: ProtocolData): string {
-    let result = '\nProtocol Metrics:\n';
-    
-    if (protocolData.tvl) {
-      result += `Total Value Locked (TVL): $${this.formatNumber(protocolData.tvl)}\n`;
-    }
-    
-    if (protocolData.change_1d) {
-      result += `24h TVL Change: ${this.formatPercentage(protocolData.change_1d)}\n`;
-    }
-
-    if (protocolData.category) {
-      result += `Category: ${protocolData.category}\n`;
-    }
-
-    return result;
-  }
-
-  formatTVLResponse(protocolData: ProtocolData): string {
-    let result = 'Total Value Locked (TVL) Information:\n\n';
-    
-    if (protocolData.tvl) {
-      result += `TVL: $${this.formatNumber(protocolData.tvl)}\n`;
-    }
-    
-    if (protocolData.change_1d) {
-      result += `24h Change: ${this.formatPercentage(protocolData.change_1d)}\n`;
-    }
-
-    if (protocolData.category) {
-      result += `Protocol Category: ${protocolData.category}\n`;
-    }
-
-    return result;
-  }
-
-  formatResponse(response: TokenResponse): string {
-    if (!response.success) {
-      return response.error || "Failed to fetch token information";
-    }
-
-    let result = `Here are the current metrics for ${response.data?.name} (${response.data?.symbol}):\n\n`;
-
-    // Market Data
-    if (response.data?.market_data) {
-      result += this.formatMarketData(response.data.market_data);
-    }
-
-    // Protocol Data (TVL)
-    if (response.protocolData) {
-      result += this.formatProtocolData(response.protocolData);
-    }
-
-    // Description
-    if (response.data?.description) {
-      result += `\nDescription:\n${response.data.description}\n`;
-    }
-
-    // Risk Warning
-    result += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research, verify information from multiple sources, and never invest more than you can afford to lose.`;
-
-    return result;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
   }
 }
