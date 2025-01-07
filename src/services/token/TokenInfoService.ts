@@ -5,6 +5,7 @@ import { TokenData, ProtocolData } from "@/types/token";
 import { ITokenService } from "./interfaces/TokenService";
 
 export class TokenInfoService implements ITokenService {
+  private static instance: TokenInfoService;
   private tokenRepository: TokenRepository;
   private tokenFormatter: TokenFormatter;
   private tokenOperations: TokenOperations;
@@ -13,6 +14,13 @@ export class TokenInfoService implements ITokenService {
     this.tokenRepository = new TokenRepository();
     this.tokenFormatter = new TokenFormatter();
     this.tokenOperations = new TokenOperations();
+  }
+
+  public static getInstance(): TokenInfoService {
+    if (!TokenInfoService.instance) {
+      TokenInfoService.instance = new TokenInfoService();
+    }
+    return TokenInfoService.instance;
   }
 
   async getTokenInfo(symbol: string): Promise<string> {
@@ -33,6 +41,11 @@ export class TokenInfoService implements ITokenService {
 
       // If no data in database, try API
       const finalTokenData = tokenData || await this.tokenRepository.fetchTokenFromAPI(cleanSymbol);
+
+      // For TVL queries, prioritize protocol data
+      if (isTVLQuery && protocolData?.tvl) {
+        return this.tokenFormatter.formatTVLResponse(protocolData);
+      }
 
       // Combine and validate data
       const response = this.tokenOperations.combineTokenData(finalTokenData, protocolData);

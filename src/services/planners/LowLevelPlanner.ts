@@ -6,9 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export class LowLevelPlanner {
   private inventoryManager: InventoryManager;
+  private tokenInfoService: TokenInfoService;
 
   constructor() {
     this.inventoryManager = InventoryManager.getInstance();
+    this.tokenInfoService = TokenInfoService.getInstance();
   }
 
   async executeTask(taskName: string, params: any): Promise<string> {
@@ -23,7 +25,7 @@ export class LowLevelPlanner {
           
           const symbol = TokenResolver.resolveTokenSymbol(lastMessage.content);
           if (symbol) {
-            return await TokenInfoService.getTokenInfo(symbol);
+            return await this.tokenInfoService.getTokenInfo(symbol);
           }
           
           return TokenResolver.getSuggestionMessage(lastMessage.content);
@@ -37,7 +39,7 @@ export class LowLevelPlanner {
         case "MARKET_UPDATE":
           return await this.generateMarketUpdate(params);
         case "TOKEN_INFO":
-          return await TokenInfoService.getTokenInfo(params.token);
+          return await this.tokenInfoService.getTokenInfo(params.token);
         default:
           return await this.generateGeneralResponse(params);
       }
