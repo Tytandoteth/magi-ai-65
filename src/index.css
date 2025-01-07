@@ -64,33 +64,33 @@
   right: -2px;
   bottom: -2px;
   background: linear-gradient(45deg, #FFDEE2, #D3E4FD, #FFDEE2);
-  background-size: 200% 200%;
+  background-size: 400% 400%;
   border-radius: 0.8rem;
   z-index: -1;
-  animation: glowingBorder 3s linear infinite;
-  opacity: 0.5;
-  filter: blur(8px);
+  animation: glowingBorder 3s ease infinite;
+  opacity: 0.4;
+  filter: blur(6px);
+  transition: all 0.3s ease;
 }
 
 @keyframes glowingBorder {
   0% {
     background-position: 0% 50%;
-    filter: blur(8px);
-  }
-  25% {
     filter: blur(6px);
   }
   50% {
     background-position: 100% 50%;
-    filter: blur(4px);
-  }
-  75% {
-    filter: blur(6px);
+    filter: blur(8px);
   }
   100% {
     background-position: 0% 50%;
-    filter: blur(8px);
+    filter: blur(6px);
   }
+}
+
+.chat-container:hover::before {
+  opacity: 0.5;
+  filter: blur(8px);
 }
 
 .chat-input-container {
