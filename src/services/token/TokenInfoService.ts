@@ -39,6 +39,7 @@ export class TokenInfoService {
 
       if (tokenData && tokenData.length > 0) {
         console.log('Found token data in database:', tokenData[0]);
+        console.log('DeFi Llama protocol data:', protocolData?.[0]);
         
         // If it's a TVL query but we don't have protocol data
         if (isTVLQuery && !protocolData?.[0]?.tvl) {
