@@ -52,7 +52,35 @@
 }
 
 .chat-container {
-  @apply bg-[#1a1b1e] rounded-xl shadow-lg;
+  @apply bg-[#1a1b1e] rounded-xl shadow-lg relative;
+  position: relative;
+}
+
+.chat-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #FFDEE2, #D3E4FD, #FFDEE2);
+  border-radius: 0.8rem;
+  z-index: -1;
+  animation: glowingBorder 3s linear infinite;
+  opacity: 0.5;
+  filter: blur(8px);
+}
+
+@keyframes glowingBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .chat-input-container {
