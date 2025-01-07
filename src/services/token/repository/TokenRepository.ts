@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TokenData, TokenNotFoundError, TokenFetchError, TokenError, TokenMetadata } from "@/types/token";
+import { TokenData, TokenMetadata } from "@/types/token";
 
 export class TokenRepository {
   private static instance: TokenRepository;
@@ -32,29 +32,34 @@ export class TokenRepository {
       const { data: tokenData, error: tokenError } = await supabase
         .from('token_metadata')
         .select('*')
-        .ilike('symbol', symbol)
+        .eq('symbol', symbol)
         .maybeSingle();
 
       if (tokenError) {
         console.error('Error fetching token metadata:', tokenError);
-        throw new TokenFetchError(symbol, tokenError.message);
+        throw new Error(`Error fetching token data: ${tokenError.message}`);
       }
 
       if (!tokenData) {
-        throw new TokenNotFoundError(symbol);
+        console.log('No token data found for symbol:', symbol);
+        return null;
       }
 
-      // Fetch protocol data
+      console.log('Found token data:', tokenData);
+
+      // Fetch protocol data if available
       const { data: protocolData, error: protocolError } = await supabase
         .from('defi_llama_protocols')
         .select('*')
-        .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
+        .or(`symbol.eq.${symbol},name.ilike.%${symbol}%`)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (protocolError) {
         console.error('Error fetching protocol data:', protocolError);
+      } else {
+        console.log('Found protocol data:', protocolData);
       }
 
       // Transform the data
@@ -72,13 +77,12 @@ export class TokenRepository {
 
       // Add protocol data if available
       if (protocolData) {
-        const rawData = protocolData.raw_data as Record<string, unknown>;
         transformedData.protocol_data = {
           tvl: protocolData.tvl,
           change_24h: protocolData.change_1d,
           category: protocolData.category,
-          chains: Array.isArray(rawData?.chains) ? rawData.chains as string[] : [],
-          apy: typeof rawData?.apy === 'number' ? rawData.apy : undefined
+          chains: Array.isArray(protocolData.raw_data?.chains) ? protocolData.raw_data.chains : [],
+          apy: typeof protocolData.raw_data?.apy === 'number' ? protocolData.raw_data.apy : undefined
         };
       }
 
@@ -90,10 +94,8 @@ export class TokenRepository {
 
       return transformedData;
     } catch (error) {
-      if (error instanceof TokenError) {
-        throw error;
-      }
-      throw new TokenFetchError(symbol, error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error in fetchTokenData:', error);
+      throw error;
     }
   }
 }
