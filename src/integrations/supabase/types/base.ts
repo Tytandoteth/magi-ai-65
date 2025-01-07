@@ -6,7 +6,7 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json | undefined }
+  | { [key: string]: Json }
   | Json[]
 
 /**
@@ -14,19 +14,23 @@ export type Json =
  */
 export interface Database {
   public: {
-    Tables: {
-      [key: string]: {
-        Row: Record<string, any>;
-        Insert: Record<string, any>;
-        Update: Record<string, any>;
-        Relationships: {
-          foreignKeyName: string;
-          columns: string[];
-          isOneToOne: boolean;
-          referencedRelation: string;
-          referencedColumns: string[];
-        }[];
-      };
-    };
+    Tables: Record<string, TableDefinition>;
+    Views: Record<string, unknown>;
+    Functions: Record<string, unknown>;
+    Enums: Record<string, unknown>;
+    CompositeTypes: Record<string, unknown>;
   };
+}
+
+export interface TableDefinition {
+  Row: Record<string, unknown>;
+  Insert: Record<string, unknown>;
+  Update: Record<string, unknown>;
+  Relationships: Array<{
+    foreignKeyName: string;
+    columns: string[];
+    isOneToOne: boolean;
+    referencedRelation: string;
+    referencedColumns: string[];
+  }>;
 }
