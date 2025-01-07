@@ -34,7 +34,7 @@ export class TokenRepository {
     }
 
     try {
-      // Fetch token metadata
+      // Fetch token metadata with exact symbol match
       const { data: tokenData, error: tokenError } = await supabase
         .from('token_metadata')
         .select('*')
@@ -53,11 +53,11 @@ export class TokenRepository {
 
       console.log('Found token data:', tokenData);
 
-      // Fetch protocol data if available
+      // Fetch protocol data with exact symbol match
       const { data: protocolData, error: protocolError } = await supabase
         .from('defi_llama_protocols')
         .select('*')
-        .or(`symbol.eq.${symbol},name.ilike.%${symbol}%`)
+        .eq('symbol', symbol)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

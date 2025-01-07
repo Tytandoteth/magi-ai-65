@@ -7,9 +7,9 @@ export const commonTokens = new Map([
   ['dogecoin', 'DOGE'],
   ['ripple', 'XRP'],
   ['polkadot', 'DOT'],
-  ['pudgy penguins', 'PENGU'],
+  ['pengu', 'PENGU'],
   ['pudgypenguins', 'PENGU'],
-  ['pengu', 'PENGU']
+  ['pudgy', 'PENGU']
 ]);
 
 export const tokenAliases = new Map([
@@ -19,6 +19,6 @@ export const tokenAliases = new Map([
   ['doge', 'dogecoin'],
   ['xrp', 'ripple'],
   ['dot', 'polkadot'],
-  ['pengu', 'pudgy penguins'],
-  ['pudgy', 'pudgy penguins']
+  ['pengu', 'pudgypenguins'],
+  ['pudgy', 'pudgypenguins']
 ]);

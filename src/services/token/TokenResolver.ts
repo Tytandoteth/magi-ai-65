@@ -8,6 +8,12 @@ export class TokenResolver {
     const cleanInput = content.replace(/\$/g, '').toLowerCase().trim();
     console.log('Cleaned input:', cleanInput);
     
+    // Special case for PENGU variations
+    if (cleanInput.includes('peng') || cleanInput === 'pudgy') {
+      console.log('Detected PENGU variation:', cleanInput);
+      return 'PENGU';
+    }
+    
     // Check for direct matches in common tokens
     if (commonTokens.has(cleanInput)) {
       console.log('Found direct match in common tokens:', cleanInput);
@@ -22,12 +28,6 @@ export class TokenResolver {
         console.log('Resolved alias to main token:', mainName);
         return commonTokens.get(mainName)!;
       }
-    }
-    
-    // Handle special cases for PENGU variations
-    if (cleanInput.includes('peng') || cleanInput === 'pudgy') {
-      console.log('Detected PENGU variation:', cleanInput);
-      return 'PENGU';
     }
     
     console.log('No token match found for:', cleanInput);
