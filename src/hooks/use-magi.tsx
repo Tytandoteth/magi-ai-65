@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { HighLevelPlanner } from "@/services/planners/HighLevelPlanner";
 import { LowLevelPlanner } from "@/services/planners/LowLevelPlanner";
 import { Message } from "@/types/chat";
+import { HighLevelAction } from "@/types/actions";
 
 export const useMagi = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -14,7 +15,7 @@ export const useMagi = () => {
 
     try {
       // Get high-level action plan
-      const action = await hlp.planAction(messages);
+      const action: HighLevelAction = await hlp.planAction(messages);
       console.log('Planned action:', action);
 
       // Execute the planned action
