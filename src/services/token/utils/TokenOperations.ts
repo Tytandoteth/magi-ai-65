@@ -1,32 +1,35 @@
-import { TokenData, ProtocolData } from "@/types/token";
-
 export class TokenOperations {
   validateTokenSymbol(symbol: string): string {
-    if (!symbol) {
-      throw new Error("Token symbol is required");
-    }
-    return symbol.replace('$', '').toUpperCase();
+    console.log('Validating token symbol:', symbol);
+    return symbol.toUpperCase().trim();
   }
 
   isTVLQuery(symbol: string): boolean {
     return symbol.toLowerCase().includes('tvl');
   }
 
-  combineTokenData(
-    tokenData: TokenData | null,
-    protocolData: ProtocolData | null
-  ): { success: boolean; data?: TokenData; protocolData?: ProtocolData; error?: string } {
-    if (!tokenData && !protocolData) {
+  combineTokenData(tokenData: any, protocolData: any): any {
+    console.log('Combining token data:', { tokenData, protocolData });
+
+    // Only combine protocol data if the symbols match
+    if (protocolData && tokenData && 
+        protocolData.symbol && tokenData.symbol &&
+        protocolData.symbol.toLowerCase() === tokenData.symbol.toLowerCase()) {
+      console.log('Symbols match, combining protocol data');
       return {
-        success: false,
-        error: "No data available for this token"
+        ...tokenData,
+        defiMetrics: {
+          tvl: protocolData.tvl,
+          change24h: protocolData.change_1d,
+          category: protocolData.category,
+          chains: protocolData.chains,
+          protocol: protocolData.name
+        }
       };
     }
 
-    return {
-      success: true,
-      data: tokenData || undefined,
-      protocolData: protocolData || undefined
-    };
+    // If symbols don't match, return token data without protocol metrics
+    console.log('Symbols do not match, returning token data only');
+    return tokenData;
   }
 }

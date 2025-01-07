@@ -8,8 +8,9 @@ export class TokenResolver {
     if (content.includes('$')) {
       const match = content.match(/\$(\w+)/i);
       if (match) {
-        console.log('Extracted token symbol:', match[1]);
-        return match[1];
+        const symbol = match[1].toUpperCase();
+        console.log('Extracted token symbol:', symbol);
+        return symbol;
       }
     }
     
@@ -41,5 +42,9 @@ export class TokenResolver {
       return `To get information about ${suggestedSymbol}, please use the $ symbol (e.g., $${suggestedSymbol}). You can also ask about market updates or specific DeFi protocols.`;
     }
     return "I'm here to help with any DeFi-related questions! You can ask me about specific tokens by using the $ symbol (e.g., $ETH), get market updates, or ask about DeFi protocols.";
+  }
+
+  static isSameToken(symbol1: string, symbol2: string): boolean {
+    return symbol1.toLowerCase() === symbol2.toLowerCase();
   }
 }
