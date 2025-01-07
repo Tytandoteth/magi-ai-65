@@ -7,15 +7,35 @@ export class TokenResolver {
     console.log('Resolving token symbol for:', content, 'chainId:', chainId);
     
     if (!content) {
-      throw new TokenError('Input content cannot be empty', 'INVALID_SYMBOL');
+      console.log('Empty content provided');
+      return null;
     }
 
-    const normalizedContent = content.trim().toLowerCase();
-    const symbol = symbolLookup.get(normalizedContent);
+    // Clean and normalize the input
+    const normalizedContent = content
+      .replace(/\$/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toLowerCase()
+      .trim();
     
-    console.log('Resolved symbol:', symbol);
+    console.log('Normalized content:', normalizedContent);
+
+    if (!normalizedContent) {
+      console.log('No valid content after normalization');
+      return null;
+    }
+
+    // Special handling for PENGU/Pudgy Penguins
+    if (normalizedContent === 'pengu' || normalizedContent === 'pudgy') {
+      console.log('Special case: PENGU token identified');
+      return 'PENGU';
+    }
+
+    const symbol = symbolLookup.get(normalizedContent);
+    console.log('Symbol lookup result:', symbol);
 
     if (!symbol) {
+      console.log('No symbol found in lookup map');
       return null;
     }
 
@@ -23,11 +43,13 @@ export class TokenResolver {
     if (chainId !== undefined) {
       const metadata = tokenMetadata.get(symbol);
       if (!metadata?.chainData[chainId]) {
+        console.error(`Token ${symbol} not supported on chain ${chainId}`);
         throw new TokenError(
           `Token ${symbol} not supported on chain ${chainId}`,
           'INVALID_CHAIN'
         );
       }
+      console.log(`Token ${symbol} verified for chain ${chainId}`);
     }
 
     return symbol;
@@ -44,6 +66,7 @@ export class TokenResolver {
     }
 
     if (chainId !== undefined && !metadata.chainData[chainId]) {
+      console.error(`Token ${symbol} not supported on chain ${chainId}`);
       throw new TokenError(
         `Token ${symbol} not supported on chain ${chainId}`,
         'INVALID_CHAIN'
@@ -55,18 +78,23 @@ export class TokenResolver {
   }
 
   static getSuggestionMessage(content: string): string {
+    console.log('Getting suggestion message for:', content);
     const cleanContent = content.replace(/\$/g, '').toLowerCase().trim();
+    
+    if (!cleanContent) {
+      return "Please provide a valid token symbol using the $ symbol (e.g., $ETH).";
+    }
     
     // Special handling for PENGU-related queries
     if (cleanContent.includes('peng') || cleanContent === 'pudgy') {
       return `To get information about PENGU (Pudgy Penguins), use $PENGU.`;
     }
-    
-    if (content.match(/^[a-z0-9\s]+$/i) && content.length <= 20) {
-      const suggestedSymbol = content.replace(/\s+/g, '').toUpperCase();
-      return `To get information about ${suggestedSymbol}, please use the $ symbol (e.g., $${suggestedSymbol}).`;
+
+    const resolvedSymbol = this.resolveTokenSymbol(cleanContent);
+    if (resolvedSymbol) {
+      return `Token found: $${resolvedSymbol}. Use this symbol to fetch data.`;
     }
     
-    return "I'm here to help with any DeFi-related questions! You can ask me about specific tokens by using the $ symbol (e.g., $ETH), get market updates, or ask about DeFi protocols.";
+    return `The token "${content}" could not be resolved. Check the symbol and try again.`;
   }
 }
