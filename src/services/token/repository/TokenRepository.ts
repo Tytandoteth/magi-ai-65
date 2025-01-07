@@ -64,7 +64,9 @@ export class TokenRepository {
         description: tokenData.description,
         market_data: tokenData.market_data as TokenData['market_data'],
         metadata: {
-          additional_metrics: tokenData.metadata?.additional_metrics as TokenMetadata['additional_metrics']
+          additional_metrics: tokenData.metadata && typeof tokenData.metadata === 'object' 
+            ? (tokenData.metadata as any).additional_metrics 
+            : undefined
         }
       };
 
