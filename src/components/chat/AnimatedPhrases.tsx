@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { HelpCircle, Lightbulb, Info, List, MessageCircle } from "lucide-react";
+import { HelpCircle, Lightbulb, Info, List, MessageCircle, ArrowRightLeft, TrendingUp, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const SUGGESTED_PROMPTS = [
   {
@@ -27,6 +28,24 @@ const SUGGESTED_PROMPTS = [
     icon: MessageCircle,
     display: "Ask me about recent crypto news",
     command: "What are the latest developments in crypto?"
+  }
+];
+
+const COMING_SOON_FEATURES = [
+  {
+    icon: ArrowRightLeft,
+    display: "Move a token from my wallet to someone elses",
+    tooltip: "Coming soon"
+  },
+  {
+    icon: TrendingUp,
+    display: "Go 10x long on $MAG",
+    tooltip: "Coming soon"
+  },
+  {
+    icon: Wallet,
+    display: "Lend against Pudgy Penguins",
+    tooltip: "Coming soon"
   }
 ];
 
@@ -61,6 +80,29 @@ export const AnimatedPhrases = ({ onPhraseClick }: AnimatedPhrasesProps) => {
               <Icon className="h-4 w-4 shrink-0" />
               <span className="text-sm">{prompt.display}</span>
             </Button>
+          );
+        })}
+        
+        {COMING_SOON_FEATURES.map((feature, index) => {
+          const Icon = feature.icon;
+          return (
+            <TooltipProvider key={`coming-soon-${index}`}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 text-left justify-start h-auto py-3 px-4 transition-all duration-200 opacity-50 cursor-not-allowed"
+                    disabled
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="text-sm">{feature.display}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{feature.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         })}
       </div>
