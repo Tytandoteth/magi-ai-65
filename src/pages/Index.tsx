@@ -8,7 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 
 const Index: React.FC = () => {
   const { chatState, apiLogs, handleSendMessage } = useChat();
@@ -73,6 +73,17 @@ const Index: React.FC = () => {
               $MAG
             </a>
           </span>
+        </div>
+
+        <div className="w-full flex justify-end mb-2">
+          <Button
+            variant="outline"
+            className="bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#D6BCFA] text-white hover:opacity-90 transition-opacity duration-200"
+            disabled
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            Connect Wallet (Coming Soon)
+          </Button>
         </div>
 
         <ErrorBoundary>
