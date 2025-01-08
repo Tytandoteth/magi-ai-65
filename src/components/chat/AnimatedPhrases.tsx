@@ -8,30 +8,30 @@ const SUGGESTED_PROMPTS = [
     icon: HelpCircle,
     display: "Ask me about any token",
     command: "Tell me about $MAG"
-  },
-  {
-    icon: Lightbulb,
-    display: "Ask me where to find the yields in DeFi",
-    command: "Show me the best DeFi strategies for high yield"
-  },
-  {
-    icon: Info,
-    display: "Ask me what I think about the market",
-    command: "What's your analysis of the current market conditions?"
-  },
-  {
-    icon: List,
-    display: "Ask me about DeFi protocols",
-    command: "What are the top DeFi protocols by TVL?"
-  },
-  {
-    icon: MessageCircle,
-    display: "Ask me about recent crypto news",
-    command: "What are the latest developments in crypto?"
   }
 ];
 
 const COMING_SOON_FEATURES = [
+  {
+    icon: MessageCircle,
+    display: "Ask me about recent crypto news",
+    tooltip: "Coming soon"
+  },
+  {
+    icon: Info,
+    display: "Ask me what I think about the market",
+    tooltip: "Coming soon"
+  },
+  {
+    icon: List,
+    display: "Ask me about DeFi protocols",
+    tooltip: "Coming soon"
+  },
+  {
+    icon: Lightbulb,
+    display: "Ask me where to find the yields in DeFi",
+    tooltip: "Coming soon"
+  },
   {
     icon: ArrowRightLeft,
     display: "Move a token from my wallet to someone elses",
