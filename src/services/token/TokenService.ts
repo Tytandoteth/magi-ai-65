@@ -11,6 +11,7 @@ export class TokenService {
   private tokenOperations: TokenOperations;
 
   constructor() {
+    console.log('[TokenService] Initializing service');
     this.tokenRepository = new TokenRepository();
     this.tokenFormatter = new TokenFormatter();
     this.tokenOperations = new TokenOperations();
@@ -18,18 +19,20 @@ export class TokenService {
 
   public static getInstance(): TokenService {
     if (!TokenService.instance) {
+      console.log('[TokenService] Creating new instance');
       TokenService.instance = new TokenService();
     }
     return TokenService.instance;
   }
 
   async getTokenInfo(symbol: string): Promise<string> {
-    console.log('Getting token info for:', symbol);
+    console.log('[TokenService] Getting token info for:', symbol);
+    const startTime = performance.now();
     
     try {
       // Special handling for MAG token
       if (symbol.toUpperCase() === 'MAG') {
-        console.log('Fetching MAG token data from mag_token_analytics');
+        console.log('[TokenService] Detected MAG token, using specialized flow');
         const { data: magData, error } = await supabase
           .from('mag_token_analytics')
           .select('*')
@@ -38,12 +41,12 @@ export class TokenService {
           .maybeSingle();
 
         if (error) {
-          console.error('Error fetching MAG data:', error);
+          console.error('[TokenService] Error fetching MAG data:', error);
           throw new Error(`Failed to fetch MAG data: ${error.message}`);
         }
 
         if (!magData) {
-          console.log('No MAG token data found in database');
+          console.log('[TokenService] No MAG token data found in database');
           return `I couldn't find any current data for the MAG token. This could be because:
 1. The data hasn't been updated recently
 2. There might be an issue with our data provider
@@ -53,6 +56,13 @@ Please try again later or check other reliable sources for the most up-to-date i
 
 IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
         }
+
+        console.log('[TokenService] Successfully fetched MAG data:', {
+          price: magData.price,
+          marketCap: magData.market_cap,
+          holders: magData.holders_count,
+          timestamp: magData.created_at
+        });
 
         return `Here are the current metrics for Magnify (MAG):
 
@@ -69,12 +79,16 @@ Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence
 IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
       }
 
-      // Call the token-profile edge function for other tokens
+      console.log('[TokenService] Calling token-profile edge function');
       const { data, error } = await supabase.functions.invoke('token-profile', {
         body: { symbol }
       });
 
-      console.log('Token profile response:', data, 'Error:', error);
+      console.log('[TokenService] Edge function response:', {
+        success: !!data,
+        error: error?.message,
+        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
+      });
 
       if (error || !data) {
         throw new Error(`Failed to fetch token data: ${error?.message || 'No data returned'}`);
@@ -83,7 +97,12 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
       return data.data;
 
     } catch (error) {
-      console.error('Error in getTokenInfo:', error);
+      console.error('[TokenService] Error in getTokenInfo:', {
+        symbol,
+        error: error.message,
+        stack: error.stack,
+        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
+      });
       throw error;
     }
   }

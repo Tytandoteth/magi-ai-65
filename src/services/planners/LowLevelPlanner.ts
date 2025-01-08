@@ -7,6 +7,7 @@ export class LowLevelPlanner {
   private tokenService: TokenService;
 
   constructor() {
+    console.log('[LowLevelPlanner] Initializing');
     this.tokenService = TokenService.getInstance();
   }
 
@@ -15,11 +16,15 @@ export class LowLevelPlanner {
     token?: string;
     percentage?: string;
   }): Promise<string> {
-    console.log('Executing task:', { action, params });
+    console.log('[LowLevelPlanner] Executing task:', { 
+      actionType: action.type,
+      params: action.params,
+      messageCount: params.messages.length 
+    });
 
     if (action.type === 'BLOCKCHAIN_ACTION' && action.params) {
+      console.log('[LowLevelPlanner] Executing blockchain action:', action.params);
       try {
-        console.log('Executing blockchain action:', action.params);
         const result = await onChainTools.executeAction({
           type: action.params.actionType,
           params: {
@@ -29,22 +34,36 @@ export class LowLevelPlanner {
           }
         });
 
+        console.log('[LowLevelPlanner] Blockchain action result:', {
+          success: result.status === 'success',
+          hash: result.hash
+        });
+
         if (result.status === 'success') {
           return `Transaction successful! Hash: ${result.hash}`;
         } else {
           return `Transaction failed. Please try again.`;
         }
       } catch (error: any) {
-        console.error('Blockchain action error:', error);
+        console.error('[LowLevelPlanner] Blockchain action error:', {
+          error: error.message,
+          params: action.params
+        });
         return `Failed to execute blockchain action: ${error.message}`;
       }
     }
 
     if (action.type === 'GET_TOKEN_INFO' && action.params?.symbol) {
+      console.log('[LowLevelPlanner] Fetching token info for:', action.params.symbol);
       try {
-        return await this.tokenService.getTokenInfo(action.params.symbol);
+        const response = await this.tokenService.getTokenInfo(action.params.symbol);
+        console.log('[LowLevelPlanner] Token info fetched successfully');
+        return response;
       } catch (error) {
-        console.error('Error getting token info:', error);
+        console.error('[LowLevelPlanner] Error getting token info:', {
+          symbol: action.params.symbol,
+          error: error.message
+        });
         return `I couldn't find reliable data for ${action.params.symbol}. This might be because:
 1. The token is not listed on major exchanges
 2. The token is too new

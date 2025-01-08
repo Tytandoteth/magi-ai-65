@@ -7,16 +7,19 @@ export class TokenRepository {
 
   public static getInstance(): TokenRepository {
     if (!TokenRepository.instance) {
+      console.log('[TokenRepository] Creating new instance');
       TokenRepository.instance = new TokenRepository();
     }
     return TokenRepository.instance;
   }
 
   async fetchTokenData(symbol: string): Promise<TokenData | null> {
-    console.log('TokenRepository: Fetching data for symbol:', symbol);
+    const startTime = performance.now();
+    console.log('[TokenRepository] Fetching data for symbol:', symbol);
     
     try {
       // Fetch from token_metadata table with exact symbol match
+      console.log('[TokenRepository] Querying token_metadata table');
       const { data: tokenData, error: tokenError } = await supabase
         .from('token_metadata')
         .select('*')
@@ -24,26 +27,32 @@ export class TokenRepository {
         .maybeSingle();
 
       if (tokenError) {
-        console.error('Error fetching token metadata:', tokenError);
+        console.error('[TokenRepository] Error fetching token metadata:', {
+          error: tokenError,
+          symbol,
+          responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
+        });
         throw tokenError;
       }
 
       if (!tokenData) {
-        console.log('No token data found for symbol:', symbol);
+        console.log('[TokenRepository] No token data found for symbol:', symbol);
         return null;
       }
 
-      console.log('Found token data:', tokenData);
-
-      // Ensure market_data is properly typed
-      const marketData: TokenMarketData | undefined = this.parseMarketData(tokenData.market_data);
+      console.log('[TokenRepository] Found token data:', {
+        symbol: tokenData.symbol,
+        name: tokenData.name,
+        lastUpdated: tokenData.last_updated,
+        hasMarketData: !!tokenData.market_data
+      });
 
       // Transform the data to match TokenData interface
       const transformedData: TokenData = {
         name: tokenData.name,
         symbol: tokenData.symbol,
         description: tokenData.description || undefined,
-        market_data: marketData,
+        market_data: this.parseMarketData(tokenData.market_data),
         metadata: {
           additional_metrics: this.parseAdditionalMetrics(tokenData.metadata),
           platforms: this.validatePlatforms(tokenData.platforms)
@@ -51,6 +60,7 @@ export class TokenRepository {
       };
 
       // Try to fetch protocol data if available
+      console.log('[TokenRepository] Fetching protocol data');
       const { data: protocolData, error: protocolError } = await supabase
         .from('defi_llama_protocols')
         .select('*')
@@ -58,9 +68,14 @@ export class TokenRepository {
         .maybeSingle();
 
       if (protocolError) {
-        console.error('Error fetching protocol data:', protocolError);
+        console.error('[TokenRepository] Error fetching protocol data:', protocolError);
       } else if (protocolData) {
-        console.log('Found protocol data:', protocolData);
+        console.log('[TokenRepository] Found protocol data:', {
+          name: protocolData.name,
+          category: protocolData.category,
+          tvl: protocolData.tvl
+        });
+        
         transformedData.protocol_data = {
           tvl: protocolData.tvl || undefined,
           change_24h: protocolData.change_1d || undefined,
@@ -70,9 +85,20 @@ export class TokenRepository {
         };
       }
 
+      console.log('[TokenRepository] Completed data fetch:', {
+        symbol,
+        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`,
+        dataFound: true
+      });
+
       return transformedData;
     } catch (error) {
-      console.error('Error in fetchTokenData:', error);
+      console.error('[TokenRepository] Error in fetchTokenData:', {
+        error: error.message,
+        stack: error.stack,
+        symbol,
+        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
+      });
       throw error;
     }
   }
