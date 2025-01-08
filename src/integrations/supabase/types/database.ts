@@ -3,6 +3,27 @@ import { Json } from './base';
 export interface Database {
   public: {
     Tables: {
+      secrets: {
+        Row: {
+          id: number
+          name: string
+          value: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          value: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          value?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       ai_agent_metrics: {
         Row: {
           completion_tokens: number | null

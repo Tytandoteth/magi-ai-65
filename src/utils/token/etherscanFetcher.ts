@@ -6,16 +6,23 @@ export async function fetchMagTokenData() {
   console.log('Fetching MAG token data from Etherscan');
   
   try {
-    const { data: { etherscan_api_key }, error: keyError } = await supabase
+    const { data, error } = await supabase
       .from('secrets')
-      .select('etherscan_api_key')
+      .select('value')
+      .eq('name', 'etherscan_api_key')
       .single();
 
-    if (keyError) {
-      console.error('Error fetching Etherscan API key:', keyError);
+    if (error) {
+      console.error('Error fetching Etherscan API key:', error);
       throw new Error('Failed to fetch Etherscan API key');
     }
 
+    if (!data?.value) {
+      console.error('No Etherscan API key found');
+      throw new Error('No Etherscan API key found');
+    }
+
+    const etherscan_api_key = data.value;
     const baseUrl = 'https://api.etherscan.io/api';
     
     // Fetch token info
