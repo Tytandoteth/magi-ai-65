@@ -27,6 +27,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // Fetch token price from Etherscan
+    console.log('Fetching token price from Etherscan...');
+    const priceResponse = await fetch(
+      `https://api.etherscan.io/api?module=stats&action=ethprice&apikey=${etherscanApiKey}`
+    );
+    const priceData = await priceResponse.json();
+    console.log('Price data received:', priceData.status === '1' ? 'success' : 'failed');
+
+    // Calculate MAG price in USD (using ETH price as reference)
+    const ethPriceUSD = parseFloat(priceData.result.ethusd);
+    const magPriceETH = 0.000000789; // This should be fetched from a DEX API
+    const magPriceUSD = ethPriceUSD * magPriceETH;
+
     console.log('Fetching holder count from Etherscan...');
     const holdersResponse = await fetch(
       `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${MAG_CONTRACT_ADDRESS}&apikey=${etherscanApiKey}`
@@ -58,20 +71,25 @@ serve(async (req) => {
     console.log('Supply data received:', supplyData.status === '1' ? 'success' : 'failed');
 
     // Calculate metrics
-    const totalSupply = parseInt(supplyData.result || '1000000000');
-    const circulatingSupply = totalSupply * 0.75; // Assuming 75% is circulating
-    const price = 0.15; // This should be fetched from a DEX or CEX API
-    const marketCap = price * totalSupply;
-    const volume24h = transactions24h * price * 1000; // Rough estimate based on tx count
+    const totalSupply = parseInt(supplyData.result || '880000000');
+    const circulatingSupply = 769755726; // This should be calculated based on locked tokens
+    const volume24h = transactions24h * magPriceUSD * 1000; // Rough estimate based on tx count
+    const marketCap = magPriceUSD * circulatingSupply;
 
     const analytics = {
-      price,
+      price: magPriceUSD,
       total_supply: totalSupply,
       circulating_supply: circulatingSupply,
       holders_count: holdersData.result?.length || 0,
       transactions_24h,
       volume_24h: volume24h,
-      market_cap: marketCap
+      market_cap: marketCap,
+      raw_data: {
+        holders: holdersData,
+        transactions: txData,
+        supply: supplyData,
+        price: priceData
+      }
     };
 
     console.log('Storing analytics in database:', analytics);
@@ -79,14 +97,7 @@ serve(async (req) => {
     // Store analytics in Supabase
     const { data: insertedData, error } = await supabase
       .from('mag_token_analytics')
-      .insert({
-        ...analytics,
-        raw_data: {
-          holders: holdersData,
-          transactions: txData,
-          supply: supplyData
-        }
-      });
+      .insert(analytics);
 
     if (error) {
       console.error('Error inserting MAG analytics:', error);
