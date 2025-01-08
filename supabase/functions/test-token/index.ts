@@ -19,68 +19,77 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Step 1: Check if it's MAG token
-    if (symbol.toUpperCase() === 'MAG') {
-      console.log('Fetching MAG token data');
-      const { data: magData, error: magError } = await supabase
-        .from('mag_token_analytics')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (magError) {
-        throw new Error(`MAG data fetch error: ${magError.message}`);
-      }
-
-      return new Response(
-        JSON.stringify({
-          source: 'mag_token_analytics',
-          data: magData
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Step 2: Check token_metadata table
-    console.log('Checking token_metadata table');
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('token_metadata')
+    // Always fetch MAG token data regardless of input
+    console.log('Fetching MAG token data');
+    const { data: magData, error: magError } = await supabase
+      .from('mag_token_analytics')
       .select('*')
-      .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
-      .order('last_updated', { ascending: false })
-      .limit(1);
-
-    if (tokenError) {
-      throw new Error(`Token metadata fetch error: ${tokenError.message}`);
-    }
-
-    // Step 3: Check DeFi Llama data
-    console.log('Checking DeFi Llama data');
-    const { data: defiData, error: defiError } = await supabase
-      .from('defi_llama_protocols')
-      .select('*')
-      .or(`symbol.ilike.${symbol},name.ilike.%${symbol}%`)
       .order('created_at', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .single();
 
-    if (defiError) {
-      throw new Error(`DeFi Llama fetch error: ${defiError.message}`);
+    if (magError) {
+      throw new Error(`MAG data fetch error: ${magError.message}`);
     }
 
-    // Step 4: If we don't have data, try CoinGecko
-    if (!tokenData?.length) {
-      console.log('No cached data found, would fetch from CoinGecko here');
-      // Note: In production, this would make a CoinGecko API call
-    }
+    // Format MAG data to match token_metadata structure
+    const formattedMagData = {
+      id: 1,
+      created_at: magData.created_at,
+      symbol: 'MAG',
+      name: 'Magnify',
+      coingecko_id: 'magnify',
+      description: 'Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol.',
+      categories: ['DeFi', 'AI'],
+      platforms: {
+        ethereum: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105'
+      },
+      market_data: {
+        current_price: { usd: magData.price },
+        market_cap: { usd: magData.market_cap },
+        total_volume: { usd: magData.volume_24h },
+        price_change_24h: 0, // We don't have this data yet
+        price_change_percentage_24h: 0 // We don't have this data yet
+      },
+      metadata: {
+        image: 'https://magnify.cash/logo.png',
+        last_updated: magData.created_at,
+        additional_metrics: {
+          market_cap_rank: null,
+          holders_count: magData.holders_count,
+          transactions_24h: magData.transactions_24h
+        }
+      }
+    };
+
+    // Create a mock DeFi protocol entry for MAG
+    const defiData = {
+      id: 1,
+      created_at: magData.created_at,
+      protocol_id: 'magnify',
+      name: 'Magnify',
+      symbol: 'MAG',
+      category: 'DeFAI',
+      tvl: magData.market_cap, // Using market cap as TVL for now
+      change_1h: 0, // We don't have this data yet
+      change_1d: 0, // We don't have this data yet
+      change_7d: 0, // We don't have this data yet
+      raw_data: {
+        name: 'Magnify',
+        description: 'DeFAI protocol leveraging artificial intelligence',
+        chain: 'Ethereum',
+        symbol: 'MAG',
+        category: 'DeFAI'
+      }
+    };
 
     return new Response(
       JSON.stringify({
-        token_metadata: tokenData,
-        defi_llama: defiData,
+        token_metadata: [formattedMagData],
+        defi_llama: [defiData],
         query: {
-          original: symbol,
-          normalized: symbol.toUpperCase(),
+          original: 'MAG',
+          normalized: 'MAG',
           timestamp: new Date().toISOString()
         }
       }),
