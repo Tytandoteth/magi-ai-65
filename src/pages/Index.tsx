@@ -110,7 +110,7 @@ const Index: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <TabsList className="mb-0">
                 <TabsTrigger value="chat">Chat</TabsTrigger>
-                <TabsTrigger value="logs">API Logs</TabsTrigger>
+                <TabsTrigger value="logs">Chat Logs</TabsTrigger>
                 <TabsTrigger value="status">API Status</TabsTrigger>
                 <TabsTrigger value="test">Test Results</TabsTrigger>
               </TabsList>
