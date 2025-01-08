@@ -16,6 +16,7 @@ const Index: React.FC = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isTestingToken, setIsTestingToken] = useState(false);
+  const [testResults, setTestResults] = useState<any>(null);
 
   const handleFetchTokens = async () => {
     try {
@@ -55,6 +56,7 @@ const Index: React.FC = () => {
   const handleTestToken = async () => {
     try {
       setIsTestingToken(true);
+      setTestResults(null);
       console.log('Testing token endpoint with PENGU');
       
       const { data, error } = await supabase.functions.invoke('test-token', {
@@ -72,9 +74,17 @@ const Index: React.FC = () => {
       }
 
       console.log('Token test results:', data);
+      setTestResults(data);
+      
+      const resultSummary = data.token_metadata?.[0] 
+        ? `Found token in metadata: ${data.token_metadata[0].name}`
+        : data.defi_llama?.[0]
+        ? `Found in DeFi Llama: ${data.defi_llama[0].name}`
+        : 'No direct matches found';
+
       toast({
         title: "Test Results",
-        description: "Check the console for detailed token resolution results",
+        description: resultSummary,
         duration: 5000,
       });
     } catch (error) {
@@ -101,6 +111,7 @@ const Index: React.FC = () => {
                 <TabsTrigger value="chat">Chat</TabsTrigger>
                 <TabsTrigger value="logs">API Logs</TabsTrigger>
                 <TabsTrigger value="status">API Status</TabsTrigger>
+                <TabsTrigger value="test">Test Results</TabsTrigger>
               </TabsList>
 
               <ActionButtons 
@@ -124,6 +135,43 @@ const Index: React.FC = () => {
 
             <TabsContent value="status" className="flex-1 flex flex-col mt-0">
               <ApiStatusDashboard />
+            </TabsContent>
+
+            <TabsContent value="test" className="flex-1 flex flex-col mt-0">
+              {testResults ? (
+                <div className="rounded-lg border p-4 space-y-4">
+                  <h3 className="text-lg font-semibold">Test Results for PENGU</h3>
+                  
+                  {testResults.token_metadata?.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Token Metadata:</h4>
+                      <pre className="bg-muted p-2 rounded text-sm overflow-auto">
+                        {JSON.stringify(testResults.token_metadata[0], null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  {testResults.defi_llama?.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">DeFi Llama Data:</h4>
+                      <pre className="bg-muted p-2 rounded text-sm overflow-auto">
+                        {JSON.stringify(testResults.defi_llama[0], null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Query Details:</h4>
+                    <pre className="bg-muted p-2 rounded text-sm overflow-auto">
+                      {JSON.stringify(testResults.query, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Click the "Test Token" button to see results here
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </ErrorBoundary>
