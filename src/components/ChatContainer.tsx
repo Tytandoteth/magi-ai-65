@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { AlertCircle, Construction } from "lucide-react";
+import { AlertCircle, Construction, Twitter } from "lucide-react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AnimatedPhrases } from "./chat/AnimatedPhrases";
 import { SuggestedPrompts } from "./chat/SuggestedPrompts";
+import { Button } from "./ui/button";
 
 interface ChatContainerProps {
   chatState: ChatState;
@@ -40,6 +41,21 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
           <div className="text-sm text-gray-500">
             Expected Release: Q1 2024
           </div>
+          <a 
+            href="https://x.com/Agent_Magi" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-block"
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-background hover:bg-accent text-primary hover:text-accent-foreground transition-colors duration-200"
+            >
+              <Twitter className="mr-2 h-4 w-4" />
+              Follow @Agent_Magi
+            </Button>
+          </a>
         </div>
       </div>
 
