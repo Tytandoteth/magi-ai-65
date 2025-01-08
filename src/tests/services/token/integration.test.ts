@@ -16,7 +16,7 @@ describe('Token Integration Tests', () => {
 
   async function getTokenData(content: string, apiKey: string) {
     console.log('Getting token data for:', content);
-    const resolvedSymbol = TokenResolver.resolveTokenSymbol(content);
+    const resolvedSymbol = await TokenResolver.resolveTokenSymbol(content);
     
     if (!resolvedSymbol) {
       console.error('Token not resolved:', content);

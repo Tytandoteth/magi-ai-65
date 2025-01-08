@@ -16,4 +16,13 @@ export interface TokenMetadata {
       verified: boolean;
     };
   };
+  marketData?: {
+    price?: number;
+    totalSupply?: number;
+    circulatingSupply?: number;
+    holdersCount?: number;
+    transactions24h?: number;
+    volume24h?: number;
+    marketCap?: number;
+  };
 }

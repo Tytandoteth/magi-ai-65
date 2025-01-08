@@ -56,13 +56,13 @@ export class TokenAggregator {
   ): Promise<TokenData> {
     console.log('Aggregating token data for:', input, 'options:', options);
     
-    const resolvedSymbol = TokenResolver.resolveTokenSymbol(input, chainId);
+    const resolvedSymbol = await TokenResolver.resolveTokenSymbol(input, chainId);
     
     if (!resolvedSymbol) {
       throw new TokenError(`Could not resolve symbol: ${input}`, 'INVALID_SYMBOL');
     }
 
-    const metadata = TokenResolver.getTokenMetadata(resolvedSymbol, chainId);
+    const metadata = await TokenResolver.getTokenMetadata(resolvedSymbol, chainId);
     if (!metadata) {
       throw new TokenError(
         `No metadata found for symbol: ${resolvedSymbol}`,
