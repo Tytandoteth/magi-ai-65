@@ -1,45 +1,28 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useChat } from '@/hooks/use-chat';
-import { useMagi } from '@/hooks/use-magi';
+import { renderHook, act } from '@testing-library/react';
+import { useChatMessages } from '../../hooks/use-chat-messages';
 
-// Mock dependencies
-vi.mock('@/hooks/use-magi', () => ({
-  useMagi: vi.fn(() => ({
-    processMessage: vi.fn(async () => 'Mocked response'),
-    isProcessing: false
-  }))
-}));
-
-describe('useChat', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+describe('useChatMessages', () => {
+  it('should initialize with empty messages', () => {
+    const { result } = renderHook(() => useChatMessages());
+    
+    expect(result.current.chatState.messages).toEqual([]);
+    expect(result.current.chatState.isLoading).toBe(false);
+    expect(result.current.chatState.error).toBeNull();
   });
 
-  it('should add user message and get AI response', async () => {
-    const { result } = renderHook(() => useChat());
-
-    await act(async () => {
-      await result.current.handleSendMessage('Hello');
+  it('should add a message', () => {
+    const { result } = renderHook(() => useChatMessages());
+    
+    act(() => {
+      result.current.addMessage({
+        id: '1',
+        content: 'Test message',
+        role: 'user',
+        timestamp: new Date()
+      });
     });
 
-    expect(result.current.chatState.messages).toHaveLength(2);
-    expect(result.current.chatState.messages[0].role).toBe('user');
-    expect(result.current.chatState.messages[1].role).toBe('assistant');
-  });
-
-  it('should handle errors gracefully', async () => {
-    vi.mocked(useMagi).mockImplementation(() => ({
-      processMessage: vi.fn().mockRejectedValue(new Error('API Error')),
-      isProcessing: false
-    }));
-
-    const { result } = renderHook(() => useChat());
-
-    await act(async () => {
-      await result.current.handleSendMessage('Hello');
-    });
-
-    expect(result.current.chatState.error).toBeTruthy();
+    expect(result.current.chatState.messages).toHaveLength(1);
+    expect(result.current.chatState.messages[0].content).toBe('Test message');
   });
 });
