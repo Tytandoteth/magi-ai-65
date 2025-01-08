@@ -1,4 +1,4 @@
-export function formatMarketData(data: any) {
+export function formatTokenResponse(data: any) {
   if (!data) return '';
   
   try {
@@ -6,7 +6,7 @@ export function formatMarketData(data: any) {
       .map(([key, value]) => `  • ${key}: ${JSON.stringify(value)}`)
       .join('\n');
   } catch (error) {
-    console.error('Error formatting market data:', error);
+    console.error('Error formatting token data:', error);
     return JSON.stringify(data);
   }
 }
