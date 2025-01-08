@@ -6,7 +6,38 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
     commonNames: ['mag', 'magnify', 'magnifycash'],
     decimals: 18,
     chainData: {
-      1: { address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', verified: true }
+      1: { 
+        address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', 
+        verified: true 
+      }
+    },
+    marketData: {
+      currentPrice: 0.001282,
+      priceChange24h: 3.4,
+      marketCap: 987315,
+      fullyDilutedValuation: 1128718,
+      volume24h: 14961.47,
+      circulatingSupply: 769755726,
+      totalSupply: 880000000,
+      maxSupply: 880000000,
+      priceRanges: {
+        '24h': {
+          low: 0.001064,
+          high: 0.001318
+        }
+      },
+      priceChangePercentages: {
+        '1h': 0.7,
+        '24h': 3.4,
+        '7d': 20.0,
+        '14d': 37.1,
+        '30d': 45.1,
+        '1y': null
+      },
+      btcPrice: 0.071349,
+      btcPriceChange24h: 6.7,
+      ethPrice: 0.063835,
+      ethPriceChange24h: 7.6
     }
   }],
   ['ETH', {
