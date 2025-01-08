@@ -1,19 +1,15 @@
 import { Json } from '@/integrations/supabase/types/base';
 
-export interface MarketData {
-  current_price?: {
+// Define MarketData as a Record to satisfy Json type constraints
+export type MarketData = {
+  [K in 'current_price' | 'market_cap' | 'total_volume']?: {
     usd?: number;
   };
-  market_cap?: {
-    usd?: number;
-  };
-  total_volume?: {
-    usd?: number;
-  };
+} & {
   price_change_percentage_24h?: number;
-}
+};
 
-export function isMarketData(data: Json): data is MarketData {
+export function isMarketData(data: Json): data is MarketData & { [key: string]: Json } {
   if (!data || typeof data !== 'object') return false;
   
   const marketData = data as MarketData;
