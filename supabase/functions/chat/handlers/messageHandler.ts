@@ -5,6 +5,45 @@ import { TokenResolver } from "../utils/token/tokenResolver.ts";
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
+const openAiKey = Deno.env.get('OPENAI_API_KEY');
+
+async function getOpenAIResponse(messages: any[]) {
+  if (!openAiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  console.log('Sending request to OpenAI with messages:', messages);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini', // Using the recommended fast model
+      messages: [
+        {
+          role: 'system',
+          content: 'You are Magi, a DeFi and crypto expert assistant. Provide accurate, concise information about tokens, market trends, and DeFi protocols. Always include relevant disclaimers about investment risks.'
+        },
+        ...messages
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('OpenAI API error:', error);
+    throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  console.log('OpenAI response:', data);
+  return data.choices[0].message.content;
+}
 
 export async function handleChatMessage(messages: any[]) {
   console.log('Processing messages in handler:', messages);
@@ -15,21 +54,6 @@ export async function handleChatMessage(messages: any[]) {
   try {
     // Handle MAG token queries
     if (content.includes('$mag')) {
-      console.log('Fetching MAG token data');
-      
-      // First verify table access
-      const { data: tableTest, error: tableError } = await supabase
-        .from('mag_token_analytics')
-        .select('created_at')
-        .limit(1);
-        
-      if (tableError) {
-        console.error('Error accessing MAG table:', tableError);
-        throw new Error(`Database access error: ${tableError.message}`);
-      }
-      
-      console.log('Table access verified, latest record timestamp:', tableTest?.[0]?.created_at);
-
       // Fetch latest MAG data
       const { data: magData, error: magError } = await supabase
         .from('mag_token_analytics')
@@ -80,7 +104,7 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
       };
     }
 
-    // Keep existing token resolution for other tokens
+    // Handle other token queries
     if (content.includes('$')) {
       const symbol = content.split('$')[1].split(' ')[0];
       console.log('Resolving token:', symbol);
@@ -90,10 +114,14 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
       };
     }
 
-    // Default response for other queries
+    // For general queries, use OpenAI
+    console.log('Processing general query with OpenAI');
+    const aiResponse = await getOpenAIResponse(messages);
+    
     return {
-      content: "I'm here to help with crypto and DeFi information! Try asking about specific tokens using the $ symbol (e.g., $ETH or $MAG) or ask for help to see what I can do."
+      content: aiResponse
     };
+
   } catch (error) {
     console.error('Error in message handler:', error);
     throw error;
