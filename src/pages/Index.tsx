@@ -53,7 +53,7 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-6">
-        <div className="flex flex-col items-center gap-2 mb-4">
+        <div className="flex flex-col items-center gap-2 mb-8">
           <img 
             src="/lovable-uploads/c59be568-ac29-4c04-ac17-49fce02a6865.png" 
             alt="Magi Mascot" 
@@ -77,13 +77,13 @@ const Index: React.FC = () => {
 
         <ErrorBoundary>
           <Tabs defaultValue="chat" className="flex-1 w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="logs">API Logs</TabsTrigger>
-              <TabsTrigger value="status">API Status</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between mb-6">
+              <TabsList className="mb-0">
+                <TabsTrigger value="chat">Chat</TabsTrigger>
+                <TabsTrigger value="logs">API Logs</TabsTrigger>
+                <TabsTrigger value="status">API Status</TabsTrigger>
+              </TabsList>
 
-            <div className="w-full flex justify-end mb-4">
               <Button
                 variant="outline"
                 className="bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#D6BCFA] text-white hover:opacity-90 transition-opacity duration-200"
