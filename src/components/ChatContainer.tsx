@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Construction } from "lucide-react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
@@ -27,23 +27,23 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
 
   console.log("ChatContainer rendered with state:", chatState);
 
-  if (!chatState) {
-    return (
-      <div className="chat-container flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="flex flex-col space-y-4 p-4">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-12 w-1/2" />
-            <Skeleton className="h-12 w-2/3" />
+  return (
+    <div className="chat-container flex-1 flex flex-col relative">
+      {/* Alpha Banner */}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 rounded-xl">
+        <div className="bg-background/95 p-6 rounded-lg shadow-xl max-w-md text-center space-y-4">
+          <Construction className="h-12 w-12 mx-auto text-yellow-500 animate-bounce-slow" />
+          <h2 className="text-xl font-semibold text-gray-200">Alpha Version</h2>
+          <p className="text-gray-400">
+            Magi Terminal is currently in development. Features will be enabled soon.
+          </p>
+          <div className="text-sm text-gray-500">
+            Expected Release: Q1 2024
           </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="chat-container flex-1 flex flex-col">
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-4 opacity-30 pointer-events-none">
         {(!chatState.messages || chatState.messages.length === 0) && !chatState.isLoading ? (
           <div className="flex flex-col space-y-4 p-4">
             <AnimatedPhrases onPhraseClick={onSendMessage} />
@@ -86,7 +86,7 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
       
       <ChatInput 
         onSend={onSendMessage} 
-        disabled={chatState.isLoading} 
+        disabled={true}
       />
     </div>
   );

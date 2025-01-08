@@ -13,7 +13,6 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Focus the textarea when the component mounts
     textareaRef.current?.focus();
   }, []);
 
@@ -22,7 +21,6 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     if (trimmedMessage) {
       onSend(trimmedMessage);
       setMessage("");
-      // Refocus the textarea after sending a message
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 0);
@@ -37,22 +35,22 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   };
 
   return (
-    <div className="flex gap-3 items-end p-4 chat-input-container">
+    <div className="flex gap-3 items-end p-4 chat-input-container opacity-50">
       <div className="flex-1 relative textarea-container">
         <Textarea
           ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="How can I help you today?"
+          placeholder="Coming soon..."
           className="resize-none bg-[#1e1f23] border-none focus-visible:ring-0 text-gray-100 placeholder:text-gray-400"
           rows={1}
-          disabled={disabled}
+          disabled={true}
         />
       </div>
       <Button
         onClick={handleSend}
-        disabled={disabled || !message.trim()}
+        disabled={true}
         size="icon"
         className="bg-[#1e1f23] hover:bg-[#2a2b2e] text-gray-100"
       >
