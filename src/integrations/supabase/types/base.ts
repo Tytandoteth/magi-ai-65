@@ -12,7 +12,7 @@ export type Json =
 /**
  * Base Database interface that defines the structure for table definitions
  */
-export interface Database {
+export interface BaseDatabase {
   public: {
     Tables: Record<string, TableDefinition>;
     Views: Record<string, unknown>;
