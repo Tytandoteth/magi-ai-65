@@ -43,22 +43,17 @@ export class TokenService {
           volume_24h: 15551.84,
           price_change_24h: 1.3,
           holders_count: 4012,
-          transactions_24h: 250 // Keeping this as is since not provided in new data
+          transactions_24h: 250
         };
 
-        return `🪄 Magnify (MAG) Snapshot
+        return `Here's the latest on MAG:
 
-💵 Price: $${magData.price.toFixed(6)}
-🌍 Market Cap: $${magData.market_cap.toLocaleString()}
-📈 Circulating Supply: ${magData.circulating_supply.toLocaleString()} MAG / ${magData.total_supply.toLocaleString()} MAG
-👥 Holders: ${magData.holders_count.toLocaleString()}
-🔄 Transactions (24h): ${magData.transactions_24h.toLocaleString()}
-💹 Volume (24h): $${magData.volume_24h.toLocaleString()}
-📊 24h Change: ${magData.price_change_24h}%
+💰 $${magData.price.toFixed(6)} (${magData.price_change_24h}% 24h)
+📊 Market Cap: $${magData.market_cap.toLocaleString()}
+👥 ${magData.holders_count.toLocaleString()} holders
+💫 ${magData.transactions_24h} trades today
 
-Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.
-
-IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+Note: Always DYOR and invest wisely!`;
       }
 
       // For other tokens, fetch from token_metadata
