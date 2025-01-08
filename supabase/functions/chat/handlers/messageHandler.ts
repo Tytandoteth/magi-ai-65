@@ -1,184 +1,79 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
-import { formatTokenResponse } from "../utils/formatters.ts";
-import { TokenResolver } from "../utils/token/tokenResolver.ts";
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-const openAiKey = Deno.env.get('OPENAI_API_KEY');
-
-async function getOpenAIResponse(messages: any[], context: any = {}) {
-  if (!openAiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  console.log('Sending request to OpenAI with messages and context:', { messages, context });
-
-  // Fetch latest market data for context
-  const { data: marketData } = await supabase
-    .from('defi_market_data')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  // Fetch latest DeFi protocols data
-  const { data: protocolsData } = await supabase
-    .from('defi_llama_protocols')
-    .select('*')
-    .order('tvl', { ascending: false })
-    .limit(5);
-
-  const systemPrompt = `You are Magi, an advanced AI assistant specializing in DeFi and cryptocurrency analysis. Your responses should:
-
-1. Demonstrate deep understanding of DeFi concepts and market dynamics
-2. Provide data-driven insights based on current market conditions
-3. Explain complex concepts in clear, accessible terms
-4. Consider multiple perspectives and potential scenarios
-5. Include relevant context from current market trends
-6. Always acknowledge risks and include appropriate disclaimers
-
-Current Market Context:
-${JSON.stringify({ marketData, protocolsData }, null, 2)}
-
-When analyzing tokens or protocols:
-- Consider TVL trends and market dynamics
-- Evaluate relative performance metrics
-- Assess risk factors and market conditions
-- Provide balanced, well-reasoned insights
-
-Remember to maintain a professional yet approachable tone while ensuring accuracy and depth in your analysis.`;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',  // Using the more capable model for better reasoning
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt
-        },
-        ...messages
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,  // Increased for more detailed responses
-      presence_penalty: 0.6,  // Encourages more diverse responses
-      frequency_penalty: 0.3,  // Reduces repetition
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('OpenAI API error:', error);
-    throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
-  }
-
-  const data = await response.json();
-  console.log('OpenAI response:', data);
-  return data.choices[0].message.content;
-}
+import { createSystemMessage } from '../utils/systemMessage.ts';
+import { fetchExternalData } from '../utils/api.ts';
+import { supabase } from '../utils/supabaseClient.ts';
 
 export async function handleChatMessage(messages: any[]) {
-  console.log('Processing messages in handler:', messages);
+  console.log('Processing chat message with messages:', messages);
   
-  const lastMessage = messages[messages.length - 1];
-  const content = lastMessage.content.toLowerCase();
+  const apiStatuses = [];
+  const startTime = Date.now();
 
   try {
-    // Handle MAG token queries
-    if (content.includes('$mag')) {
-      // Fetch latest MAG data
-      const { data: magData, error: magError } = await supabase
+    // Get only essential context data based on the last message
+    const lastMessage = messages[messages.length - 1].content.toLowerCase();
+    let contextData = {};
+
+    // Efficient database queries with specific column selection
+    if (lastMessage.includes('$mag') || lastMessage.includes('magnify')) {
+      const { data: magData } = await supabase
         .from('mag_token_analytics')
-        .select('*')
+        .select('price,total_supply,circulating_supply,holders_count,transactions_24h,volume_24h,market_cap')
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
-
-      if (magError) throw magError;
-
-      if (!magData) {
-        console.warn('No MAG data found in database');
-        return {
-          content: "I apologize, but I couldn't fetch the latest MAG token data at the moment. Please try again in a few moments."
-        };
-      }
-
-      console.log('Retrieved MAG data:', JSON.stringify(magData, null, 2));
-
-      // Get AI-enhanced analysis for MAG token
-      const aiContext = {
-        tokenData: magData,
-        marketTrends: await getMarketTrends()
-      };
-
-      const aiResponse = await getOpenAIResponse([
-        {
-          role: 'user',
-          content: `Analyze the MAG token based on this data: ${JSON.stringify(magData)}`
-        }
-      ], aiContext);
-
-      return {
-        content: aiResponse
-      };
-    }
-
-    // Handle other token queries
-    if (content.includes('$')) {
-      const symbol = content.split('$')[1].split(' ')[0];
-      console.log('Resolving token:', symbol);
+        .single();
       
-      // Fetch token data from database
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('token_metadata')
-        .select('*')
-        .eq('symbol', symbol.toUpperCase())
-        .maybeSingle();
-
-      if (tokenError) throw tokenError;
-
-      // Get AI-enhanced analysis
-      const aiContext = {
-        tokenData,
-        marketTrends: await getMarketTrends()
-      };
-
-      const aiResponse = await getOpenAIResponse([
-        {
-          role: 'user',
-          content: `Analyze the ${symbol} token based on this data: ${JSON.stringify(tokenData)}`
-        }
-      ], aiContext);
-
-      return {
-        content: aiResponse
-      };
+      if (magData) {
+        contextData.magData = magData;
+      }
     }
 
-    // For general queries, use enhanced OpenAI with context
-    console.log('Processing general query with OpenAI');
-    const aiResponse = await getOpenAIResponse(messages);
-    
-    return {
-      content: aiResponse
+    // Create conversation with minimal data
+    const { data: conversation, error: convError } = await supabase
+      .from('chat_conversations')
+      .insert({
+        user_session_id: crypto.randomUUID(),
+        context: contextData
+      })
+      .select('id')
+      .single();
+
+    if (convError) {
+      throw new Error(`Error creating conversation: ${convError.message}`);
+    }
+
+    // Store only the last user message
+    const userMessage = messages[messages.length - 1];
+    const { error: msgError } = await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: conversation.id,
+        role: 'user',
+        content: userMessage.content,
+      });
+
+    if (msgError) {
+      throw new Error(`Error storing message: ${msgError.message}`);
+    }
+
+    // Create system message with minimal context
+    const systemMessage = {
+      role: 'system',
+      content: `You are Magi, a friendly and knowledgeable AI assistant specializing in DeFi and crypto. Use a conversational, engaging tone while maintaining professionalism.
+
+Context data: ${JSON.stringify(contextData)}
+
+Remember to maintain a helpful and approachable tone throughout the conversation.`
     };
 
+    // Format messages for OpenAI with minimal context
+    const openAiMessages = [
+      systemMessage,
+      ...messages.slice(-3) // Only keep last 3 messages for context
+    ];
+
+    return { openAiMessages, apiStatuses, conversation };
   } catch (error) {
-    console.error('Error in message handler:', error);
+    console.error('Error in handleChatMessage:', error);
     throw error;
   }
-}
-
-async function getMarketTrends() {
-  const { data } = await supabase
-    .from('defi_market_data')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(10);
-  
-  return data;
 }

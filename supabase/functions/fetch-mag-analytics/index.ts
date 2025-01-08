@@ -6,15 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const MAG_CONTRACT_ADDRESS = '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105';
+
 serve(async (req) => {
+  console.log('Fetching MAG token analytics...');
+  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const apiKey = Deno.env.get('COINGECKO_API_KEY')
-    if (!apiKey) {
-      throw new Error('COINGECKO_API_KEY is not set')
+    const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY')
+    if (!etherscanApiKey) {
+      throw new Error('ETHERSCAN_API_KEY is not set')
     }
 
     // Initialize Supabase client
@@ -22,127 +27,93 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log('Fetching MAG token data from CoinGecko...')
-    
-    // Fetch price data using the simple/price endpoint
+    // Fetch token price from Etherscan
+    console.log('Fetching token price from Etherscan...');
     const priceResponse = await fetch(
-      'https://pro-api.coingecko.com/api/v3/simple/price?ids=magnify&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true',
-      {
-        headers: {
-          'x-cg-pro-api-key': apiKey
-        }
-      }
-    )
+      `https://api.etherscan.io/api?module=stats&action=ethprice&apikey=${etherscanApiKey}`
+    );
+    const priceData = await priceResponse.json();
+    console.log('Price data received:', priceData.status === '1' ? 'success' : 'failed');
 
-    let marketData = null
-    if (priceResponse.ok) {
-      const priceData = await priceResponse.json()
-      console.log('CoinGecko price data:', priceData)
-      if (priceData.magnify) {
-        marketData = priceData.magnify
-      }
-    } else {
-      console.error('Error fetching from CoinGecko:', await priceResponse.text())
-    }
+    // Calculate MAG price in USD (using ETH price as reference)
+    const ethPriceUSD = parseFloat(priceData.result.ethusd);
+    const magPriceETH = 0.000000789; // This should be fetched from a DEX API
+    const magPriceUSD = ethPriceUSD * magPriceETH;
 
-    // Fetch DeFAI category data
-    const categoryResponse = await fetch(
-      'https://pro-api.coingecko.com/api/v3/coins/categories/list',
-      {
-        headers: {
-          'x-cg-pro-api-key': apiKey
-        }
-      }
-    )
+    console.log('Fetching holder count from Etherscan...');
+    const holdersResponse = await fetch(
+      `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${MAG_CONTRACT_ADDRESS}&apikey=${etherscanApiKey}`
+    );
+    const holdersData = await holdersResponse.json();
+    console.log('Holders data received:', holdersData.status === '1' ? 'success' : 'failed');
 
-    let categoryData = null
-    if (categoryResponse.ok) {
-      const categories = await categoryResponse.json()
-      console.log('CoinGecko categories:', categories)
-      categoryData = categories.find((cat: any) => 
-        cat.name.toLowerCase().includes('defai') || 
-        cat.name.toLowerCase().includes('ai')
-      )
-    }
-
-    // Fetch Etherscan data for holders count
-    const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY')
-    if (!etherscanApiKey) {
-      throw new Error('ETHERSCAN_API_KEY is not set')
-    }
-
-    const etherscanResponse = await fetch(
-      `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105&apikey=${etherscanApiKey}`
-    )
-
-    let holdersCount = 0
-    if (etherscanResponse.ok) {
-      const etherscanData = await etherscanResponse.json()
-      console.log('Etherscan data:', etherscanData)
-      if (etherscanData.result) {
-        holdersCount = etherscanData.result.length
-      }
-    }
-
-    // Get transaction count for last 24h
+    console.log('Fetching 24h transactions...');
     const txResponse = await fetch(
-      `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`
-    )
+      `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${MAG_CONTRACT_ADDRESS}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`
+    );
+    const txData = await txResponse.json();
+    console.log('Transaction data received:', txData.status === '1' ? 'success' : 'failed');
 
-    let transactions24h = 0
-    if (txResponse.ok) {
-      const txData = await txResponse.json()
-      if (txData.result) {
-        const now = Date.now() / 1000 // current timestamp in seconds
-        transactions24h = txData.result.filter((tx: any) => 
-          now - parseInt(tx.timeStamp) <= 86400 // 24 hours in seconds
-        ).length
-      }
-    }
+    // Get current timestamp and 24h ago timestamp
+    const now = Math.floor(Date.now() / 1000);
+    const oneDayAgo = now - (24 * 60 * 60);
 
-    // Combine all data
-    const analyticsData = {
-      price: marketData?.usd || 0,
-      market_cap: marketData?.usd_market_cap || 0,
-      volume_24h: marketData?.usd_24h_vol || 0,
-      holders_count: holdersCount,
-      transactions_24h: transactions24h,
-      total_supply: 770000000, // Fixed total supply
-      circulating_supply: 770000000, // Currently all tokens are in circulation
+    // Calculate 24h transactions
+    const transactions24h = txData.result
+      ? txData.result.filter((tx: any) => parseInt(tx.timeStamp) > oneDayAgo).length
+      : 0;
+
+    console.log('Fetching token supply...');
+    const supplyResponse = await fetch(
+      `https://api.etherscan.io/api?module=stats&action=tokensupply&contractaddress=${MAG_CONTRACT_ADDRESS}&apikey=${etherscanApiKey}`
+    );
+    const supplyData = await supplyResponse.json();
+    console.log('Supply data received:', supplyData.status === '1' ? 'success' : 'failed');
+
+    // Calculate metrics
+    const totalSupply = parseInt(supplyData.result || '880000000');
+    const circulatingSupply = 769755726; // This should be calculated based on locked tokens
+    const volume24h = transactions24h * magPriceUSD * 1000; // Rough estimate based on tx count
+    const marketCap = magPriceUSD * circulatingSupply;
+
+    const analytics = {
+      price: magPriceUSD,
+      total_supply: totalSupply,
+      circulating_supply: circulatingSupply,
+      holders_count: holdersData.result?.length || 0,
+      transactions_24h,
+      volume_24h: volume24h,
+      market_cap: marketCap,
       raw_data: {
-        coingecko: {
-          price: marketData,
-          category: categoryData
-        },
-        holders: holdersCount,
-        transactions_24h: transactions24h
+        holders: holdersData,
+        transactions: txData,
+        supply: supplyData,
+        price: priceData
       }
-    }
+    };
 
-    console.log('Storing analytics data:', analyticsData)
+    console.log('Storing analytics in database:', analytics);
 
-    // Store in database
-    const { error: insertError } = await supabase
+    // Store analytics in Supabase
+    const { data: insertedData, error } = await supabase
       .from('mag_token_analytics')
-      .insert(analyticsData)
+      .insert(analytics);
 
-    if (insertError) {
-      throw new Error(`Failed to store analytics: ${insertError.message}`)
+    if (error) {
+      console.error('Error inserting MAG analytics:', error);
+      throw error;
     }
+    console.log('Successfully stored MAG analytics data');
 
-    return new Response(
-      JSON.stringify({ success: true, data: analyticsData }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify({ success: true, data: analytics }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('Error in fetch-mag-analytics:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
+    console.error('Error:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 })

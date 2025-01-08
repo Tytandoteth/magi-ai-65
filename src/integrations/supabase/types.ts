@@ -118,50 +118,6 @@ export type Database = {
           },
         ]
       }
-      chat_queries: {
-        Row: {
-          conversation_id: number | null
-          created_at: string
-          effectiveness_score: number | null
-          id: number
-          metadata: Json | null
-          processing_time_ms: number | null
-          query: string
-          response: string | null
-          tokens_used: number | null
-        }
-        Insert: {
-          conversation_id?: number | null
-          created_at?: string
-          effectiveness_score?: number | null
-          id?: number
-          metadata?: Json | null
-          processing_time_ms?: number | null
-          query: string
-          response?: string | null
-          tokens_used?: number | null
-        }
-        Update: {
-          conversation_id?: number | null
-          created_at?: string
-          effectiveness_score?: number | null
-          id?: number
-          metadata?: Json | null
-          processing_time_ms?: number | null
-          query?: string
-          response?: string | null
-          tokens_used?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_queries_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "chat_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       crypto_news: {
         Row: {
           categories: string[] | null
