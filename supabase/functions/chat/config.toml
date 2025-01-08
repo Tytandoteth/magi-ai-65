@@ -1,7 +1,1 @@
 project_id = "ejncohkxeviqioparmyh"
-
-[chat]
-verify_jwt = false
-
-[test-mag]
-verify_jwt = false

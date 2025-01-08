@@ -109,22 +109,21 @@ export async function handleChatMessage(messages: any[]) {
 
       console.log('Retrieved MAG data:', JSON.stringify(magData, null, 2));
 
-      const response = `Here's the latest information about MAG (Magnify):
+      // Get AI-enhanced analysis for MAG token
+      const aiContext = {
+        tokenData: magData,
+        marketTrends: await getMarketTrends()
+      };
 
-💰 Current Price: $${magData.price?.toFixed(6)}
-📊 Market Cap: $${magData.market_cap?.toLocaleString()}
-📈 Total Supply: ${magData.total_supply?.toLocaleString()} MAG
-💫 Circulating Supply: ${magData.circulating_supply?.toLocaleString()} MAG
-👥 Current Holders: ${magData.holders_count?.toLocaleString()}
-🔄 24h Transactions: ${magData.transactions_24h?.toLocaleString()}
-💱 24h Trading Volume: $${magData.volume_24h?.toLocaleString()}
-
-MAG is the native token of Magnify, a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.
-
-IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+      const aiResponse = await getOpenAIResponse([
+        {
+          role: 'user',
+          content: `Analyze the MAG token based on this data: ${JSON.stringify(magData)}`
+        }
+      ], aiContext);
 
       return {
-        content: response
+        content: aiResponse
       };
     }
 
@@ -132,9 +131,31 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
     if (content.includes('$')) {
       const symbol = content.split('$')[1].split(' ')[0];
       console.log('Resolving token:', symbol);
-      const tokenData = await TokenResolver.resolveToken(symbol);
+      
+      // Fetch token data from database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('token_metadata')
+        .select('*')
+        .eq('symbol', symbol.toUpperCase())
+        .maybeSingle();
+
+      if (tokenError) throw tokenError;
+
+      // Get AI-enhanced analysis
+      const aiContext = {
+        tokenData,
+        marketTrends: await getMarketTrends()
+      };
+
+      const aiResponse = await getOpenAIResponse([
+        {
+          role: 'user',
+          content: `Analyze the ${symbol} token based on this data: ${JSON.stringify(tokenData)}`
+        }
+      ], aiContext);
+
       return {
-        content: formatTokenResponse(tokenData)
+        content: aiResponse
       };
     }
 
@@ -150,4 +171,14 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
     console.error('Error in message handler:', error);
     throw error;
   }
+}
+
+async function getMarketTrends() {
+  const { data } = await supabase
+    .from('defi_market_data')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(10);
+  
+  return data;
 }
