@@ -9,39 +9,58 @@ export async function handleChatMessage(messages: any[]) {
   const startTime = Date.now();
 
   try {
-    // Fetch external data including market context
-    const externalData = await fetchExternalData();
-    console.log('Fetched external data:', externalData);
-    
-    // Track API statuses
-    if (externalData.marketData) {
-      apiStatuses.push({
-        name: 'Market API',
-        status: 'success',
-        responseTime: Date.now() - startTime
-      });
+    // Fetch data from our tables based on the last message
+    const lastMessage = messages[messages.length - 1].content.toLowerCase();
+    let contextData = {};
+
+    // Check for MAG token query
+    if (lastMessage.includes('$mag') || lastMessage.includes('magnify')) {
+      const { data: magData } = await supabase
+        .from('mag_token_analytics')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (magData) {
+        contextData.magData = magData;
+      }
     }
-    
-    if (externalData.cryptoData) {
-      apiStatuses.push({
-        name: 'CoinGecko API',
-        status: 'success',
-        responseTime: Date.now() - startTime
-      });
+
+    // Check for DeFi protocols query
+    if (lastMessage.includes('defi') || lastMessage.includes('tvl') || lastMessage.includes('protocols')) {
+      const { data: protocolsData } = await supabase
+        .from('defi_llama_protocols')
+        .select('*')
+        .order('tvl', { ascending: false })
+        .limit(5);
+      
+      if (protocolsData) {
+        contextData.defiData = protocolsData;
+      }
     }
-    
-    if (externalData.twitterData) {
-      apiStatuses.push({
-        name: 'Twitter API',
-        status: 'success',
-        responseTime: Date.now() - startTime
-      });
-    } else {
-      apiStatuses.push({
-        name: 'Twitter API',
-        status: 'error',
-        error: 'No Twitter data received'
-      });
+
+    // Check for market conditions or news
+    if (lastMessage.includes('market') || lastMessage.includes('news') || lastMessage.includes('latest')) {
+      const [marketData, newsData] = await Promise.all([
+        supabase
+          .from('defi_market_data')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('crypto_news')
+          .select('*')
+          .order('published_at', { ascending: false })
+          .limit(5)
+      ]);
+
+      if (marketData.data) {
+        contextData.marketData = marketData.data;
+      }
+      if (newsData.data) {
+        contextData.newsData = newsData.data;
+      }
     }
 
     // Create conversation
@@ -49,7 +68,7 @@ export async function handleChatMessage(messages: any[]) {
       .from('chat_conversations')
       .insert({
         user_session_id: crypto.randomUUID(),
-        context: externalData
+        context: contextData
       })
       .select()
       .single();
@@ -72,26 +91,27 @@ export async function handleChatMessage(messages: any[]) {
       throw new Error(`Error storing message: ${msgError.message}`);
     }
 
-    // Create system message with context
-    const systemMessage = await createSystemMessage(externalData, userMessage.content);
-    console.log('Generated system message:', systemMessage);
+    // Create system message with context and personality
+    const systemMessage = {
+      role: 'system',
+      content: `You are Magi, a friendly and knowledgeable AI assistant specializing in DeFi and crypto. Use a conversational, engaging tone while maintaining professionalism. Avoid being overly formal or robotic.
 
-    // Format response to be more professional and remove emojis
-    const cleanMessage = (msg: string) => {
-      // Remove emojis using regex
-      return msg.replace(
-        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, 
-        ''
-      ).trim();
+When providing information:
+- Be concise and clear
+- Use emojis occasionally to add personality 
+- Share specific data points when available
+- Acknowledge uncertainty when data is limited
+- Provide actionable insights when relevant
+
+Context data: ${JSON.stringify(contextData)}
+
+Remember to maintain a helpful and approachable tone throughout the conversation.`
     };
 
-    // Prepare messages for OpenAI
+    // Format messages for OpenAI
     const openAiMessages = [
       systemMessage,
-      ...messages.map(msg => ({
-        ...msg,
-        content: cleanMessage(msg.content)
-      }))
+      ...messages
     ];
 
     return { openAiMessages, apiStatuses, conversation };
