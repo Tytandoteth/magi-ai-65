@@ -3,6 +3,7 @@ import { TokenFormatter } from "./utils/TokenFormatter";
 import { TokenOperations } from "./utils/TokenOperations";
 import { TokenData } from "@/types/token";
 import { supabase } from "@/integrations/supabase/client";
+import { isMarketData } from "@/types/market";
 
 export class TokenService {
   private static instance: TokenService;
@@ -93,7 +94,7 @@ Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time 
 
       let response = `📊 ${tokenData.name} (${tokenData.symbol}) Analysis\n\n`;
 
-      if (tokenData.market_data) {
+      if (tokenData.market_data && isMarketData(tokenData.market_data)) {
         const marketData = tokenData.market_data;
         if (marketData.current_price?.usd) {
           response += `💵 Price: $${marketData.current_price.usd.toLocaleString()}\n`;
