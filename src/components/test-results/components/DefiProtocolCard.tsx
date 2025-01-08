@@ -8,6 +8,14 @@ interface DefiProtocolCardProps {
 }
 
 export const DefiProtocolCard: React.FC<DefiProtocolCardProps> = ({ protocolData }) => {
+  const formatValue = (value: number | undefined | null) => {
+    if (value === undefined || value === null) return '0';
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   return (
     <Card className="p-6 border-yellow-200 bg-yellow-50/50 dark:bg-yellow-950/10">
       <div className="space-y-4">
@@ -29,7 +37,7 @@ export const DefiProtocolCard: React.FC<DefiProtocolCardProps> = ({ protocolData
               {protocolData.name} ({protocolData.symbol})
             </h4>
             <p className="text-sm text-muted-foreground">
-              Category: {protocolData.category}
+              Category: {protocolData.category || 'DeFi'}
             </p>
           </div>
         </div>
@@ -38,15 +46,21 @@ export const DefiProtocolCard: React.FC<DefiProtocolCardProps> = ({ protocolData
           <MetricCard
             icon={<Wallet className="h-4 w-4" />}
             label="TVL"
-            value={`$${protocolData.tvl.toLocaleString()}`}
+            value={`$${formatValue(protocolData.tvl)}`}
           />
           <MetricCard
             icon={<LineChart className="h-4 w-4" />}
             label="24h Change"
-            value={`${protocolData.change_1d?.toFixed(2)}%`}
+            value={`${formatValue(protocolData.change_1d)}%`}
             trend={protocolData.change_1d >= 0 ? 'up' : 'down'}
           />
         </div>
+
+        {protocolData.raw_data?.description && (
+          <p className="text-sm text-muted-foreground">
+            {protocolData.raw_data.description}
+          </p>
+        )}
 
         <details className="mt-4">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
