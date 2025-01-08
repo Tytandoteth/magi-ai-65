@@ -39,7 +39,7 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
             Magi Terminal is currently in development. Features will be enabled soon.
           </p>
           <div className="text-sm text-gray-500">
-            Expected Release: Q1 2024
+            Expected Release: January 2025
           </div>
           <a 
             href="https://x.com/Agent_Magi" 
