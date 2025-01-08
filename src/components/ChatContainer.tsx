@@ -7,6 +7,7 @@ import { ChatState } from "@/types/chat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AnimatedPhrases } from "./chat/AnimatedPhrases";
+import { SuggestedPrompts } from "./chat/SuggestedPrompts";
 
 interface ChatContainerProps {
   chatState: ChatState;
@@ -48,9 +49,16 @@ export const ChatContainer = ({ chatState, onSendMessage }: ChatContainerProps) 
             <AnimatedPhrases onPhraseClick={onSendMessage} />
           </div>
         ) : (
-          chatState.messages?.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))
+          <>
+            <div className="flex flex-col space-y-4">
+              {chatState.messages?.map((message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+            </div>
+            <div className="px-4 py-2">
+              <SuggestedPrompts onPhraseClick={onSendMessage} />
+            </div>
+          </>
         )}
         
         {chatState.isLoading && (
