@@ -33,27 +33,30 @@ export class TokenService {
     try {
       // Special handling for MAG token
       if (symbol.toUpperCase() === 'MAG') {
-        console.log('[TokenService] Detected MAG token, using hardcoded data');
+        console.log('[TokenService] Detected MAG token, fetching latest data');
         
-        const magData = {
-          price: 0.001288,
-          market_cap: 991698,
-          total_supply: 880000000,
-          circulating_supply: 769755726,
-          volume_24h: 15551.84,
-          price_change_24h: 1.3,
-          holders_count: 4012,
-          transactions_24h: 250
-        };
+        const { data: magData, error } = await supabase
+          .from('mag_token_analytics')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('[TokenService] Error fetching MAG data:', error);
+          throw new Error(`Failed to fetch MAG data: ${error.message}`);
+        }
+
+        if (!magData) {
+          return `I couldn't find current MAG token data. Please try again in a few moments.`;
+        }
 
         return `Here's the latest on MAG:
 
-💰 $${magData.price.toFixed(6)} (${magData.price_change_24h}% 24h)
-📊 Market Cap: $${magData.market_cap.toLocaleString()}
-👥 ${magData.holders_count.toLocaleString()} holders
-💫 ${magData.transactions_24h} trades today
-
-Note: Always DYOR and invest wisely!`;
+💰 $${magData.price?.toFixed(6)}
+📊 Market Cap: $${magData.market_cap?.toLocaleString()}
+👥 ${magData.holders_count?.toLocaleString()} holders
+💫 ${magData.transactions_24h} trades today`;
       }
 
       // For other tokens, fetch from token_metadata
