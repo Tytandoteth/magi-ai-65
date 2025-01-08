@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { TokenMatchCard } from "./components/TokenMatchCard";
 import { DefiProtocolCard } from "./components/DefiProtocolCard";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TokenTestResultsProps {
   testResults: any;
@@ -12,6 +13,31 @@ interface TokenTestResultsProps {
 
 export const TokenTestResults: React.FC<TokenTestResultsProps> = ({ testResults }) => {
   const { toast } = useToast();
+  const [magData, setMagData] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchMagData = async () => {
+      if (testResults?.query?.normalized === 'MAG') {
+        console.log('Fetching MAG token analytics data...');
+        const { data, error } = await supabase
+          .from('mag_token_analytics')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching MAG data:', error);
+          return;
+        }
+
+        console.log('Fetched MAG data:', data);
+        setMagData(data);
+      }
+    };
+
+    fetchMagData();
+  }, [testResults]);
 
   const handleCopyAllLogs = async () => {
     try {
@@ -46,6 +72,25 @@ export const TokenTestResults: React.FC<TokenTestResultsProps> = ({ testResults 
     normalized: "MAG"
   };
 
+  // Enhance token metadata with MAG data if available
+  const enhancedTokenMetadata = testResults.token_metadata?.[0] ? {
+    ...testResults.token_metadata[0],
+    market_data: magData ? {
+      current_price: { usd: magData.price },
+      market_cap: { usd: magData.market_cap },
+      total_volume: { usd: magData.volume_24h },
+      price_change_percentage_24h: 0 // We'll need to calculate this from historical data
+    } : testResults.token_metadata[0].market_data,
+    metadata: {
+      ...testResults.token_metadata[0].metadata,
+      additional_metrics: {
+        ...testResults.token_metadata[0].metadata?.additional_metrics,
+        holders_count: magData?.holders_count || 0,
+        transactions_24h: magData?.transactions_24h || 0
+      }
+    }
+  } : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,8 +108,8 @@ export const TokenTestResults: React.FC<TokenTestResultsProps> = ({ testResults 
         </Button>
       </div>
       
-      {testResults.token_metadata?.length > 0 && (
-        <TokenMatchCard tokenData={testResults.token_metadata[0]} />
+      {enhancedTokenMetadata && (
+        <TokenMatchCard tokenData={enhancedTokenMetadata} />
       )}
 
       {testResults.defi_llama?.length > 0 && (

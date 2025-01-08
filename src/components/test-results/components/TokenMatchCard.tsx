@@ -20,24 +20,18 @@ export const TokenMatchCard: React.FC<TokenMatchCardProps> = ({ tokenData }) => 
     });
   };
 
+  const formatMillions = (value: number | undefined | null) => {
+    if (!value) return '$0.00M';
+    return `$${(value / 1e6).toFixed(2)}M`;
+  };
+
   const getMarketData = () => {
-    if (isMagToken) {
-      // Try to get latest MAG analytics data
-      const marketData = tokenData.market_data || {};
-      return {
-        price: marketData.current_price?.usd || 0,
-        marketCap: marketData.market_cap?.usd || 0,
-        volume: marketData.total_volume?.usd || 0,
-        priceChange: marketData.price_change_percentage_24h || 0
-      };
-    }
-    
-    // Default market data handling
+    const marketData = tokenData.market_data || {};
     return {
-      price: tokenData.market_data?.current_price?.usd || 0,
-      marketCap: tokenData.market_data?.market_cap?.usd || 0,
-      volume: tokenData.market_data?.total_volume?.usd || 0,
-      priceChange: tokenData.market_data?.price_change_percentage_24h || 0
+      price: marketData.current_price?.usd || 0,
+      marketCap: marketData.market_cap?.usd || 0,
+      volume: marketData.total_volume?.usd || 0,
+      priceChange: marketData.price_change_percentage_24h || 0
     };
   };
 
@@ -84,12 +78,12 @@ export const TokenMatchCard: React.FC<TokenMatchCardProps> = ({ tokenData }) => 
           <MetricCard
             icon={<Wallet className="h-4 w-4" />}
             label="Market Cap"
-            value={`$${(marketData.marketCap / 1e6).toFixed(2)}M`}
+            value={formatMillions(marketData.marketCap)}
           />
           <MetricCard
             icon={<LineChart className="h-4 w-4" />}
             label="24h Volume"
-            value={`$${(marketData.volume / 1e6).toFixed(2)}M`}
+            value={formatMillions(marketData.volume)}
           />
         </div>
 
