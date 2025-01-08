@@ -7,12 +7,46 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const openAiKey = Deno.env.get('OPENAI_API_KEY');
 
-async function getOpenAIResponse(messages: any[]) {
+async function getOpenAIResponse(messages: any[], context: any = {}) {
   if (!openAiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
-  console.log('Sending request to OpenAI with messages:', messages);
+  console.log('Sending request to OpenAI with messages and context:', { messages, context });
+
+  // Fetch latest market data for context
+  const { data: marketData } = await supabase
+    .from('defi_market_data')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Fetch latest DeFi protocols data
+  const { data: protocolsData } = await supabase
+    .from('defi_llama_protocols')
+    .select('*')
+    .order('tvl', { ascending: false })
+    .limit(5);
+
+  const systemPrompt = `You are Magi, an advanced AI assistant specializing in DeFi and cryptocurrency analysis. Your responses should:
+
+1. Demonstrate deep understanding of DeFi concepts and market dynamics
+2. Provide data-driven insights based on current market conditions
+3. Explain complex concepts in clear, accessible terms
+4. Consider multiple perspectives and potential scenarios
+5. Include relevant context from current market trends
+6. Always acknowledge risks and include appropriate disclaimers
+
+Current Market Context:
+${JSON.stringify({ marketData, protocolsData }, null, 2)}
+
+When analyzing tokens or protocols:
+- Consider TVL trends and market dynamics
+- Evaluate relative performance metrics
+- Assess risk factors and market conditions
+- Provide balanced, well-reasoned insights
+
+Remember to maintain a professional yet approachable tone while ensuring accuracy and depth in your analysis.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -21,16 +55,18 @@ async function getOpenAIResponse(messages: any[]) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini', // Using the recommended fast model
+      model: 'gpt-4o',  // Using the more capable model for better reasoning
       messages: [
         {
           role: 'system',
-          content: 'You are Magi, a DeFi and crypto expert assistant. Provide accurate, concise information about tokens, market trends, and DeFi protocols. Always include relevant disclaimers about investment risks.'
+          content: systemPrompt
         },
         ...messages
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,  // Increased for more detailed responses
+      presence_penalty: 0.6,  // Encourages more diverse responses
+      frequency_penalty: 0.3,  // Reduces repetition
     }),
   });
 
@@ -62,10 +98,7 @@ export async function handleChatMessage(messages: any[]) {
         .limit(1)
         .maybeSingle();
 
-      if (magError) {
-        console.error('Error fetching MAG data:', magError);
-        throw new Error('Failed to fetch MAG token data');
-      }
+      if (magError) throw magError;
 
       if (!magData) {
         console.warn('No MAG data found in database');
@@ -75,15 +108,6 @@ export async function handleChatMessage(messages: any[]) {
       }
 
       console.log('Retrieved MAG data:', JSON.stringify(magData, null, 2));
-
-      // Validate data integrity
-      const requiredFields = ['price', 'market_cap', 'total_supply', 'circulating_supply', 'holders_count', 'transactions_24h', 'volume_24h'];
-      const missingFields = requiredFields.filter(field => magData[field] === null || magData[field] === undefined);
-      
-      if (missingFields.length > 0) {
-        console.warn('Missing required fields:', missingFields);
-        throw new Error(`Incomplete MAG data: missing ${missingFields.join(', ')}`);
-      }
 
       const response = `Here's the latest information about MAG (Magnify):
 
@@ -114,7 +138,7 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
       };
     }
 
-    // For general queries, use OpenAI
+    // For general queries, use enhanced OpenAI with context
     console.log('Processing general query with OpenAI');
     const aiResponse = await getOpenAIResponse(messages);
     
