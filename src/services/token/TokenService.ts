@@ -52,9 +52,7 @@ export class TokenService {
 2. There might be an issue with our data provider
 3. The token information is temporarily unavailable
 
-Please try again later or check other reliable sources for the most up-to-date information.
-
-IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+Please try again later or check other reliable sources for the most up-to-date information.`;
         }
 
         console.log('[TokenService] Successfully fetched MAG data:', {
@@ -74,9 +72,7 @@ Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
 24h Transactions: ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
 24h Volume: $${magData.volume_24h?.toLocaleString() ?? 'N/A'}
 
-Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.
-
-IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
+Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.`;
       }
 
       console.log('[TokenService] Calling token-profile edge function');

@@ -27,7 +27,5 @@ export function formatTokenResponse(tokenData: any) {
     response += `\nDescription: ${tokenData.description.en}\n`;
   }
 
-  response += `\nIMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
-
   return response;
 }
