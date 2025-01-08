@@ -8,9 +8,13 @@ export class TokenResolver {
       // or other data sources
       return {
         symbol: symbol.toUpperCase(),
-        price: "Data not available",
-        marketCap: "Data not available",
-        volume24h: "Data not available"
+        name: symbol.toUpperCase(),
+        market_data: {
+          current_price: { usd: "Data not available" },
+          market_cap: { usd: "Data not available" },
+          total_volume: { usd: "Data not available" },
+          price_change_percentage_24h: 0
+        }
       };
     } catch (error) {
       console.error('Error resolving token:', error);

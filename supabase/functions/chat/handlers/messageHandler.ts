@@ -21,7 +21,7 @@ export async function handleChatMessage(messages: any[]) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching MAG data:', error);
@@ -33,6 +33,8 @@ export async function handleChatMessage(messages: any[]) {
           content: "I apologize, but I couldn't fetch the latest MAG token data at the moment. Please try again in a few moments."
         };
       }
+
+      console.log('Retrieved MAG data:', magData);
 
       const response = `Here's the latest information about MAG (Magnify):
 
