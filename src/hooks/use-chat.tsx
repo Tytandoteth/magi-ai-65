@@ -13,14 +13,18 @@ export const useChat = () => {
 
   const logChatQuery = async (query: string, response: string, metadata: any) => {
     try {
+      // Ensure numeric values are properly rounded to integers
+      const tokensUsed = Math.round(response.length / 4);
+      const processingTimeMs = Math.round(metadata.processingTime);
+
       const { error } = await supabase
         .from('chat_queries')
         .insert({
           query,
           response,
           metadata,
-          processing_time_ms: metadata.processingTime,
-          tokens_used: metadata.tokensUsed,
+          processing_time_ms: processingTimeMs,
+          tokens_used: tokensUsed,
         });
 
       if (error) {
@@ -72,7 +76,7 @@ export const useChat = () => {
       // Log the chat query with analytics
       await logChatQuery(content, response, {
         processingTime,
-        tokensUsed: response.length / 4, // Rough estimate
+        tokensUsed: Math.round(response.length / 4), // Ensure integer
         messageCount: currentMessages.length,
         userMessageLength: content.length,
         responseLength: response.length,
