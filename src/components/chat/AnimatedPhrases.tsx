@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HelpCircle, LightBulb, Info, List, QuestionMarkCircle } from "lucide-react";
+import { HelpCircle, Lightbulb, Info, List, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const SUGGESTED_PROMPTS = [
@@ -9,7 +9,7 @@ const SUGGESTED_PROMPTS = [
     command: "Tell me about $MAG"
   },
   {
-    icon: LightBulb,
+    icon: Lightbulb,
     display: "Ask me where to find the yields in DeFi",
     command: "Show me the best DeFi strategies for high yield"
   },
@@ -24,7 +24,7 @@ const SUGGESTED_PROMPTS = [
     command: "What are the top DeFi protocols by TVL?"
   },
   {
-    icon: QuestionMarkCircle,
+    icon: MessageCircle,
     display: "Ask me about recent crypto news",
     command: "What are the latest developments in crypto?"
   }
