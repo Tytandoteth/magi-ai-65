@@ -6,7 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const MAG_CONTRACT_ADDRESS = '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105';
+
 serve(async (req) => {
+  console.log('Fetching MAG token analytics...');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -23,42 +27,82 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log('Fetching MAG token analytics...')
-    
-    // Mock data for now - in production, this would fetch real data from Etherscan
-    const mockAnalytics = {
-      price: 1.23,
-      total_supply: 1000000,
-      circulating_supply: 750000,
-      holders_count: 1500,
-      transactions_24h: 250,
-      volume_24h: 50000,
-      market_cap: 1230000
-    }
+    console.log('Fetching holder count from Etherscan...');
+    const holdersResponse = await fetch(
+      `https://api.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${MAG_CONTRACT_ADDRESS}&apikey=${etherscanApiKey}`
+    );
+    const holdersData = await holdersResponse.json();
+    console.log('Holders data received:', holdersData.status === '1' ? 'success' : 'failed');
+
+    console.log('Fetching 24h transactions...');
+    const txResponse = await fetch(
+      `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${MAG_CONTRACT_ADDRESS}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`
+    );
+    const txData = await txResponse.json();
+    console.log('Transaction data received:', txData.status === '1' ? 'success' : 'failed');
+
+    // Get current timestamp and 24h ago timestamp
+    const now = Math.floor(Date.now() / 1000);
+    const oneDayAgo = now - (24 * 60 * 60);
+
+    // Calculate 24h transactions
+    const transactions24h = txData.result
+      ? txData.result.filter((tx: any) => parseInt(tx.timeStamp) > oneDayAgo).length
+      : 0;
+
+    console.log('Fetching token supply...');
+    const supplyResponse = await fetch(
+      `https://api.etherscan.io/api?module=stats&action=tokensupply&contractaddress=${MAG_CONTRACT_ADDRESS}&apikey=${etherscanApiKey}`
+    );
+    const supplyData = await supplyResponse.json();
+    console.log('Supply data received:', supplyData.status === '1' ? 'success' : 'failed');
+
+    // Calculate metrics
+    const totalSupply = parseInt(supplyData.result || '1000000000');
+    const circulatingSupply = totalSupply * 0.75; // Assuming 75% is circulating
+    const price = 0.15; // This should be fetched from a DEX or CEX API
+    const marketCap = price * totalSupply;
+    const volume24h = transactions24h * price * 1000; // Rough estimate based on tx count
+
+    const analytics = {
+      price,
+      total_supply: totalSupply,
+      circulating_supply: circulatingSupply,
+      holders_count: holdersData.result?.length || 0,
+      transactions_24h,
+      volume_24h: volume24h,
+      market_cap: marketCap
+    };
+
+    console.log('Storing analytics in database:', analytics);
 
     // Store analytics in Supabase
     const { data: insertedData, error } = await supabase
       .from('mag_token_analytics')
       .insert({
-        ...mockAnalytics,
-        raw_data: mockAnalytics
-      })
+        ...analytics,
+        raw_data: {
+          holders: holdersData,
+          transactions: txData,
+          supply: supplyData
+        }
+      });
 
     if (error) {
-      console.error('Error inserting MAG analytics:', error)
-      throw error
+      console.error('Error inserting MAG analytics:', error);
+      throw error;
     }
-    console.log('Inserted MAG analytics data')
+    console.log('Successfully stored MAG analytics data');
 
-    return new Response(JSON.stringify({ success: true, data: mockAnalytics }), {
+    return new Response(JSON.stringify({ success: true, data: analytics }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
 })
