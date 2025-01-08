@@ -1,73 +1,66 @@
 import { Message } from "@/types/chat";
 import { HighLevelAction } from "@/types/actions";
-import { TokenResolver } from "../token/TokenResolver";
-import { onChainTools } from "@/integrations/goat/tools";
 
 export class HighLevelPlanner {
   async planAction(messages: Message[]): Promise<HighLevelAction> {
-    console.log('Planning high-level action based on messages:', messages);
-    
     const lastMessage = messages[messages.length - 1];
-    if (!lastMessage) {
-      return { type: 'UNKNOWN', description: 'No message provided' };
-    }
-
+    console.log('Planning action for message:', lastMessage.content);
+    
     const content = lastMessage.content.toLowerCase();
-    console.log('Analyzing content:', content);
 
-    // Check for blockchain actions
-    const ethTransactionMatch = content.match(/send\s+([\d.]+)\s*eth\s+to\s+(0x[a-fA-F0-9]{40})/i);
-    if (ethTransactionMatch) {
-      console.log('Detected ETH transaction request:', ethTransactionMatch);
-      return {
-        type: 'BLOCKCHAIN_ACTION',
-        description: 'Send ETH transaction',
-        params: {
-          actionType: 'SEND_ETH',
-          to: ethTransactionMatch[2],
-          value: ethTransactionMatch[1]
-        }
-      };
-    }
-
-    // Look for token symbols with $ prefix
-    const tokenMatch = content.match(/\$([A-Za-z]+)/);
-    if (tokenMatch) {
-      const tokenSymbol = tokenMatch[1].toUpperCase();
-      console.log('Found token symbol in message:', tokenSymbol);
+    // Token info request
+    if (content.includes('$') || content.includes('tell me about')) {
+      const symbol = content.includes('$') ? 
+        content.split('$')[1].split(' ')[0].toUpperCase() :
+        content.split('tell me about')[1].trim().toUpperCase();
       
+      console.log('Detected token info request for:', symbol);
       return {
-        type: 'GET_TOKEN_INFO',
-        description: 'Get token information',
-        params: {
-          symbol: tokenSymbol
-        }
+        type: 'TOKEN_INFO',
+        params: { symbol }
       };
     }
 
-    // Look for percentage calculations
-    const percentageMatch = content.match(/(\d+\.?\d*)%/);
-    if (percentageMatch) {
+    // DeFi TVL request
+    if (content.includes('tvl') || content.includes('top defi protocols')) {
+      console.log('Detected TVL ranking request');
       return {
-        type: 'CALCULATE_PERCENTAGE',
-        description: 'Calculate percentage value',
-        params: {
-          value: percentageMatch[1]
-        }
+        type: 'DEFI_TVL_RANKING',
+        params: {}
       };
     }
 
-    // Handle general queries
-    if (content.includes('what can you do') || content.includes('help')) {
+    // Market analysis request
+    if (content.includes('market') && (content.includes('analysis') || content.includes('conditions'))) {
+      console.log('Detected market analysis request');
       return {
-        type: 'UNKNOWN',
-        description: 'User asking for capabilities'
+        type: 'MARKET_ANALYSIS',
+        params: {}
       };
     }
 
+    // Latest crypto news request
+    if (content.includes('latest') || content.includes('news') || content.includes('developments')) {
+      console.log('Detected crypto news request');
+      return {
+        type: 'CRYPTO_NEWS',
+        params: {}
+      };
+    }
+
+    // DeFi strategies request
+    if (content.includes('strategies') || content.includes('yield')) {
+      console.log('Detected DeFi strategies request');
+      return {
+        type: 'DEFI_STRATEGIES',
+        params: {}
+      };
+    }
+
+    console.log('No specific action type detected, defaulting to unknown');
     return {
       type: 'UNKNOWN',
-      description: 'Could not determine action from message'
+      params: {}
     };
   }
 }

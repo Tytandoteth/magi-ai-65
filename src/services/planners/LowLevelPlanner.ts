@@ -1,99 +1,154 @@
-import { TokenService } from "../token/TokenService";
 import { HighLevelAction } from "@/types/actions";
-import { Message } from "@/types/chat";
-import { onChainTools } from "@/integrations/goat/tools";
+import { supabase } from "@/integrations/supabase/client";
+import { TokenService } from "@/services/token/TokenService";
 
 export class LowLevelPlanner {
   private tokenService: TokenService;
 
   constructor() {
-    console.log('[LowLevelPlanner] Initializing');
     this.tokenService = TokenService.getInstance();
   }
 
-  async executeTask(action: HighLevelAction, params: {
-    messages: Message[];
-    token?: string;
-    percentage?: string;
-  }): Promise<string> {
-    console.log('[LowLevelPlanner] Executing task:', { 
-      actionType: action.type,
-      params: action.params,
-      messageCount: params.messages.length 
+  async executeTask(action: HighLevelAction, context: any): Promise<string> {
+    console.log('Executing task:', action.type, 'with context:', context);
+
+    try {
+      switch (action.type) {
+        case 'TOKEN_INFO':
+          return await this.tokenService.getTokenInfo(action.params.symbol);
+
+        case 'DEFI_TVL_RANKING':
+          return await this.getTopDefiProtocols();
+
+        case 'MARKET_ANALYSIS':
+          return await this.getMarketAnalysis();
+
+        case 'CRYPTO_NEWS':
+          return await this.getLatestNews();
+
+        case 'DEFI_STRATEGIES':
+          return await this.getDefiStrategies();
+
+        default:
+          return "I'm not sure how to handle that just yet. Try asking about specific tokens (e.g., $MAG, $ETH) or market data!";
+      }
+    } catch (error) {
+      console.error('Error executing task:', error);
+      throw error;
+    }
+  }
+
+  private async getTopDefiProtocols(): Promise<string> {
+    const { data: protocols, error } = await supabase
+      .from('defi_llama_protocols')
+      .select('*')
+      .order('tvl', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Error fetching DeFi protocols:', error);
+      throw error;
+    }
+
+    if (!protocols.length) {
+      return "I couldn't find any DeFi protocol data at the moment. Please try again later.";
+    }
+
+    let response = "🏆 Top DeFi Protocols by TVL:\n\n";
+    protocols.forEach((protocol, index) => {
+      response += `${index + 1}. ${protocol.name}\n`;
+      response += `   💰 TVL: $${protocol.tvl?.toLocaleString()}\n`;
+      response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      if (protocol.category) {
+        response += `   🏷️ Category: ${protocol.category}\n`;
+      }
+      response += '\n';
     });
 
-    if (action.type === 'BLOCKCHAIN_ACTION' && action.params) {
-      console.log('[LowLevelPlanner] Executing blockchain action:', action.params);
-      try {
-        const result = await onChainTools.executeAction({
-          type: action.params.actionType,
-          params: {
-            to: action.params.to,
-            value: action.params.value,
-            token: action.params.token
-          }
-        });
+    return response;
+  }
 
-        console.log('[LowLevelPlanner] Blockchain action result:', {
-          success: result.status === 'success',
-          hash: result.hash
-        });
+  private async getMarketAnalysis(): Promise<string> {
+    const { data: marketData, error } = await supabase
+      .from('defi_market_data')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-        if (result.status === 'success') {
-          return `🎉 Success! Your transaction was completed.\nHere's the hash for reference: ${result.hash}`;
-        } else {
-          return `😔 Uh-oh! The transaction didn't go through. Let's double-check everything and try again.`;
-        }
-      } catch (error: any) {
-        console.error('[LowLevelPlanner] Blockchain action error:', {
-          error: error.message,
-          params: action.params
-        });
-        return `😔 Failed to execute transaction: ${error.message}. Let's try again!`;
-      }
+    if (error) {
+      console.error('Error fetching market data:', error);
+      throw error;
     }
 
-    if (action.type === 'GET_TOKEN_INFO' && action.params?.symbol) {
-      console.log('[LowLevelPlanner] Fetching token info for:', action.params.symbol);
-      try {
-        const response = await this.tokenService.getTokenInfo(action.params.symbol);
-        console.log('[LowLevelPlanner] Token info fetched successfully');
-        return response;
-      } catch (error) {
-        console.error('[LowLevelPlanner] Error getting token info:', {
-          symbol: action.params.symbol,
-          error: error.message
-        });
-        return `🤔 Hmm, I couldn't find anything on ${action.params.symbol}. It might be a newly launched or lesser-known token. Let's give it another shot later!`;
-      }
+    if (!marketData.length) {
+      return "I couldn't fetch the latest market data. Please try again later.";
     }
 
-    if (action.type === 'CALCULATE_PERCENTAGE' && params.percentage) {
-      const percentage = parseFloat(params.percentage);
-      if (isNaN(percentage)) {
-        return `😕 I couldn't understand that percentage value. Could you provide a valid number?`;
-      }
-      return `🔢 Quick Math!\n${percentage}% is the same as ${percentage / 100} in decimals.`;
+    let response = "📊 Current Market Analysis:\n\n";
+    marketData.forEach(token => {
+      response += `${token.name} (${token.symbol})\n`;
+      response += `💵 Price: $${token.current_price?.toLocaleString()}\n`;
+      response += `📈 24h Change: ${token.price_change_percentage_24h?.toFixed(2)}%\n\n`;
+    });
+
+    return response;
+  }
+
+  private async getLatestNews(): Promise<string> {
+    const { data: news, error } = await supabase
+      .from('crypto_news')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Error fetching crypto news:', error);
+      throw error;
     }
 
-    if (action.type === 'UNKNOWN') {
-      const lastMessage = params.messages[params.messages.length - 1];
-      
-      if (lastMessage.content.toLowerCase().includes('what can you do')) {
-        return `Hi there! 👋 I'm your AI-powered DeFi guide. Here's what I can do for you:
-
-1️⃣ Token Info: Ask me about tokens like $ETH, $BTC, or $MAG.
-2️⃣ Market Updates: Stay in the loop with real-time trends.
-3️⃣ DeFi Protocols: Dive into metrics and insights about protocols.
-4️⃣ Transactions: Need help sending ETH? Just tell me the amount and address!
-5️⃣ Calculations: Curious about token conversions? Let me handle the math.
-
-Just ask away—I've got you covered! 🚀`;
-      }
-
-      return `🤔 I'm not sure how to handle that just yet. Can you try asking me about tokens, market data, or DeFi insights? I'll do my best to help!`;
+    if (!news.length) {
+      return "I couldn't fetch the latest crypto news. Please try again later.";
     }
 
-    return `🤔 I'm not quite sure how to help with that. Try asking about specific tokens or market information!`;
+    let response = "📰 Latest Crypto Developments:\n\n";
+    news.forEach((item, index) => {
+      response += `${index + 1}. ${item.title}\n`;
+      response += `   🔗 Source: ${item.source}\n`;
+      response += `   📅 Published: ${new Date(item.published_at).toLocaleDateString()}\n\n`;
+    });
+
+    return response;
+  }
+
+  private async getDefiStrategies(): Promise<string> {
+    const { data: protocols, error } = await supabase
+      .from('defi_llama_protocols')
+      .select('*')
+      .order('tvl', { ascending: false })
+      .limit(3);
+
+    if (error) {
+      console.error('Error fetching DeFi protocols:', error);
+      throw error;
+    }
+
+    if (!protocols.length) {
+      return "I couldn't fetch DeFi strategy data at the moment. Please try again later.";
+    }
+
+    let response = "💎 Top DeFi Opportunities:\n\n";
+    protocols.forEach((protocol, index) => {
+      response += `${index + 1}. ${protocol.name}\n`;
+      response += `   💰 Total Value Locked: $${protocol.tvl?.toLocaleString()}\n`;
+      if (protocol.staking) {
+        response += `   🔒 Staking Available: $${protocol.staking?.toLocaleString()}\n`;
+      }
+      response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      response += `   🏷️ Category: ${protocol.category || 'Various'}\n\n`;
+    });
+
+    response += "\n⚠️ IMPORTANT: DeFi investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.";
+
+    return response;
   }
 }
