@@ -16,25 +16,50 @@ export async function handleChatMessage(messages: any[]) {
     // Handle MAG token queries
     if (content.includes('$mag')) {
       console.log('Fetching MAG token data');
-      const { data: magData, error } = await supabase
+      
+      // First verify table access
+      const { data: tableTest, error: tableError } = await supabase
+        .from('mag_token_analytics')
+        .select('created_at')
+        .limit(1);
+        
+      if (tableError) {
+        console.error('Error accessing MAG table:', tableError);
+        throw new Error(`Database access error: ${tableError.message}`);
+      }
+      
+      console.log('Table access verified, latest record timestamp:', tableTest?.[0]?.created_at);
+
+      // Fetch latest MAG data
+      const { data: magData, error: magError } = await supabase
         .from('mag_token_analytics')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching MAG data:', error);
+      if (magError) {
+        console.error('Error fetching MAG data:', magError);
         throw new Error('Failed to fetch MAG token data');
       }
 
       if (!magData) {
+        console.warn('No MAG data found in database');
         return {
           content: "I apologize, but I couldn't fetch the latest MAG token data at the moment. Please try again in a few moments."
         };
       }
 
-      console.log('Retrieved MAG data:', magData);
+      console.log('Retrieved MAG data:', JSON.stringify(magData, null, 2));
+
+      // Validate data integrity
+      const requiredFields = ['price', 'market_cap', 'total_supply', 'circulating_supply', 'holders_count', 'transactions_24h', 'volume_24h'];
+      const missingFields = requiredFields.filter(field => magData[field] === null || magData[field] === undefined);
+      
+      if (missingFields.length > 0) {
+        console.warn('Missing required fields:', missingFields);
+        throw new Error(`Incomplete MAG data: missing ${missingFields.join(', ')}`);
+      }
 
       const response = `Here's the latest information about MAG (Magnify):
 
@@ -55,7 +80,7 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
       };
     }
 
-    // Handle other token queries
+    // Keep existing token resolution for other tokens
     if (content.includes('$')) {
       const symbol = content.split('$')[1].split(' ')[0];
       console.log('Resolving token:', symbol);
@@ -69,7 +94,6 @@ IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct th
     return {
       content: "I'm here to help with crypto and DeFi information! Try asking about specific tokens using the $ symbol (e.g., $ETH or $MAG) or ask for help to see what I can do."
     };
-
   } catch (error) {
     console.error('Error in message handler:', error);
     throw error;
