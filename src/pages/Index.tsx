@@ -7,13 +7,14 @@ import ApiStatusDashboard from "@/components/ApiStatusDashboard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Wallet } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Wallet, Beaker } from "lucide-react";
 
 const Index: React.FC = () => {
   const { chatState, apiLogs, handleSendMessage } = useChat();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isTestingToken, setIsTestingToken] = useState(false);
 
   const handleFetchTokens = async () => {
     try {
@@ -47,6 +48,43 @@ const Index: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTestToken = async () => {
+    try {
+      setIsTestingToken(true);
+      console.log('Testing token endpoint with PENGU');
+      
+      const { data, error } = await supabase.functions.invoke('test-token', {
+        body: { symbol: 'PENGU' }
+      });
+
+      if (error) {
+        console.error('Error testing token:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to test token endpoint. Please try again.",
+        });
+        return;
+      }
+
+      console.log('Token test results:', data);
+      toast({
+        title: "Test Results",
+        description: "Check the console for detailed token resolution results",
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred while testing the token endpoint.",
+      });
+    } finally {
+      setIsTestingToken(false);
     }
   };
 
@@ -84,15 +122,37 @@ const Index: React.FC = () => {
                 <TabsTrigger value="status">API Status</TabsTrigger>
               </TabsList>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-gradient-to-r from-[#40E0D0] via-[#89CFF0] to-[#FFB6C1] text-white/90 hover:opacity-100 transition-opacity duration-200 text-[10px] px-2 py-0.5"
-                disabled
-              >
-                <Wallet className="mr-0.5 h-2.5 w-2.5" />
-                Connect Wallet (Coming Soon)
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestToken}
+                  disabled={isTestingToken}
+                  className="bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 text-white/90 hover:opacity-90 transition-opacity duration-200 text-[10px] px-2 py-0.5"
+                >
+                  {isTestingToken ? (
+                    <>
+                      <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Beaker className="mr-1 h-2.5 w-2.5" />
+                      Test Token
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gradient-to-r from-[#40E0D0] via-[#89CFF0] to-[#FFB6C1] text-white/90 hover:opacity-100 transition-opacity duration-200 text-[10px] px-2 py-0.5"
+                  disabled
+                >
+                  <Wallet className="mr-0.5 h-2.5 w-2.5" />
+                  Connect Wallet (Coming Soon)
+                </Button>
+              </div>
             </div>
             
             <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
