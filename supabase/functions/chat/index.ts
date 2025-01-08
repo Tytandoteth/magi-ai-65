@@ -19,16 +19,20 @@ serve(async (req) => {
 
   try {
     const { messages } = await req.json();
-    console.log('Received messages:', messages);
+    console.log('Processing chat request with messages:', messages);
 
-    const { openAiMessages, apiStatuses, conversation } = await handleChatMessage(messages);
+    // Get only the last 5 messages to reduce context size
+    const recentMessages = messages.slice(-5);
     
-    // Get OpenAI response using the updated model
+    // Process message with optimized handler
+    const { openAiMessages, apiStatuses, conversation } = await handleChatMessage(recentMessages);
+    
+    // Get OpenAI response with reduced tokens
     const completion = await getOpenAIResponse(openAiMessages);
     const response = completion.choices[0].message;
-    console.log('OpenAI response:', response);
+    console.log('Generated response:', response);
 
-    // Store assistant response
+    // Store assistant response efficiently
     const { error: resMsgError } = await supabase
       .from('chat_messages')
       .insert({
@@ -38,6 +42,7 @@ serve(async (req) => {
       });
 
     if (resMsgError) {
+      console.error('Error storing response:', resMsgError);
       throw new Error(`Error storing response: ${resMsgError.message}`);
     }
 

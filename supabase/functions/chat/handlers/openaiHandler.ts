@@ -11,10 +11,12 @@ export async function getOpenAIResponse(messages: any[]) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4',
       messages,
       temperature: 0.8,
-      max_tokens: 500,
+      max_tokens: 300, // Reduced from 500
+      presence_penalty: 0.6,
+      frequency_penalty: 0.5,
     }),
   });
 
