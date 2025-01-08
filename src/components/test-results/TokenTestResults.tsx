@@ -1,12 +1,34 @@
 import React from "react";
-import { ArrowDown, ArrowUp, Coins, DollarSign, LineChart, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, Coins, DollarSign, LineChart, SaveAll, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface TokenTestResultsProps {
   testResults: any;
 }
 
 export const TokenTestResults: React.FC<TokenTestResultsProps> = ({ testResults }) => {
+  const { toast } = useToast();
+
+  const handleCopyAllLogs = async () => {
+    try {
+      const logsContent = JSON.stringify(testResults, null, 2);
+      await navigator.clipboard.writeText(logsContent);
+      toast({
+        title: "Success",
+        description: "Test results have been copied to clipboard",
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy test results to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!testResults) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -17,9 +39,20 @@ export const TokenTestResults: React.FC<TokenTestResultsProps> = ({ testResults 
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-semibold">
-        Test Results for {testResults.query.original}
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">
+          Test Results for {testResults.query.original}
+        </h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyAllLogs}
+          className="text-gray-400 hover:text-gray-300"
+        >
+          <SaveAll className="mr-2" />
+          Copy All Results
+        </Button>
+      </div>
       
       {testResults.token_metadata?.length > 0 && (
         <Card className="p-6 border-green-200 bg-green-50/50 dark:bg-green-950/10">
