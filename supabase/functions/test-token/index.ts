@@ -19,8 +19,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Always fetch MAG token data regardless of input
-    console.log('Fetching MAG token data');
+    // First, trigger a fresh fetch of MAG analytics
+    console.log('Fetching fresh MAG analytics data...');
+    const fetchAnalyticsResponse = await fetch(
+      `${supabaseUrl}/functions/v1/fetch-mag-analytics`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!fetchAnalyticsResponse.ok) {
+      console.error('Error fetching MAG analytics:', await fetchAnalyticsResponse.text());
+    } else {
+      console.log('Successfully fetched fresh MAG analytics');
+    }
+
+    // Now fetch the latest MAG data from the database
+    console.log('Fetching latest MAG token data from database');
     const { data: magData, error: magError } = await supabase
       .from('mag_token_analytics')
       .select('*')
@@ -31,6 +50,8 @@ serve(async (req) => {
     if (magError) {
       throw new Error(`MAG data fetch error: ${magError.message}`);
     }
+
+    console.log('Latest MAG analytics data:', magData);
 
     // Format MAG data to match token_metadata structure
     const formattedMagData = {
@@ -62,7 +83,7 @@ serve(async (req) => {
       }
     };
 
-    // Create a mock DeFi protocol entry for MAG
+    // Create a mock DeFi protocol entry for MAG using the latest data
     const defiData = {
       id: 1,
       created_at: magData.created_at,
