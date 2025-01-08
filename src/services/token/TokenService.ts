@@ -56,21 +56,23 @@ export class TokenService {
 Let's try again in a bit!`;
         }
 
-        console.log('[TokenService] Successfully fetched MAG data:', {
-          price: magData.price,
-          marketCap: magData.market_cap,
-          holders: magData.holders_count,
-          timestamp: magData.created_at
-        });
+        console.log('[TokenService] Successfully fetched MAG data:', magData);
+
+        // Format numbers with proper decimal places
+        const price = magData.price?.toFixed(6);
+        const marketCap = magData.market_cap?.toLocaleString();
+        const circulatingSupply = magData.circulating_supply?.toLocaleString();
+        const totalSupply = magData.total_supply?.toLocaleString();
+        const volume24h = magData.volume_24h?.toLocaleString();
 
         return `🪄 Magnify (MAG) Snapshot
 
-💵 Price: $${magData.price?.toLocaleString() ?? 'N/A'}
-🌍 Market Cap: $${magData.market_cap?.toLocaleString() ?? 'N/A'}
-📈 Circulating Supply: ${magData.circulating_supply?.toLocaleString() ?? 'N/A'} MAG / ${magData.total_supply?.toLocaleString() ?? 'N/A'} MAG
+💵 Price: $${price}
+🌍 Market Cap: $${marketCap}
+📈 Circulating Supply: ${circulatingSupply} MAG / ${totalSupply} MAG
 👥 Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
 🔄 Transactions (24h): ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
-💹 Volume (24h): $${magData.volume_24h?.toLocaleString() ?? 'N/A'}
+💹 Volume (24h): $${volume24h}
 
 Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.`;
       }
