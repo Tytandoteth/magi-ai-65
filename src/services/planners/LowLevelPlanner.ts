@@ -40,16 +40,16 @@ export class LowLevelPlanner {
         });
 
         if (result.status === 'success') {
-          return `Transaction successful! Hash: ${result.hash}`;
+          return `🎉 Success! Your transaction was completed.\nHere's the hash for reference: ${result.hash}`;
         } else {
-          return `Transaction failed. Please try again.`;
+          return `😔 Uh-oh! The transaction didn't go through. Let's double-check everything and try again.`;
         }
       } catch (error: any) {
         console.error('[LowLevelPlanner] Blockchain action error:', {
           error: error.message,
           params: action.params
         });
-        return `Failed to execute blockchain action: ${error.message}`;
+        return `😔 Failed to execute transaction: ${error.message}. Let's try again!`;
       }
     }
 
@@ -64,46 +64,36 @@ export class LowLevelPlanner {
           symbol: action.params.symbol,
           error: error.message
         });
-        return `I couldn't find reliable data for ${action.params.symbol}. This might be because:
-1. The token is not listed on major exchanges
-2. The token is too new
-3. There might be a temporary issue with our data provider
-
-Try checking the token symbol and asking again, or ask about another token like $ETH, $BTC, or $MAG.`;
+        return `🤔 Hmm, I couldn't find anything on ${action.params.symbol}. It might be a newly launched or lesser-known token. Let's give it another shot later!`;
       }
     }
 
     if (action.type === 'CALCULATE_PERCENTAGE' && params.percentage) {
       const percentage = parseFloat(params.percentage);
       if (isNaN(percentage)) {
-        return `I couldn't understand the percentage value. Please provide a valid number.`;
+        return `😕 I couldn't understand that percentage value. Could you provide a valid number?`;
       }
-      return `${percentage}% is equal to ${percentage / 100} in decimal form.`;
+      return `🔢 Quick Math!\n${percentage}% is the same as ${percentage / 100} in decimals.`;
     }
 
     if (action.type === 'UNKNOWN') {
       const lastMessage = params.messages[params.messages.length - 1];
       
       if (lastMessage.content.toLowerCase().includes('what can you do')) {
-        return `I'm your AI-powered DeFi assistant! Here's what I can help you with:
+        return `Hi there! 👋 I'm your AI-powered DeFi guide. Here's what I can do for you:
 
-1. Token Information: Ask about any token using $ (e.g., $ETH, $BTC, $MAG)
-2. Market Updates: Get real-time market data and trends
-3. DeFi Protocols: Learn about different protocols and their metrics
-4. Transactions: Help you send ETH transactions (just provide amount and address)
-5. Price Calculations: Help with token calculations and conversions
+1️⃣ Token Info: Ask me about tokens like $ETH, $BTC, or $MAG.
+2️⃣ Market Updates: Stay in the loop with real-time trends.
+3️⃣ DeFi Protocols: Dive into metrics and insights about protocols.
+4️⃣ Transactions: Need help sending ETH? Just tell me the amount and address!
+5️⃣ Calculations: Curious about token conversions? Let me handle the math.
 
-Just ask me about any of these topics and I'll be happy to help!`;
+Just ask away—I've got you covered! 🚀`;
       }
 
-      return `I'm not sure how to help with that specific request. Here are some things you can try:
-
-1. Get token information by using $ (e.g., $ETH, $BTC, $MAG)
-2. Ask about market updates or DeFi protocols
-3. Send ETH transactions by providing an amount and address
-4. Ask "what can you do" to see all my capabilities`;
+      return `🤔 I'm not sure how to handle that just yet. Can you try asking me about tokens, market data, or DeFi insights? I'll do my best to help!`;
     }
 
-    return `I don't know how to handle that type of request yet. Please try asking about specific tokens or market information.`;
+    return `🤔 I'm not quite sure how to help with that. Try asking about specific tokens or market information!`;
   }
 }

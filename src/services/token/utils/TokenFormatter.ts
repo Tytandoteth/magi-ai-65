@@ -12,69 +12,53 @@ export class TokenFormatter {
     console.log('Formatting response for data:', data);
     
     if (!data) {
-      return "I couldn't find reliable data for this token.";
+      return "🤔 Hmm, I couldn't find any data for this token. Double-check the symbol or try again in a bit!";
     }
 
-    let response = `Let me tell you about ${data.basicInfo.name} (${data.basicInfo.symbol}):\n\n`;
+    let response = `Let's take a quick look at ${data.basicInfo.name} (${data.basicInfo.symbol}):\n\n`;
 
     // Market Data
     if (data.marketData) {
       if (data.marketData.currentPrice !== undefined) {
-        response += `Current Price: ${this.formatCurrency(data.marketData.currentPrice)}\n`;
+        response += `💵 Price: ${this.formatCurrency(data.marketData.currentPrice)}\n`;
       }
       
       if (data.marketData.marketCap !== undefined) {
-        response += `Market Cap: ${this.formatCurrency(data.marketData.marketCap)}\n`;
+        response += `🌍 Market Cap: ${this.formatCurrency(data.marketData.marketCap)}\n`;
       }
       
       if (data.marketData.volume24h !== undefined) {
-        response += `24h Trading Volume: ${this.formatCurrency(data.marketData.volume24h)}\n`;
+        response += `📊 24h Trading Volume: ${this.formatCurrency(data.marketData.volume24h)}\n`;
       }
 
       if (data.marketData.priceChange24h !== undefined) {
-        const changePrefix = data.marketData.priceChange24h >= 0 ? '📈' : '📉';
-        response += `24h Price Change: ${changePrefix} ${this.formatPercentage(data.marketData.priceChange24h)}%\n`;
+        const changePrefix = data.marketData.priceChange24h >= 0 ? '🔺' : '🔻';
+        response += `${changePrefix} Price Movement (24h): ${this.formatPercentage(data.marketData.priceChange24h)}%\n`;
       }
     }
 
     // DeFi Metrics
     if (data.defiMetrics) {
-      response += `\nProtocol Metrics:\n`;
+      response += `\nAnd here's a little extra:\n🔒 Protocol Metrics:\n`;
       
       if (data.defiMetrics.tvl !== undefined) {
-        response += `Total Value Locked (TVL): ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
+        response += `TVL: ${this.formatCurrency(data.defiMetrics.tvl)}\n`;
       }
       
       if (data.defiMetrics.change24h !== undefined) {
-        const changePrefix = data.defiMetrics.change24h >= 0 ? '📈' : '📉';
-        response += `24h TVL Change: ${changePrefix} ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
+        const changePrefix = data.defiMetrics.change24h >= 0 ? '🔺' : '🔻';
+        response += `TVL Change (24h): ${this.formatPercentage(data.defiMetrics.change24h)}%\n`;
       }
 
       if (data.defiMetrics.category) {
         response += `Category: ${data.defiMetrics.category}\n`;
       }
-
-      if (data.defiMetrics.chains && data.defiMetrics.chains.length > 0) {
-        response += `Available on: ${data.defiMetrics.chains.join(', ')}\n`;
-      }
-
-      if (data.defiMetrics.apy !== undefined) {
-        response += `Current APY: ${this.formatPercentage(data.defiMetrics.apy)}%\n`;
-      }
-    }
-
-    // Metadata
-    if (data.metadata?.marketCapRank) {
-      response += `\nMarket Cap Rank: #${data.metadata.marketCapRank}\n`;
     }
 
     // Description
     if (data.basicInfo.description) {
-      response += `\nAbout ${data.basicInfo.symbol}:\n${data.basicInfo.description}\n`;
+      response += `\nWhat's ${data.basicInfo.name} all about?\n"${data.basicInfo.description}"\n`;
     }
-
-    // Risk Warning
-    response += `\n⚠️ Remember: Crypto investments carry significant risks. Always DYOR (Do Your Own Research) and never invest more than you can afford to lose.`;
 
     return response;
   }

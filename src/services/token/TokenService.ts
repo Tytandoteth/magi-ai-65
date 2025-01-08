@@ -47,12 +47,12 @@ export class TokenService {
 
         if (!magData) {
           console.log('[TokenService] No MAG token data found in database');
-          return `I couldn't find any current data for the MAG token. This could be because:
+          return `🤔 Hmm, I couldn't find current MAG token data. This could be because:
 1. The data hasn't been updated recently
 2. There might be an issue with our data provider
 3. The token information is temporarily unavailable
 
-Please try again later or check other reliable sources for the most up-to-date information.`;
+Let's try again in a bit!`;
         }
 
         console.log('[TokenService] Successfully fetched MAG data:', {
@@ -62,17 +62,16 @@ Please try again later or check other reliable sources for the most up-to-date i
           timestamp: magData.created_at
         });
 
-        return `Here are the current metrics for Magnify (MAG):
+        return `🪄 Magnify (MAG) Snapshot
 
-Current Price: $${magData.price?.toLocaleString() ?? 'N/A'}
-Market Cap: $${magData.market_cap?.toLocaleString() ?? 'N/A'}
-Total Supply: ${magData.total_supply?.toLocaleString() ?? 'N/A'} MAG
-Circulating Supply: ${magData.circulating_supply?.toLocaleString() ?? 'N/A'} MAG
-Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
-24h Transactions: ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
-24h Volume: $${magData.volume_24h?.toLocaleString() ?? 'N/A'}
+💵 Price: $${magData.price?.toLocaleString() ?? 'N/A'}
+🌍 Market Cap: $${magData.market_cap?.toLocaleString() ?? 'N/A'}
+📈 Circulating Supply: ${magData.circulating_supply?.toLocaleString() ?? 'N/A'} MAG / ${magData.total_supply?.toLocaleString() ?? 'N/A'} MAG
+👥 Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
+🔄 Transactions (24h): ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
+💹 Volume (24h): $${magData.volume_24h?.toLocaleString() ?? 'N/A'}
 
-Description: Magnify is a DeFAI (Decentralized Finance Augmented by Intelligence) protocol that leverages artificial intelligence to provide real-time market insights and automated financial guidance.`;
+Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.`;
       }
 
       console.log('[TokenService] Calling token-profile edge function');
