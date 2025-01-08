@@ -7,10 +7,14 @@ import { checkCryptoNewsAPI } from './apis/cryptonews.ts';
 import { checkDefiLlamaAPI } from './apis/defillama.ts';
 
 serve(async (req) => {
+  console.log('Received request to check API status');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { 
-      headers: corsHeaders 
+      headers: corsHeaders,
+      status: 204
     });
   }
 
@@ -33,7 +37,8 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
-        }
+        },
+        status: 200
       }
     );
 
