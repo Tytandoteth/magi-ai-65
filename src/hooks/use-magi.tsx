@@ -1,29 +1,25 @@
 import { useState, useCallback } from "react";
-import { HighLevelPlanner } from "@/services/planners/HighLevelPlanner";
-import { LowLevelPlanner } from "@/services/planners/LowLevelPlanner";
 import { Message } from "@/types/chat";
-import { HighLevelAction } from "@/types/actions";
-import { MagiGameAgent } from "@/services/game/agent";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useMagi = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const hlp = new HighLevelPlanner();
-  const llp = new LowLevelPlanner();
 
   const processMessage = useCallback(async (messages: Message[]): Promise<string> => {
     console.log('Processing message with Magi:', messages);
     setIsProcessing(true);
 
     try {
-      // Call the chat edge function
+      // Call the chat edge function with proper URL formatting
       const { data, error } = await supabase.functions.invoke('chat', {
-        body: { messages }
+        body: { 
+          messages: messages.slice(-5) // Only send last 5 messages to reduce payload
+        }
       });
 
       if (error) {
         console.error('Error calling chat function:', error);
-        throw new Error('Failed to process message');
+        throw new Error(`Failed to process message: ${error.message}`);
       }
 
       console.log('Chat response:', data);
