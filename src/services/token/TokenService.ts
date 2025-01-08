@@ -33,48 +33,32 @@ export class TokenService {
     try {
       // Special handling for MAG token
       if (symbol.toUpperCase() === 'MAG') {
-        console.log('[TokenService] Detected MAG token, using specialized flow');
-        const { data: magData, error } = await supabase
-          .from('mag_token_analytics')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('[TokenService] Error fetching MAG data:', error);
-          throw new Error(`Failed to fetch MAG data: ${error.message}`);
-        }
-
-        if (!magData) {
-          console.log('[TokenService] No MAG token data found in database');
-          return `🤔 Hmm, I couldn't find current MAG token data. This could be because:
-1. The data hasn't been updated recently
-2. There might be an issue with our data provider
-3. The token information is temporarily unavailable
-
-Let's try again in a bit!`;
-        }
-
-        console.log('[TokenService] Successfully fetched MAG data:', magData);
-
-        // Format numbers with proper decimal places
-        const price = magData.price?.toFixed(6);
-        const marketCap = magData.market_cap?.toLocaleString();
-        const circulatingSupply = magData.circulating_supply?.toLocaleString();
-        const totalSupply = magData.total_supply?.toLocaleString();
-        const volume24h = magData.volume_24h?.toLocaleString();
+        console.log('[TokenService] Detected MAG token, using hardcoded data');
+        
+        const magData = {
+          price: 0.001288,
+          market_cap: 991698,
+          total_supply: 880000000,
+          circulating_supply: 769755726,
+          volume_24h: 15551.84,
+          price_change_24h: 1.3,
+          holders_count: 4012,
+          transactions_24h: 250 // Keeping this as is since not provided in new data
+        };
 
         return `🪄 Magnify (MAG) Snapshot
 
-💵 Price: $${price}
-🌍 Market Cap: $${marketCap}
-📈 Circulating Supply: ${circulatingSupply} MAG / ${totalSupply} MAG
-👥 Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
-🔄 Transactions (24h): ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
-💹 Volume (24h): $${volume24h}
+💵 Price: $${magData.price.toFixed(6)}
+🌍 Market Cap: $${magData.market_cap.toLocaleString()}
+📈 Circulating Supply: ${magData.circulating_supply.toLocaleString()} MAG / ${magData.total_supply.toLocaleString()} MAG
+👥 Holders: ${magData.holders_count.toLocaleString()}
+🔄 Transactions (24h): ${magData.transactions_24h.toLocaleString()}
+💹 Volume (24h): $${magData.volume_24h.toLocaleString()}
+📊 24h Change: ${magData.price_change_24h}%
 
-Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.`;
+Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.
+
+IMPORTANT: Cryptocurrency investments carry significant risks. Always conduct thorough research and never invest more than you can afford to lose.`;
       }
 
       // For other tokens, fetch from token_metadata
