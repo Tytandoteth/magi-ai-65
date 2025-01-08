@@ -24,25 +24,45 @@ serve(async (req) => {
 
     console.log('Fetching MAG token data from CoinGecko...')
     
-    // First try to get data from CoinGecko
-    const cgResponse = await fetch(
-      'https://api.coingecko.com/api/v3/simple/token_price/ethereum/0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105?include_market_cap=true&include_24hr_vol=true&include_24hr_change=true&include_last_updated_at=true',
+    // Fetch price data using the simple/price endpoint
+    const priceResponse = await fetch(
+      'https://pro-api.coingecko.com/api/v3/simple/price?ids=magnify&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true',
       {
         headers: {
-          'x-cg-demo-api-key': apiKey
+          'x-cg-pro-api-key': apiKey
         }
       }
     )
 
     let marketData = null
-    if (cgResponse.ok) {
-      const cgData = await cgResponse.json()
-      console.log('CoinGecko data:', cgData)
-      if (cgData['0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105']) {
-        marketData = cgData['0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105']
+    if (priceResponse.ok) {
+      const priceData = await priceResponse.json()
+      console.log('CoinGecko price data:', priceData)
+      if (priceData.magnify) {
+        marketData = priceData.magnify
       }
     } else {
-      console.error('Error fetching from CoinGecko:', await cgResponse.text())
+      console.error('Error fetching from CoinGecko:', await priceResponse.text())
+    }
+
+    // Fetch DeFAI category data
+    const categoryResponse = await fetch(
+      'https://pro-api.coingecko.com/api/v3/coins/categories/list',
+      {
+        headers: {
+          'x-cg-pro-api-key': apiKey
+        }
+      }
+    )
+
+    let categoryData = null
+    if (categoryResponse.ok) {
+      const categories = await categoryResponse.json()
+      console.log('CoinGecko categories:', categories)
+      categoryData = categories.find((cat: any) => 
+        cat.name.toLowerCase().includes('defai') || 
+        cat.name.toLowerCase().includes('ai')
+      )
     }
 
     // Fetch Etherscan data for holders count
@@ -90,7 +110,10 @@ serve(async (req) => {
       total_supply: 770000000, // Fixed total supply
       circulating_supply: 770000000, // Currently all tokens are in circulation
       raw_data: {
-        coingecko: marketData,
+        coingecko: {
+          price: marketData,
+          category: categoryData
+        },
         holders: holdersCount,
         transactions_24h: transactions24h
       }
