@@ -4,6 +4,7 @@ import { LowLevelPlanner } from "@/services/planners/LowLevelPlanner";
 import { Message } from "@/types/chat";
 import { HighLevelAction } from "@/types/actions";
 import { MagiGameAgent } from "@/services/game/agent";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useMagi = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -15,30 +16,24 @@ export const useMagi = () => {
     setIsProcessing(true);
 
     try {
-      // Initialize Game Agent
-      const gameAgent = MagiGameAgent.getInstance();
-      await gameAgent.initialize();
+      // Call the chat edge function
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: { messages }
+      });
 
-      // Get high-level action plan
-      const action: HighLevelAction = await hlp.planAction(messages);
-      console.log('Planned action:', action);
-
-      // Try processing with Game Agent first
-      try {
-        const gameResponse = await gameAgent.processMessage(messages[messages.length - 1].content);
-        return gameResponse;
-      } catch (gameError) {
-        console.log('Game Agent processing failed, falling back to legacy system:', gameError);
-        
-        // Fall back to legacy system if Game Agent fails
-        const response = await llp.executeTask(action, {
-          messages,
-          token: "ETH",
-          percentage: "5.2"
-        });
-
-        return response;
+      if (error) {
+        console.error('Error calling chat function:', error);
+        throw new Error('Failed to process message');
       }
+
+      console.log('Chat response:', data);
+
+      if (!data?.response?.content) {
+        throw new Error('Invalid response from chat function');
+      }
+
+      return data.response.content;
+
     } catch (error) {
       console.error('Error in Magi processing:', error);
       throw error;

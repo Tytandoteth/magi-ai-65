@@ -11,7 +11,7 @@ export async function getOpenAIResponse(messages: any[]) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       messages,
       temperature: 0.8,
       max_tokens: 500,

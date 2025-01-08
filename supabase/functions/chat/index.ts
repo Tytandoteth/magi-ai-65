@@ -23,7 +23,7 @@ serve(async (req) => {
 
     const { openAiMessages, apiStatuses, conversation } = await handleChatMessage(messages);
     
-    // Get OpenAI response
+    // Get OpenAI response using the updated model
     const completion = await getOpenAIResponse(openAiMessages);
     const response = completion.choices[0].message;
     console.log('OpenAI response:', response);
