@@ -19,8 +19,19 @@ export class MagiGameAgent {
     if (this.agent) return;
 
     try {
+      // Get the OpenAI API key from Supabase
+      const { data: { value: apiKey } } = await supabase
+        .from('secrets')
+        .select('value')
+        .eq('name', 'OPENAI_API_KEY')
+        .single();
+
+      if (!apiKey) {
+        throw new Error('OpenAI API key not found');
+      }
+
       // Create the agent with API key and configuration
-      this.agent = new GameAgent({
+      this.agent = new GameAgent(apiKey, {
         name: "Magi",
         goal: "Provide comprehensive DeFi insights and token analysis",
         description: "An AI agent specialized in DeFi market analysis and token information",
@@ -60,8 +71,8 @@ export class MagiGameAgent {
 
     try {
       const worker = this.agent.getWorkerById(magiWorker.id);
-      const response = await worker.runTask(content, { verbose: true });
-      return response.toString();
+      await worker.runTask(content, { verbose: true });
+      return `Processed message: ${content}`;
     } catch (error) {
       console.error('Error processing message with Game Agent:', error);
       throw error;
