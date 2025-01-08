@@ -9,10 +9,12 @@ describe('LowLevelPlanner', () => {
     planner = new LowLevelPlanner();
   });
 
-  it('should handle GET_TOKEN_INFO action', async () => {
+  it('should handle TOKEN_INFO action', async () => {
     const action: HighLevelAction = {
-      type: 'GET_TOKEN_INFO',
-      description: 'Get token information'
+      type: 'TOKEN_INFO',
+      params: {
+        symbol: 'ETH'
+      }
     };
 
     const result = await planner.executeTask(action, {
@@ -27,20 +29,22 @@ describe('LowLevelPlanner', () => {
   it('should handle UNKNOWN action', async () => {
     const action: HighLevelAction = {
       type: 'UNKNOWN',
-      description: 'Unknown action'
+      params: {}
     };
 
     const result = await planner.executeTask(action, {
       messages: []
     });
 
-    expect(result).toContain("I'm not sure how to help");
+    expect(result).toContain("I'm not sure how to handle");
   });
 
-  it('should handle GET_TOKEN_INFO action with missing token', async () => {
+  it('should handle TOKEN_INFO action with missing token', async () => {
     const action: HighLevelAction = {
-      type: 'GET_TOKEN_INFO',
-      description: 'Get token information'
+      type: 'TOKEN_INFO',
+      params: {
+        symbol: 'UNKNOWN'
+      }
     };
 
     const result = await planner.executeTask(action, {
