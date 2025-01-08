@@ -4,6 +4,7 @@ import { TokenOperations } from "./utils/TokenOperations";
 import { TokenData } from "@/types/token";
 import { supabase } from "@/integrations/supabase/client";
 import { isMarketData } from "@/types/market";
+import { tokenMetadata } from "./TokenMaps";
 
 export class TokenService {
   private static instance: TokenService;
@@ -28,53 +29,48 @@ export class TokenService {
 
   async getTokenInfo(symbol: string): Promise<string> {
     console.log('[TokenService] Getting token info for:', symbol);
-    const startTime = performance.now();
     
     try {
-      // Special handling for MAG token
+      // Special handling for MAG token using hardcoded data
       if (symbol.toUpperCase() === 'MAG') {
-        console.log('[TokenService] Detected MAG token, using specialized flow');
-        const { data: magData, error } = await supabase
-          .from('mag_token_analytics')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('[TokenService] Error fetching MAG data:', error);
-          throw new Error(`Failed to fetch MAG data: ${error.message}`);
+        console.log('[TokenService] Using hardcoded MAG token data');
+        const magData = tokenMetadata.get('MAG');
+        
+        if (!magData || !magData.marketData) {
+          return "Could not find MAG token data";
         }
 
-        if (!magData) {
-          console.log('[TokenService] No MAG token data found in database');
-          return `🤔 Hmm, I couldn't find current MAG token data. This could be because:
-1. The data hasn't been updated recently
-2. There might be an issue with our data provider
-3. The token information is temporarily unavailable
+        const {
+          currentPrice,
+          marketCap,
+          volume24h,
+          circulatingSupply,
+          totalSupply,
+          priceChangePercentages,
+          btcPrice,
+          btcPriceChange24h,
+          ethPrice,
+          ethPriceChange24h
+        } = magData.marketData;
 
-Let's try again in a bit!`;
-        }
+        return `🪄 Magnify (MAG) Market Data
 
-        console.log('[TokenService] Successfully fetched MAG data:', magData);
+💵 Price: $${currentPrice.toFixed(6)} (${priceChangePercentages['24h']}% 24h)
+🌍 Market Cap: $${marketCap.toLocaleString()}
+📈 Supply: ${circulatingSupply.toLocaleString()} MAG / ${totalSupply.toLocaleString()} MAG
+💹 24h Volume: $${volume24h.toLocaleString()}
 
-        // Format numbers with proper decimal places
-        const price = magData.price?.toFixed(6);
-        const marketCap = magData.market_cap?.toLocaleString();
-        const circulatingSupply = magData.circulating_supply?.toLocaleString();
-        const totalSupply = magData.total_supply?.toLocaleString();
-        const volume24h = magData.volume_24h?.toLocaleString();
+📊 Price Changes:
+• 1h: ${priceChangePercentages['1h']}%
+• 24h: ${priceChangePercentages['24h']}%
+• 7d: ${priceChangePercentages['7d']}%
+• 30d: ${priceChangePercentages['30d']}%
 
-        return `🪄 Magnify (MAG) Snapshot
+💎 Pair Prices:
+• BTC: ${btcPrice} (${btcPriceChange24h}% 24h)
+• ETH: ${ethPrice} (${ethPriceChange24h}% 24h)
 
-💵 Price: $${price}
-🌍 Market Cap: $${marketCap}
-📈 Circulating Supply: ${circulatingSupply} MAG / ${totalSupply} MAG
-👥 Holders: ${magData.holders_count?.toLocaleString() ?? 'N/A'}
-🔄 Transactions (24h): ${magData.transactions_24h?.toLocaleString() ?? 'N/A'}
-💹 Volume (24h): $${volume24h}
-
-Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.`;
+Magnify is an AI-powered DeFi assistant that brings real-time market insights and automated financial guidance to the crypto space.`;
       }
 
       // For other tokens, fetch from token_metadata

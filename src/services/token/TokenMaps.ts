@@ -7,7 +7,7 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
     decimals: 18,
     chainData: {
       1: { 
-        address: '0x7F78a73F2b4D12Fd3537cd196a6f4c9d2f2F6105', 
+        address: '0x71da932ccda723ba3ab730c976bc66daaf9c598c', 
         verified: true 
       }
     },
