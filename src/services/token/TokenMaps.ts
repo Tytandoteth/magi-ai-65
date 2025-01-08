@@ -12,9 +12,9 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
       }
     },
     marketData: {
-      currentPrice: 0.001282,
-      priceChange24h: 3.4,
-      marketCap: 987315,
+      currentPrice: 0.001285,
+      priceChange24h: 3.9,
+      marketCap: 987372,
       fullyDilutedValuation: 1128718,
       volume24h: 14961.47,
       circulatingSupply: 769755726,
@@ -28,7 +28,7 @@ export const tokenMetadata = new Map<string, TokenMetadata>([
       },
       priceChangePercentages: {
         '1h': 0.7,
-        '24h': 3.4,
+        '24h': 3.9,
         '7d': 20.0,
         '14d': 37.1,
         '30d': 45.1,
