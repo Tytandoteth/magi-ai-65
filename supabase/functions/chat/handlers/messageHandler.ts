@@ -13,21 +13,22 @@ export async function handleChatMessage(messages: any[]) {
     const lastMessage = messages[messages.length - 1].content.toLowerCase();
     let contextData = {};
 
-    // Efficient database queries with specific column selection
+    // Efficient database queries with specific column selection and proper error handling
     if (lastMessage.includes('$mag') || lastMessage.includes('magnify')) {
-      const { data: magData } = await supabase
+      const { data: magData, error: magError } = await supabase
         .from('mag_token_analytics')
         .select('price,total_supply,circulating_supply,holders_count,transactions_24h,volume_24h,market_cap')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (magData) {
-        contextData.magData = magData;
+      if (magError) {
+        console.error('Error fetching MAG data:', magError);
+      } else if (magData && magData.length > 0) {
+        contextData.magData = magData[0]; // Take first row if multiple exist
       }
     }
 
-    // Create conversation with minimal data
+    // Create conversation with minimal data and proper error handling
     const { data: conversation, error: convError } = await supabase
       .from('chat_conversations')
       .insert({
@@ -38,10 +39,15 @@ export async function handleChatMessage(messages: any[]) {
       .single();
 
     if (convError) {
+      console.error('Error creating conversation:', convError);
       throw new Error(`Error creating conversation: ${convError.message}`);
     }
 
-    // Store only the last user message
+    if (!conversation) {
+      throw new Error('No conversation was created');
+    }
+
+    // Store only the last user message with error handling
     const userMessage = messages[messages.length - 1];
     const { error: msgError } = await supabase
       .from('chat_messages')
@@ -52,6 +58,7 @@ export async function handleChatMessage(messages: any[]) {
       });
 
     if (msgError) {
+      console.error('Error storing message:', msgError);
       throw new Error(`Error storing message: ${msgError.message}`);
     }
 
@@ -71,6 +78,7 @@ Remember to maintain a helpful and approachable tone throughout the conversation
       ...messages.slice(-3) // Only keep last 3 messages for context
     ];
 
+    console.log('Prepared OpenAI messages:', openAiMessages);
     return { openAiMessages, apiStatuses, conversation };
   } catch (error) {
     console.error('Error in handleChatMessage:', error);
