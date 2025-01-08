@@ -2,6 +2,39 @@ import { createSystemMessage } from '../utils/systemMessage.ts';
 import { fetchExternalData } from '../utils/api.ts';
 import { supabase } from '../utils/supabaseClient.ts';
 
+const MAG_TOKEN_DATA = {
+  symbol: 'MAG',
+  name: 'Magnify',
+  marketData: {
+    currentPrice: 0.001282,
+    priceChange24h: 3.4,
+    marketCap: 987315,
+    fullyDilutedValuation: 1128718,
+    volume24h: 14961.47,
+    circulatingSupply: 769755726,
+    totalSupply: 880000000,
+    maxSupply: 880000000,
+    priceRanges: {
+      '24h': {
+        low: 0.001064,
+        high: 0.001318
+      }
+    },
+    priceChangePercentages: {
+      '1h': 0.7,
+      '24h': 3.4,
+      '7d': 20.0,
+      '14d': 37.1,
+      '30d': 45.1,
+      '1y': null
+    },
+    btcPrice: 0.071349,
+    btcPriceChange24h: 6.7,
+    ethPrice: 0.063835,
+    ethPriceChange24h: 7.6
+  }
+};
+
 export async function handleChatMessage(messages: any[]) {
   console.log('Processing chat message with messages:', messages);
   
@@ -13,19 +46,12 @@ export async function handleChatMessage(messages: any[]) {
     const lastMessage = messages[messages.length - 1].content.toLowerCase();
     let contextData = {};
 
-    // Efficient database queries with specific column selection and proper error handling
+    // Check if the message is about MAG token
     if (lastMessage.includes('$mag') || lastMessage.includes('magnify')) {
-      const { data: magData, error: magError } = await supabase
-        .from('mag_token_analytics')
-        .select('price,total_supply,circulating_supply,holders_count,transactions_24h,volume_24h,market_cap')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      if (magError) {
-        console.error('Error fetching MAG data:', magError);
-      } else if (magData && magData.length > 0) {
-        contextData.magData = magData[0]; // Take first row if multiple exist
-      }
+      console.log('MAG token request detected, using hardcoded data');
+      contextData = {
+        magData: MAG_TOKEN_DATA
+      };
     }
 
     // Create conversation with minimal data and proper error handling
@@ -62,12 +88,21 @@ export async function handleChatMessage(messages: any[]) {
       throw new Error(`Error storing message: ${msgError.message}`);
     }
 
-    // Create system message with minimal context
+    // Create system message with token data context
     const systemMessage = {
       role: 'system',
       content: `You are Magi, a friendly and knowledgeable AI assistant specializing in DeFi and crypto. Use a conversational, engaging tone while maintaining professionalism.
 
-Context data: ${JSON.stringify(contextData)}
+When discussing the MAG token, always use the following accurate data:
+Current Price: $${MAG_TOKEN_DATA.marketData.currentPrice}
+24h Change: ${MAG_TOKEN_DATA.marketData.priceChange24h}%
+Market Cap: $${MAG_TOKEN_DATA.marketData.marketCap.toLocaleString()}
+24h Volume: $${MAG_TOKEN_DATA.marketData.volume24h.toLocaleString()}
+Circulating Supply: ${MAG_TOKEN_DATA.marketData.circulatingSupply.toLocaleString()} MAG
+Total Supply: ${MAG_TOKEN_DATA.marketData.totalSupply.toLocaleString()} MAG
+24h Range: $${MAG_TOKEN_DATA.marketData.priceRanges['24h'].low} - $${MAG_TOKEN_DATA.marketData.priceRanges['24h'].high}
+BTC Price: ${MAG_TOKEN_DATA.marketData.btcPrice} BTC (${MAG_TOKEN_DATA.marketData.btcPriceChange24h}%)
+ETH Price: ${MAG_TOKEN_DATA.marketData.ethPrice} ETH (${MAG_TOKEN_DATA.marketData.ethPriceChange24h}%)
 
 Remember to maintain a helpful and approachable tone throughout the conversation.`
     };
