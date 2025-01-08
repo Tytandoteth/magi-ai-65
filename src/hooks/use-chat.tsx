@@ -5,35 +5,37 @@ import { useApiLogs, ApiLog } from "./use-api-logs";
 import { useChatMessages } from "./use-chat-messages";
 import { useMagi } from "./use-magi";
 
-/**
- * useChat Hook
- * 
- * A custom hook that manages the chat functionality including message handling,
- * API interactions, and state management.
- * 
- * @returns {Object} Chat state and control functions
- * @property {ChatState} chatState - Current state of the chat
- * @property {ApiLog[]} apiLogs - Logs of API interactions
- * @property {Function} handleSendMessage - Function to send new messages
- * 
- * @example
- * ```tsx
- * const { chatState, apiLogs, handleSendMessage } = useChat();
- * ```
- */
 export const useChat = () => {
   const { toast } = useToast();
   const { apiLogs, addApiLog } = useApiLogs();
   const { chatState, addMessage, setLoading, setError } = useChatMessages();
   const { processMessage } = useMagi();
 
-  /**
-   * Handles sending a new message in the chat
-   * @param {string} content - The message content to send
-   */
+  const logChatQuery = async (query: string, response: string, metadata: any) => {
+    try {
+      const { error } = await supabase
+        .from('chat_queries')
+        .insert({
+          query,
+          response,
+          metadata,
+          processing_time_ms: metadata.processingTime,
+          tokens_used: metadata.tokensUsed,
+        });
+
+      if (error) {
+        console.error('Error logging chat query:', error);
+      }
+    } catch (error) {
+      console.error('Error in logChatQuery:', error);
+    }
+  };
+
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    const startTime = Date.now();
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -58,6 +60,7 @@ export const useChat = () => {
       console.log('Starting chat request with messages:', currentMessages);
       
       const response = await processMessage(currentMessages);
+      const processingTime = Date.now() - startTime;
       
       const assistantMessage: Message = {
         id: Date.now().toString(),
@@ -65,6 +68,15 @@ export const useChat = () => {
         role: "assistant",
         timestamp: new Date(),
       };
+
+      // Log the chat query with analytics
+      await logChatQuery(content, response, {
+        processingTime,
+        tokensUsed: response.length / 4, // Rough estimate
+        messageCount: currentMessages.length,
+        userMessageLength: content.length,
+        responseLength: response.length,
+      });
 
       apiLog.response = { content: response };
       addApiLog(apiLog);
