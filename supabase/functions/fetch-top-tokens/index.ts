@@ -17,13 +17,19 @@ const supabase = createClient(
 
 async function fetchTokens(page: number, perPage: number) {
   console.log(`Fetching tokens page ${page} with ${perPage} tokens per page`)
-  const response = await fetch(
-    `https://pro-api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&locale=en&x_cg_pro_api_key=${COINGECKO_API_KEY}`
-  )
-  if (!response.ok) {
-    throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`)
+  try {
+    const response = await fetch(
+      `https://pro-api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&locale=en&x_cg_pro_api_key=${COINGECKO_API_KEY}`
+    )
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error(`Error fetching page ${page}:`, error)
+    throw error
   }
-  return await response.json()
 }
 
 async function processTokenBatch(tokens: any[]) {
@@ -33,9 +39,15 @@ async function processTokenBatch(tokens: any[]) {
   // Get existing tokens
   const { data: existing } = await supabase
     .from('token_metadata')
-    .select('coingecko_id')
+    .select('coingecko_id, symbol')
   
-  existing?.forEach(token => existingTokens.add(token.coingecko_id))
+  existing?.forEach(token => {
+    existingTokens.add(token.coingecko_id)
+    // Add to symbol lookup for token resolution
+    if (token.symbol) {
+      symbolLookup.set(token.symbol.toLowerCase(), token.symbol)
+    }
+  })
   
   // Filter out existing tokens
   const newTokens = tokens.filter(token => !existingTokens.has(token.id))
@@ -45,8 +57,8 @@ async function processTokenBatch(tokens: any[]) {
     return { processed: 0, existing: tokens.length }
   }
   
-  // Process in smaller sub-batches
-  const batchSize = 25
+  // Process in smaller sub-batches to avoid rate limits
+  const batchSize = 20
   let processed = 0
   
   for (let i = 0; i < newTokens.length; i += batchSize) {
@@ -59,6 +71,7 @@ async function processTokenBatch(tokens: any[]) {
         current_price: token.current_price,
         market_cap: token.market_cap,
         total_volume: token.total_volume,
+        price_change_percentage_24h: token.price_change_percentage_24h
       },
       metadata: {
         image: token.image,
@@ -78,12 +91,15 @@ async function processTokenBatch(tokens: any[]) {
     processed += batch.length
     console.log(`Processed ${processed} new tokens`)
     
-    // Add a small delay between batches
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Add delay between batches to respect rate limits
+    await new Promise(resolve => setTimeout(resolve, 1500))
   }
 
   return { processed, existing: existingTokens.size }
 }
+
+// Initialize symbol lookup map for token resolution
+const symbolLookup = new Map<string, string>()
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -92,27 +108,51 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting token fetch process')
-    const tokensPerPage = 100
-    const totalPages = 40 // To get 4000 tokens
+    console.log('Starting enhanced token fetch process')
+    const tokensPerPage = 100 // CoinGecko's max per page
+    const totalPages = 45 // To get 4500 tokens (45 * 100)
     let totalProcessed = 0
     let totalExisting = 0
+    let failedPages = []
 
     for (let page = 1; page <= totalPages; page++) {
       try {
+        console.log(`Fetching page ${page}/${totalPages}`)
         const tokens = await fetchTokens(page, tokensPerPage)
         const { processed, existing } = await processTokenBatch(tokens)
         totalProcessed += processed
         totalExisting += existing
 
         console.log(`Completed page ${page}/${totalPages}`)
-        console.log(`Total processed: ${totalProcessed}, Total existing: ${totalExisting}`)
+        console.log(`Running totals - Processed: ${totalProcessed}, Existing: ${totalExisting}`)
         
-        // Add delay between pages to avoid rate limits
+        // Add delay between pages to respect rate limits
         await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (error) {
         console.error(`Error processing page ${page}:`, error)
-        continue // Skip failed pages but continue with the next
+        failedPages.push(page)
+        // Continue with next page despite errors
+        continue
+      }
+    }
+
+    // Retry failed pages once
+    if (failedPages.length > 0) {
+      console.log(`Retrying ${failedPages.length} failed pages`)
+      for (const page of failedPages) {
+        try {
+          const tokens = await fetchTokens(page, tokensPerPage)
+          const { processed, existing } = await processTokenBatch(tokens)
+          totalProcessed += processed
+          totalExisting += existing
+          
+          // Remove from failed pages if successful
+          failedPages = failedPages.filter(p => p !== page)
+          
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        } catch (error) {
+          console.error(`Retry failed for page ${page}:`, error)
+        }
       }
     }
 
@@ -123,7 +163,8 @@ serve(async (req) => {
           tokenMetadata: totalProcessed,
           marketData: totalProcessed
         },
-        existingTokens: totalExisting
+        existingTokens: totalExisting,
+        failedPages: failedPages.length > 0 ? failedPages : undefined
       }),
       {
         headers: {
@@ -133,7 +174,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Fatal error:', error)
     return new Response(
       JSON.stringify({
         success: false,
