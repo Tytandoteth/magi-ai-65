@@ -75,17 +75,6 @@ const Index: React.FC = () => {
           </span>
         </div>
 
-        <div className="w-full flex justify-end mb-2">
-          <Button
-            variant="outline"
-            className="bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#D6BCFA] text-white hover:opacity-90 transition-opacity duration-200"
-            disabled
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            Connect Wallet (Coming Soon)
-          </Button>
-        </div>
-
         <ErrorBoundary>
           <Tabs defaultValue="chat" className="flex-1 w-full">
             <TabsList className="mb-4">
@@ -93,6 +82,17 @@ const Index: React.FC = () => {
               <TabsTrigger value="logs">API Logs</TabsTrigger>
               <TabsTrigger value="status">API Status</TabsTrigger>
             </TabsList>
+
+            <div className="w-full flex justify-end mb-4">
+              <Button
+                variant="outline"
+                className="bg-gradient-to-r from-[#9b87f5] via-[#7E69AB] to-[#D6BCFA] text-white hover:opacity-90 transition-opacity duration-200"
+                disabled
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Connect Wallet (Coming Soon)
+              </Button>
+            </div>
             
             <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
               <ChatContainer 
