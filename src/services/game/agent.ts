@@ -1,4 +1,5 @@
 import { GameAgent } from "@virtuals-protocol/game";
+import { supabase } from "@/integrations/supabase/client";
 import { magiWorker } from "./worker";
 
 export class MagiGameAgent {
@@ -18,6 +19,7 @@ export class MagiGameAgent {
     if (this.agent) return;
 
     try {
+      // Create the agent with API key and configuration
       this.agent = new GameAgent({
         name: "Magi",
         goal: "Provide comprehensive DeFi insights and token analysis",
@@ -59,7 +61,7 @@ export class MagiGameAgent {
     try {
       const worker = this.agent.getWorkerById(magiWorker.id);
       const response = await worker.runTask(content, { verbose: true });
-      return response;
+      return response.toString();
     } catch (error) {
       console.error('Error processing message with Game Agent:', error);
       throw error;
