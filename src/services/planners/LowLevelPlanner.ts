@@ -58,9 +58,14 @@ export class LowLevelPlanner {
     protocols.forEach((protocol, index) => {
       response += `${index + 1}. ${protocol.name}\n`;
       response += `   💰 TVL: $${protocol.tvl?.toLocaleString()}\n`;
-      response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      if (protocol.change_1d) {
+        response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      }
       if (protocol.category) {
         response += `   🏷️ Category: ${protocol.category}\n`;
+      }
+      if (protocol.staking) {
+        response += `   🔒 Staking: $${protocol.staking?.toLocaleString()}\n`;
       }
       response += '\n';
     });
@@ -73,7 +78,7 @@ export class LowLevelPlanner {
       .from('defi_market_data')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
 
     if (error) {
       console.error('Error fetching market data:', error);
@@ -85,11 +90,30 @@ export class LowLevelPlanner {
     }
 
     let response = "📊 Current Market Analysis:\n\n";
+    let totalMarketCap = 0;
+    let totalVolume = 0;
+    let gainers = 0;
+    let losers = 0;
+
     marketData.forEach(token => {
-      response += `${token.name} (${token.symbol})\n`;
-      response += `💵 Price: $${token.current_price?.toLocaleString()}\n`;
-      response += `📈 24h Change: ${token.price_change_percentage_24h?.toFixed(2)}%\n\n`;
+      totalMarketCap += token.market_cap || 0;
+      totalVolume += token.total_volume || 0;
+      if (token.price_change_percentage_24h > 0) gainers++;
+      if (token.price_change_percentage_24h < 0) losers++;
     });
+
+    response += `💹 Total Market Cap: $${totalMarketCap.toLocaleString()}\n`;
+    response += `📈 24h Trading Volume: $${totalVolume.toLocaleString()}\n`;
+    response += `🟢 Gainers: ${gainers}\n`;
+    response += `🔴 Losers: ${losers}\n\n`;
+    response += "Top Movers:\n";
+
+    marketData
+      .sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0))
+      .slice(0, 3)
+      .forEach(token => {
+        response += `${token.name} (${token.symbol}): ${token.price_change_percentage_24h?.toFixed(2)}%\n`;
+      });
 
     return response;
   }
@@ -113,8 +137,12 @@ export class LowLevelPlanner {
     let response = "📰 Latest Crypto Developments:\n\n";
     news.forEach((item, index) => {
       response += `${index + 1}. ${item.title}\n`;
+      if (item.sentiment) {
+        const sentiment = item.sentiment > 0 ? "🟢" : item.sentiment < 0 ? "🔴" : "⚪";
+        response += `   ${sentiment} Sentiment: ${item.sentiment.toFixed(2)}\n`;
+      }
       response += `   🔗 Source: ${item.source}\n`;
-      response += `   📅 Published: ${new Date(item.published_at).toLocaleDateString()}\n\n`;
+      response += `   📅 ${new Date(item.published_at).toLocaleDateString()}\n\n`;
     });
 
     return response;
@@ -125,7 +153,7 @@ export class LowLevelPlanner {
       .from('defi_llama_protocols')
       .select('*')
       .order('tvl', { ascending: false })
-      .limit(3);
+      .limit(5);
 
     if (error) {
       console.error('Error fetching DeFi protocols:', error);
@@ -143,7 +171,9 @@ export class LowLevelPlanner {
       if (protocol.staking) {
         response += `   🔒 Staking Available: $${protocol.staking?.toLocaleString()}\n`;
       }
-      response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      if (protocol.change_1d) {
+        response += `   📊 24h Change: ${protocol.change_1d?.toFixed(2)}%\n`;
+      }
       response += `   🏷️ Category: ${protocol.category || 'Various'}\n\n`;
     });
 

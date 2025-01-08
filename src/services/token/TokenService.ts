@@ -74,30 +74,48 @@ Let's try again in a bit!`;
 Magnify isn't just a token; it's a movement. Powered by AI, it brings real-time market insights and automated financial guidance to the DeFi space.`;
       }
 
-      console.log('[TokenService] Calling token-profile edge function');
-      const { data, error } = await supabase.functions.invoke('token-profile', {
-        body: { symbol }
-      });
+      // For other tokens, fetch from token_metadata
+      const { data: tokenData, error } = await supabase
+        .from('token_metadata')
+        .select('*')
+        .eq('symbol', symbol.toUpperCase())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      console.log('[TokenService] Edge function response:', {
-        success: !!data,
-        error: error?.message,
-        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
-      });
-
-      if (error || !data) {
-        throw new Error(`Failed to fetch token data: ${error?.message || 'No data returned'}`);
+      if (error) {
+        throw new Error(`Failed to fetch token data: ${error.message}`);
       }
 
-      return data.data;
+      if (!tokenData) {
+        return `I couldn't find information about ${symbol}. This token might be new, unlisted, or not tracked by major platforms.`;
+      }
 
+      let response = `📊 ${tokenData.name} (${tokenData.symbol}) Analysis\n\n`;
+
+      if (tokenData.market_data) {
+        const marketData = tokenData.market_data;
+        if (marketData.current_price?.usd) {
+          response += `💵 Price: $${marketData.current_price.usd.toLocaleString()}\n`;
+        }
+        if (marketData.market_cap?.usd) {
+          response += `🌍 Market Cap: $${marketData.market_cap.usd.toLocaleString()}\n`;
+        }
+        if (marketData.total_volume?.usd) {
+          response += `💹 24h Volume: $${marketData.total_volume.usd.toLocaleString()}\n`;
+        }
+        if (marketData.price_change_percentage_24h) {
+          response += `📈 24h Change: ${marketData.price_change_percentage_24h.toFixed(2)}%\n`;
+        }
+      }
+
+      if (tokenData.description) {
+        response += `\n${tokenData.description}\n`;
+      }
+
+      return response;
     } catch (error) {
-      console.error('[TokenService] Error in getTokenInfo:', {
-        symbol,
-        error: error.message,
-        stack: error.stack,
-        responseTime: `${(performance.now() - startTime).toFixed(2)}ms`
-      });
+      console.error('[TokenService] Error in getTokenInfo:', error);
       throw error;
     }
   }
