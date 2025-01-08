@@ -87,10 +87,10 @@ const Index: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-gradient-to-r from-[#40E0D0] via-[#89CFF0] to-[#FFB6C1] text-white/90 hover:opacity-100 transition-opacity duration-200 text-xs px-3 py-1"
+                className="bg-gradient-to-r from-[#40E0D0] via-[#89CFF0] to-[#FFB6C1] text-white/90 hover:opacity-100 transition-opacity duration-200 text-[10px] px-2 py-0.5"
                 disabled
               >
-                <Wallet className="mr-1 h-3 w-3" />
+                <Wallet className="mr-0.5 h-2.5 w-2.5" />
                 Connect Wallet (Coming Soon)
               </Button>
             </div>
